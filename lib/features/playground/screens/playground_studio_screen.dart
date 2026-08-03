@@ -81,6 +81,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
   BuildContext? _playAgainWaitingContext;
   BuildContext? _tttDialogContext;
   bool _gameOverSheetOpen = false;
+  BuildContext? _gameOverSheetContext;
   bool _partnerHasLeft = false;
   String _partnerLeftMessage = '';
 
@@ -373,6 +374,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
               ),
               onPressed: () {
                 Navigator.pop(dialogCtx);
+                _dismissGameOverSheet();
                 _sendPlaygroundSignal('__GAME_PLAY_AGAIN_ACCEPTED__');
                 _resetTTTGame();
               },
@@ -543,6 +545,16 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
     }
   }
 
+  void _dismissGameOverSheet() {
+    if (_gameOverSheetOpen && _gameOverSheetContext != null) {
+      try {
+        Navigator.pop(_gameOverSheetContext!);
+      } catch (_) {}
+      _gameOverSheetOpen = false;
+      _gameOverSheetContext = null;
+    }
+  }
+
   void _showGameOverCard(String winnerName, String loserName, {required bool isDraw}) {
     _gameOverSheetOpen = true;
     showModalBottomSheet(
@@ -550,6 +562,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
       backgroundColor: Colors.transparent,
       isDismissible: true,
       builder: (ctx) {
+        _gameOverSheetContext = ctx;
         return Container(
           padding: EdgeInsets.only(
             left: 24,
@@ -640,6 +653,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
                   onPressed: () {
                     Navigator.pop(ctx);
                     _gameOverSheetOpen = false;
+                    _gameOverSheetContext = null;
                     _requestPlayAgain();
                   },
                   icon: const Icon(Icons.replay_rounded, size: 24),
@@ -653,12 +667,16 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
       },
     ).then((_) {
       _gameOverSheetOpen = false;
+      _gameOverSheetContext = null;
     });
 
     Timer(const Duration(seconds: 5), () {
-      if (mounted && _gameOverSheetOpen) {
-        Navigator.of(context).pop();
+      if (mounted && _gameOverSheetOpen && _gameOverSheetContext != null) {
+        try {
+          Navigator.pop(_gameOverSheetContext!);
+        } catch (_) {}
         _gameOverSheetOpen = false;
+        _gameOverSheetContext = null;
       }
     });
   }
@@ -1242,6 +1260,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
   }
 
   Future<void> _initChatSocket() async {
+    final partnerName = widget.partner['partnerName'] ?? 'Partner';
     final originalChannelName = widget.partner['channelName'] ?? '';
     final channelToJoin = _privateChannelName.isNotEmpty ? _privateChannelName : originalChannelName;
     
@@ -1265,6 +1284,12 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
       if (_myUserId.isNotEmpty) {
         // Fallback room
         _chatSocket?.emit('join_room', 'friend-chat-$_myUserId');
+        // Let the partner know we rejoined the chat room
+        _chatSocket?.emit('game_signal', {
+          'channelName': dynChannelToJoin,
+          'signal': '__CHAT_REJOINED__',
+          'senderId': _myUserId,
+        });
       }
       
       // Fetch history on connect/reconnect to catch any messages missed during micro-disconnects
@@ -1279,6 +1304,11 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
       _chatSocket?.emit('join_room', dynChannelToJoin);
       if (_myUserId.isNotEmpty) {
         _chatSocket?.emit('join_room', 'friend-chat-$_myUserId');
+        _chatSocket?.emit('game_signal', {
+          'channelName': dynChannelToJoin,
+          'signal': '__CHAT_REJOINED__',
+          'senderId': _myUserId,
+        });
       }
     }
 
@@ -1312,7 +1342,21 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
             Navigator.pop(_playAgainWaitingContext!);
             _playAgainWaitingContext = null;
           }
+          _dismissGameOverSheet();
           _resetTTTGame();
+        } else if (text == '__CHAT_REJOINED__') {
+          setState(() {
+            _partnerHasLeft = false;
+            _partnerLeftMessage = '';
+          });
+          _messages.add(ChatMessage(
+            id: 'sys_${DateTime.now().millisecondsSinceEpoch}',
+            isMe: false,
+            isSystem: true,
+            text: '$partnerName joined the chat',
+            timestamp: DateTime.now(),
+          ));
+          _scrollToBottom();
         } else if (text == '__GAME_PLAY_AGAIN_REJECTED__') {
           if (_playAgainWaitingContext != null) {
             Navigator.pop(_playAgainWaitingContext!);
@@ -1379,7 +1423,22 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
             Navigator.pop(_playAgainWaitingContext!);
             _playAgainWaitingContext = null;
           }
+          _dismissGameOverSheet();
           _resetTTTGame();
+          return;
+        } else if (text == '__CHAT_REJOINED__') {
+          setState(() {
+            _partnerHasLeft = false;
+            _partnerLeftMessage = '';
+          });
+          _messages.add(ChatMessage(
+            id: 'sys_${DateTime.now().millisecondsSinceEpoch}',
+            isMe: false,
+            isSystem: true,
+            text: '$partnerName joined the chat',
+            timestamp: DateTime.now(),
+          ));
+          _scrollToBottom();
           return;
         } else if (text == '__GAME_PLAY_AGAIN_REJECTED__') {
           if (_playAgainWaitingContext != null) {
@@ -2644,7 +2703,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
                          Text('You were blocked by this user.', style: GoogleFonts.outfit(color: Colors.redAccent, fontWeight: FontWeight.w500)),
                       ],
                     )
-                  : _partnerHasLeft
+                  : _partnerHasLeft && _isMatchmakingChat
                     ? Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 8),

@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sikkaplay/core/user/user_service.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/features/home/widgets/social_join_tasks_widget.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:sikkaplay/core/sync/sync_coordinator.dart';
 
 class HomeState {
   final bool isLoading;
@@ -248,22 +248,13 @@ class HomeNotifier extends StateNotifier<HomeState> {
       final data = await _userService.getHomeState();
       if (data != null && data['success'] == true) {
         state = HomeState.fromJson(data).copyWith(isLoading: false);
-        _ref.read(userProvider.notifier).refresh(silent: true).catchError((_) {});
       } else {
         state = state.copyWith(isLoading: false);
-      }
-      
-      // Update FCM token
-      try {
-        final fcmToken = await FirebaseMessaging.instance.getToken();
-        if (fcmToken != null) {
-          await _userService.updateFcmToken(fcmToken);
-        }
-      } catch (e) {
-        print('FCM Token error: $e');
+        throw Exception('Failed to load home state');
       }
     } catch (e) {
       state = state.copyWith(isLoading: false);
+      rethrow;
     }
   }
 
@@ -273,6 +264,9 @@ class HomeNotifier extends StateNotifier<HomeState> {
       state = state.copyWith(isLoading: true);
     }
     await _loadState();
+    if (!silent) {
+      await _ref.read(userProvider.notifier).refresh(silent: true).catchError((_) {});
+    }
   }
 
   /// Claims daily streak securely from backend
@@ -282,7 +276,7 @@ class HomeNotifier extends StateNotifier<HomeState> {
     final success = await _userService.claimDailyStreak();
 
     if (success) {
-      await refresh();
+      _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
       return true;
     }
     return false;
@@ -292,7 +286,7 @@ class HomeNotifier extends StateNotifier<HomeState> {
   Future<bool> resumeDailyStreak() async {
     final result = await _userService.resumeDailyStreak();
     if (result != null && result['success'] == true) {
-      await refresh();
+      _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
       return true;
     }
     return false;
@@ -314,7 +308,7 @@ class HomeNotifier extends StateNotifier<HomeState> {
     final success = await _userService.claimMilestone('daily_code_task', 0);
 
     if (success) {
-      await refresh();
+      _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged, SyncEvent.tasksUpdated]);
       return true;
     }
     return false;
@@ -326,7 +320,7 @@ class HomeNotifier extends StateNotifier<HomeState> {
     final success = await _userService.claimMilestone('visit_all_task', 0);
 
     if (success) {
-      await refresh();
+      _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged, SyncEvent.tasksUpdated]);
       return true;
     }
     return false;
@@ -369,7 +363,7 @@ class HomeNotifier extends StateNotifier<HomeState> {
 
     final success = await _userService.requestWithdrawal(coinsAmount, upiId, earningType: earningType);
     if (success) {
-      await refresh();
+      _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
       return true;
     }
     return false;

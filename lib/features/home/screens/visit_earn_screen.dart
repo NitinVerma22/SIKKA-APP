@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/constants/app_sizes.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
+import 'package:sikkaplay/core/sync/sync_coordinator.dart';
 
 class LinkOfferItem {
   final String id;
@@ -82,7 +83,7 @@ class _VisitEarnScreenState extends ConsumerState<VisitEarnScreen> {
               id: l['id'] ?? '',
               title: l['title'] ?? '',
               url: l['url'] ?? '',
-              estimatedTime: '8 Secs',
+              estimatedTime: '15 Secs',
               rewardAmount: l['rewardAmount'] ?? 5,
               cooldownRemaining: l['cooldownRemaining'] ?? 0,
             )).toList();
@@ -134,8 +135,8 @@ class _VisitEarnScreenState extends ConsumerState<VisitEarnScreen> {
             final userServ = ref.read(userServiceProvider);
             userServ.claimVisitLink(link.id).then((success) async {
               if (success) {
-                // Sync user profile coins silently
-                ref.read(userProvider.notifier).refresh(silent: true);
+                // Sync user profile coins and home state via Sync Coordinator
+                ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged, SyncEvent.tasksUpdated]);
                 
                 // Fetch latest links details (cooldowns, statuses) silently
                 final rawLinks = await userServ.getVisitLinks();
@@ -145,7 +146,7 @@ class _VisitEarnScreenState extends ConsumerState<VisitEarnScreen> {
                       id: l['id'] ?? '',
                       title: l['title'] ?? '',
                       url: l['url'] ?? '',
-                      estimatedTime: '8 Secs',
+                      estimatedTime: '15 Secs',
                       rewardAmount: l['rewardAmount'] ?? 5,
                       cooldownRemaining: l['cooldownRemaining'] ?? 0,
                     )).toList();
@@ -218,7 +219,7 @@ class _VisitEarnScreenState extends ConsumerState<VisitEarnScreen> {
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Instructions: Tap any link, stay on the webpage for at least 8 seconds, and do not exit. Your coins will be credited instantly!',
+                    'Instructions: Tap any link, stay on the webpage for at least 15 seconds, and do not exit. Your coins will be credited instantly!',
                     style: TextStyle(color: Colors.black87, fontSize: 12, height: 1.4, fontWeight: FontWeight.w500),
                   ),
                 ),
@@ -419,7 +420,7 @@ class WebVisitSimulatorScreen extends StatefulWidget {
 }
 
 class _WebVisitSimulatorScreenState extends State<WebVisitSimulatorScreen> {
-  int _secondsLeft = 8;
+  int _secondsLeft = 15;
   Timer? _timer;
   bool _isClaimable = false;
   late final WebViewController _controller;
@@ -602,7 +603,7 @@ class _WebVisitSimulatorScreenState extends State<WebVisitSimulatorScreen> {
           children: [
             // Linear Progress Bar
             LinearProgressIndicator(
-              value: _isPageLoaded ? (1.0 - (_secondsLeft / 8.0)) : 0.0,
+              value: _isPageLoaded ? (1.0 - (_secondsLeft / 15.0)) : 0.0,
               backgroundColor: Colors.grey.shade200,
               valueColor: AlwaysStoppedAnimation<Color>(_isClaimable ? Colors.green : Colors.amber),
               minHeight: 4,

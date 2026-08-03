@@ -631,34 +631,37 @@ class _LiveStatsGridState extends ConsumerState<LiveStatsGrid> {
   @override
   Widget build(BuildContext context) {
     final selectedLanguage = ref.watch(languageProvider);
-    return Row(
-      children: [
-        Expanded(
-          child: _StatCard(
-            title: context.tr('live_stats_playing', selectedLanguage),
-            subtitle: context.tr('live_stats_players', selectedLanguage),
-            value: _formatK(_playingNow),
-            icon: Icons.groups_rounded,
-            color: const Color(0xFF2563EB), // Premium Blue
-            gradientColors: const [Color(0xFFEFF6FF), Colors.white],
-            imagePath: 'assets/images/games_hub/gamepad_stats.webp',
-            showLiveDot: true,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _StatCard(
+              title: context.tr('live_stats_playing', selectedLanguage),
+              subtitle: context.tr('live_stats_players', selectedLanguage),
+              value: _formatK(_playingNow),
+              icon: Icons.groups_rounded,
+              color: const Color(0xFF2563EB), // Premium Blue
+              gradientColors: const [Color(0xFFEFF6FF), Colors.white],
+              imagePath: 'assets/images/games_hub/gamepad_stats.webp',
+              showLiveDot: true,
+            ),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _StatCard(
-            title: context.tr('live_stats_earned', selectedLanguage),
-            subtitle: context.tr('live_stats_coins', selectedLanguage),
-            value: _formatK(_earnedToday),
-            icon: Icons.monetization_on_rounded,
-            color: const Color(0xFF16A34A), // Premium Green
-            gradientColors: const [Color(0xFFF0FDF4), Colors.white],
-            imagePath: 'assets/images/games_hub/coins_stats.webp',
-            showLiveDot: false,
+          const SizedBox(width: 16),
+          Expanded(
+            child: _StatCard(
+              title: context.tr('live_stats_earned', selectedLanguage),
+              subtitle: context.tr('live_stats_coins', selectedLanguage),
+              value: _formatK(_earnedToday),
+              icon: Icons.monetization_on_rounded,
+              color: const Color(0xFF16A34A), // Premium Green
+              gradientColors: const [Color(0xFFF0FDF4), Colors.white],
+              imagePath: 'assets/images/games_hub/coins_stats.webp',
+              showLiveDot: false,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -735,7 +738,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 112,
+      constraints: const BoxConstraints(minHeight: 112),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: gradientColors,
@@ -771,7 +774,7 @@ class _StatCard extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
@@ -808,6 +811,7 @@ class _StatCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.only(right: 52),
                   child: Column(
@@ -838,13 +842,17 @@ class _StatCard extends StatelessWidget {
                             ),
                           );
                         },
-                        child: Text(
-                          value,
-                          key: ValueKey<String>(value),
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFF0F172A),
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            value,
+                            key: ValueKey<String>(value),
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF0F172A),
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ),
                       ),

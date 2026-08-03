@@ -20,6 +20,7 @@ import 'package:sikkaplay/shared/widgets/ad_banner_widget.dart';
 import 'package:sikkaplay/features/games/spin_earn/widgets/fake_ad_dialog.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
+import 'package:sikkaplay/core/sync/sync_coordinator.dart';
 
 class DailyCodeScreen extends ConsumerStatefulWidget {
   const DailyCodeScreen({super.key});
@@ -283,8 +284,7 @@ class _DailyCodeScreenState extends ConsumerState<DailyCodeScreen> {
 
     final onCompleteClaim = () async {
       await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
-      await ref.read(userProvider.notifier).fetchProfile();
-      ref.read(homeProvider.notifier).refresh();
+      ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged, SyncEvent.tasksUpdated]);
       
       if (mounted) {
         _showRewardCreditedDialog(coinsEarned);

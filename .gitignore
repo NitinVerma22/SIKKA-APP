@@ -49,3 +49,4 @@ app.*.map.json
 /backend/
 analysis*.txt
 test-upload.js
+*.hprof

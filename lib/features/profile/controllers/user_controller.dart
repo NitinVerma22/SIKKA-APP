@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sikkaplay/core/user/user_service.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
+import 'package:sikkaplay/core/sync/sync_coordinator.dart';
 
 class UserState {
   final bool isLoading;
@@ -43,6 +44,15 @@ class UserNotifier extends StateNotifier<UserState> {
     }
   }
 
+  Future<void> _fetchProfileSilently() async {
+    try {
+      final data = await _userService.getProfile();
+      if (data != null) {
+        state = state.copyWith(isLoading: false, userData: data);
+      }
+    } catch (_) {}
+  }
+
   Future<void> fetchProfile({bool silent = false}) async {
     if (!silent) {
       state = state.copyWith(isLoading: true, error: null);
@@ -51,12 +61,13 @@ class UserNotifier extends StateNotifier<UserState> {
       final data = await _userService.getProfile();
       if (data != null) {
         state = state.copyWith(isLoading: false, userData: data);
-        _ref.read(homeProvider.notifier).refresh(silent: true).catchError((_) {});
       } else {
         state = state.copyWith(isLoading: false, error: 'Failed to load profile');
+        throw Exception('Failed to load profile');
       }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
     }
   }
 
@@ -120,11 +131,11 @@ class UserNotifier extends StateNotifier<UserState> {
     }
 
     if (success) {
-      // Sync with backend to get latest transactions
-      await fetchProfile();
+      // Sync with backend using the centralized Sync Coordinator
+      _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
     } else {
       // Revert optimistic update
-      await fetchProfile(silent: true);
+      await _fetchProfileSilently();
     }
     return success;
   }
@@ -141,11 +152,11 @@ class UserNotifier extends StateNotifier<UserState> {
     final success = await _userService.claimDynamicSocialTask(taskId);
 
     if (success) {
-      // Sync with backend to get latest transactions
-      await fetchProfile();
+      // Sync with backend using the centralized Sync Coordinator
+      _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
     } else {
       // Revert optimistic update
-      await fetchProfile(silent: true);
+      await _fetchProfileSilently();
     }
     return success;
   }
@@ -159,7 +170,7 @@ class UserNotifier extends StateNotifier<UserState> {
           currentData['balance'] = response['balance'];
           state = state.copyWith(userData: currentData);
         }
-        _ref.read(homeProvider.notifier).refresh(silent: true).catchError((_) {});
+        _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
       }
       return response;
     }
@@ -172,14 +183,14 @@ class UserNotifier extends StateNotifier<UserState> {
       currentData['balance'] = newBalance;
       state = state.copyWith(userData: currentData);
     }
-    _ref.read(homeProvider.notifier).refresh(silent: true).catchError((_) {});
+    _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
   }
 
   Future<bool> updateUpi(String upiId) async {
     state = state.copyWith(isLoading: true, error: null);
     final success = await _userService.updateUpi(upiId);
     if (success) {
-      await fetchProfile();
+      _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.profileUpdated]);
     } else {
       state = state.copyWith(isLoading: false, error: 'Failed to update UPI ID');
     }
@@ -190,7 +201,7 @@ class UserNotifier extends StateNotifier<UserState> {
     state = state.copyWith(isLoading: true, error: null);
     final res = await _userService.updateProfileDetails(name: name, username: username, gender: gender, city: city);
     if (res['success'] == true) {
-      await fetchProfile();
+      _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.profileUpdated]);
     } else {
       state = state.copyWith(isLoading: false, error: res['error']);
     }

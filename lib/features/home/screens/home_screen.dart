@@ -103,7 +103,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       final remaining = 20 - elapsed;
       _showValidationLoader(remaining, task);
     } else {
-      _triggerRewardedAdAndClaim(task);
+      _triggerInterstitialAdAndClaim(task);
     }
   }
 
@@ -223,7 +223,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   setState(() {
                     _isValidating = false;
                   });
-                  _triggerRewardedAdAndClaim(task);
+                  _triggerInterstitialAdAndClaim(task);
                 } else {
                   if (context.mounted) {
                     setDialogState(() {
@@ -285,7 +285,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     });
   }
 
-  void _triggerRewardedAdAndClaim(SocialTask task) {
+  void _triggerInterstitialAdAndClaim(SocialTask task) {
     final selectedLanguage = ref.read(languageProvider);
     final userState = ref.read(userProvider);
     final userId = userState.userData?['id'] ?? '';
@@ -315,54 +315,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       }
     };
 
-    if (!AdService.instance.isRewardedAdLoaded()) {
-      AdService.instance.loadRewardedAd();
+    if (!AdService.instance.isInterstitialAdLoaded()) {
+      AdService.instance.loadInterstitialAd();
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (spinnerContext) {
-          return _AdSpinnerDialog(
-            selectedLanguage: selectedLanguage,
-            onAdLoaded: () {
-              Navigator.of(spinnerContext).pop();
-              AdService.instance.showRewardedAd(
-                context: context,
-                userId: userId,
-                onAdDismissed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(selectedLanguage == 'Hindi' ? 'विज्ञापन पूरा देखें!' : 'Watch full ad to claim reward.')),
-                  );
-                },
-                onUserEarnedReward: (reward) => onCompleteClaim(),
-              );
-            },
-            onTimeout: () {
-              Navigator.of(spinnerContext).pop();
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) => FakeAdDialog(
-                  title: selectedLanguage == 'Hindi' ? 'मनोरंजन पुरस्कार' : 'Social Reward Ad',
-                  message: selectedLanguage == 'Hindi'
-                      ? 'रिवॉर्ड क्लेम करने के लिए विज्ञापन देखें'
-                      : 'Watch short ad to claim your reward',
-                  onComplete: onCompleteClaim,
-                ),
-              );
-            },
-          );
-        },
+        builder: (_) => FakeAdDialog(
+          title: selectedLanguage == 'Hindi' ? 'मनोरंजन पुरस्कार' : 'Social Reward Ad',
+          message: selectedLanguage == 'Hindi'
+              ? 'रिवॉर्ड क्लेम करने के लिए विज्ञापन देखें'
+              : 'Watch short ad to claim your reward',
+          onComplete: onCompleteClaim,
+        ),
       );
     } else {
-      AdService.instance.showRewardedAd(
-        context: context,
-        userId: userId,
+      AdService.instance.showInterstitialAd(
         onAdDismissed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(selectedLanguage == 'Hindi' ? 'विज्ञापन पूरा देखें!' : 'Watch full ad to claim reward.')),
-          );
+          // Wait 5 seconds after ad starts/dismisses and claim coins
+          Future.delayed(const Duration(seconds: 5), () {
+            onCompleteClaim();
+          });
         },
-        onUserEarnedReward: (reward) => onCompleteClaim(),
       );
     }
   }
@@ -1221,79 +1194,6 @@ class _MarqueeWidgetState extends State<MarqueeWidget> {
   }
 }
 
-class _AdSpinnerDialog extends StatefulWidget {
-  final String selectedLanguage;
-  final VoidCallback onAdLoaded;
-  final VoidCallback onTimeout;
-
-  const _AdSpinnerDialog({
-    required this.selectedLanguage,
-    required this.onAdLoaded,
-    required this.onTimeout,
-  });
-
-  @override
-  State<_AdSpinnerDialog> createState() => _AdSpinnerDialogState();
-}
-
-class _AdSpinnerDialogState extends State<_AdSpinnerDialog> {
-  Timer? _timer;
-  int _elapsedMs = 0;
-  bool _resolved = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
-      if (!mounted || _resolved) {
-        timer.cancel();
-        return;
-      }
-      _elapsedMs += 200;
-      if (AdService.instance.isRewardedAdLoaded()) {
-        _resolved = true;
-        timer.cancel();
-        widget.onAdLoaded();
-      } else if (_elapsedMs >= 3000) {
-        _resolved = true;
-        timer.cancel();
-        widget.onTimeout();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Card(
-        color: const Color(0xFF1E1E2E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(color: AppColors.primary),
-              const SizedBox(height: 16),
-              Text(
-                widget.selectedLanguage == 'Hindi'
-                    ? 'वीडियो विज्ञापन लोड हो रहा है...'
-                    : 'Loading Video Ad...',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _SocialBenefitsDialog extends StatefulWidget {
   final SocialTask task;

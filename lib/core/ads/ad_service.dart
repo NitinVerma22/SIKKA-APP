@@ -226,6 +226,11 @@ class AdService {
     return _rewardedAd != null;
   }
 
+  /// Check if Interstitial Ad is cached and ready to play
+  bool isInterstitialAdLoaded() {
+    return _interstitialAd != null;
+  }
+
   /// Loads an Interstitial Ad in the background
   void loadInterstitialAd({String? customAdUnitId}) {
     if (_isLoadingInterstitial || _interstitialAd != null) return;

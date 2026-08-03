@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "site": "sikkaplay-admin",
+    "public": "admin/dist",
+    "ignore": [
+      "firebase-admin.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

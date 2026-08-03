@@ -16,6 +16,7 @@ import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum TileType { coin, bomb }
 
@@ -63,24 +64,47 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
     GameAudio.init();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final session = await ref.read(userServiceProvider).startGameSession('treasure_grid');
-      if (session != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final savedSession = prefs.getString('saved_session_treasure_grid');
+      final savedCoins = prefs.getInt('saved_coins_treasure_grid') ?? 0;
+
+      if (savedSession != null && savedSession.isNotEmpty && savedCoins > 0) {
         if (mounted) {
           setState(() {
-            _sessionId = session;
+            _sessionId = savedSession;
+            _sessionCoins = savedCoins;
             _isSessionLoading = false;
           });
           _startGame();
         }
       } else {
-        if (mounted) {
-          final selectedLanguage = ref.read(languageProvider);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.tr('failed_start_session', selectedLanguage))),
-          );
-          Navigator.of(context).pop();
+        final session = await ref.read(userServiceProvider).startGameSession('treasure_grid');
+        if (session != null) {
+          if (mounted) {
+            setState(() {
+              _sessionId = session;
+              _isSessionLoading = false;
+            });
+            _startGame();
+          }
+          await prefs.setString('saved_session_treasure_grid', session);
+          await prefs.setInt('saved_coins_treasure_grid', 0);
+        } else {
+          if (mounted) {
+            final selectedLanguage = ref.read(languageProvider);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(context.tr('failed_start_session', selectedLanguage))),
+            );
+            Navigator.of(context).pop();
+          }
         }
       }
+    });
+  }
+
+  void _saveProgress() {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setInt('saved_coins_treasure_grid', _sessionCoins);
     });
   }
 
@@ -270,7 +294,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
       return;
     }
 
-    if (_sessionCoins >= 80) {
+    if (_sessionCoins >= 50) {
       final selectedLanguage = ref.read(languageProvider);
       GameNotifications.showCoinUpdate(context, selectedLanguage == 'Hindi' ? 'गुल्लक भर गई! पहले दावा करें' : 'Gullak Full! Claim first', isPenalty: true);
       return;
@@ -292,8 +316,8 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
         final reward = _grid[index].coins;
         _roundCoins += reward;
         // Clamp to prevent exceeding Gullak limit
-        if (_sessionCoins + _roundCoins > 80) {
-          _roundCoins = 80 - _sessionCoins;
+        if (_sessionCoins + _roundCoins > 50) {
+          _roundCoins = 50 - _sessionCoins;
         }
         GameNotifications.showCoinUpdate(context, '+$reward Sikka (Round)');
       }
@@ -303,14 +327,15 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
       setState(() {
         if (_isPerfectStreak && _roundCoins > 0) {
           _roundCoins += 2;
-          if (_sessionCoins + _roundCoins > 80) {
-            _roundCoins = 80 - _sessionCoins;
+          if (_sessionCoins + _roundCoins > 50) {
+            _roundCoins = 50 - _sessionCoins;
           }
           GameNotifications.showCoinUpdate(context, 'Perfect Streak! +2 Sikka Bonus! 🔥');
         }
-        _sessionCoins = min(80, _sessionCoins + _roundCoins);
+        _sessionCoins = min(50, _sessionCoins + _roundCoins);
         _isRoundEnding = true;
       });
+      _saveProgress();
 
       _revealBoardSequentially();
     }
@@ -353,6 +378,11 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
     // 5. Hold for 500ms
     await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
+
+    if (_sessionCoins >= 50) {
+      _claimGullak();
+      return;
+    }
 
     // 6. Start transition countdown
     setState(() {
@@ -482,7 +512,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
   }
 
   void _claimGullak() {
-    if (_sessionCoins >= 80) {
+    if (_sessionCoins >= 50) {
       setState(() {
         _isPaused = true;
       });
@@ -503,13 +533,25 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
             });
           }
           WidgetsBinding.instance.addPostFrameCallback((_) async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove('saved_session_treasure_grid');
+            await prefs.remove('saved_coins_treasure_grid');
+
             final session = await ref.read(userServiceProvider).startGameSession('treasure_grid');
-            if (mounted) {
-              setState(() {
-                _sessionId = session;
-                _isSessionLoading = false;
-              });
-              _startGame();
+            if (session != null) {
+              if (mounted) {
+                setState(() {
+                  _sessionId = session;
+                  _isSessionLoading = false;
+                });
+                _startGame();
+              }
+              await prefs.setString('saved_session_treasure_grid', session);
+              await prefs.setInt('saved_coins_treasure_grid', 0);
+            } else {
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
             }
           });
         },
@@ -541,42 +583,40 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
     final selectedLanguage = ref.watch(languageProvider);
     return DoubleBackExit(
       onExitConfirmed: () async {
-        final isFull = _sessionCoins >= 80;
-        final shouldClaim = await showDialog<bool>(
+        final shouldExit = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             backgroundColor: const Color(0xFF1A1A24),
-            title: Text(context.tr('exit_game_title', selectedLanguage), style: const TextStyle(color: Colors.white)),
+            title: Text(
+              selectedLanguage == 'Hindi' ? 'गेम से बाहर निकलें?' : 'Exit Game?',
+              style: const TextStyle(color: Colors.white),
+            ),
             content: Text(
-                isFull 
-                  ? context.tr('exit_game_full_gullak', selectedLanguage)
-                  : (_sessionCoins > 0 
-                      ? context.tr('exit_game_warn_gullak', selectedLanguage).replaceAll('{coins}', '$_sessionCoins') 
-                      : context.tr('exit_game_confirm', selectedLanguage)),
-                style: const TextStyle(color: Colors.white70)),
+              selectedLanguage == 'Hindi'
+                  ? 'क्या आप गेम से बाहर निकलना चाहते हैं?'
+                  : 'Do you want to exit?',
+              style: const TextStyle(color: Colors.white70),
+            ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(null),
-                child: Text(context.tr('keep_playing_btn', selectedLanguage), style: const TextStyle(color: AppColors.textSecondary)),
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(
+                  selectedLanguage == 'Hindi' ? 'रद्द करें' : 'Cancel',
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
               ),
-              if (!isFull)
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(context.tr('exit_lose_coins_btn', selectedLanguage), style: const TextStyle(color: Colors.redAccent)),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(
+                  selectedLanguage == 'Hindi' ? 'बाहर निकलें' : 'Exit',
+                  style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
                 ),
-              if (isFull)
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(context.tr('claim_exit_btn', selectedLanguage), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                ),
+              ),
             ],
           ),
         );
 
-        if (shouldClaim == true && isFull) {
-          if (!context.mounted) return;
-          _claimGullak(); // Use the existing claim logic
-        } else if (shouldClaim == false) {
+        if (shouldExit == true) {
           _exitGame();
         }
       },
@@ -620,7 +660,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
                       // Wallet
                       GameGullakBar(
                         currentCoins: _sessionCoins,
-                        maxCoins: 80,
+                        maxCoins: 50,
                         onClaim: _claimGullak,
                       ),
                     ],
@@ -742,9 +782,10 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
                       ),
                       onPressed: () {
                         setState(() {
-                          _sessionCoins = min(80, _sessionCoins + _roundCoins);
+                          _sessionCoins = min(50, _sessionCoins + _roundCoins);
                           _isRoundEnding = true;
                         });
+                        _saveProgress();
                         GameNotifications.showCoinUpdate(context, 'Claimed +$_roundCoins Sikka!');
                         GameAudio.playCorrect();
                         

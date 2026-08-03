@@ -9,6 +9,7 @@ import 'package:sikkaplay/features/games/spin_earn/widgets/fake_ad_dialog.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
+import 'package:sikkaplay/core/sync/sync_coordinator.dart';
 
 class GameClaimDialog {
   static void show({
@@ -44,10 +45,10 @@ class GameClaimDialog {
         return;
       }
 
-      final result = await ref.read(userServiceProvider).endGameSession(sessionId, coinsEarned: coinsEarned);
+      final result = await ref.read(userServiceProvider).endGameSession(sessionId, coinsEarned: coinsEarned + 30);
       if (result != null && result['success'] == true) {
         final int coinsWon = result['coinsEarned'] ?? 0;
-        await ref.read(userProvider.notifier).fetchProfile();
+        ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
         onClaimCompleted();
         if (context.mounted) {
           _showPostClaimDialog(context, coinsWon, onContinue, onExit, selectedLanguage);
@@ -111,7 +112,7 @@ class GameClaimDialog {
 
         if (result != null && result['success'] == true) {
           final int coinsWon = result['coinsEarned'] ?? 0;
-          await ref.read(userProvider.notifier).fetchProfile();
+          ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
           onClaimCompleted();
           if (context.mounted) {
             _showPostClaimDialog(context, coinsWon, onContinue, onExit, selectedLanguage);
@@ -349,11 +350,9 @@ class GameClaimDialog {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                adType == 'interstitial'
-                                    ? (selectedLanguage == 'Hindi'
-                                        ? 'अपना पुरस्कार तुरंत क्लेम करें'
-                                        : 'Claim your reward instantly')
-                                    : context.tr('claim_securely', selectedLanguage),
+                                selectedLanguage == 'Hindi'
+                                    ? 'दावा करने के लिए वीडियो देखें, आपको 30 सिक्का बोनस मिलेगा, कुल ${coinsEarned + 30} सिक्का!'
+                                    : 'Watch video to claim, you will get 30 coins bonus, total ${coinsEarned + 30} coins!',
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 12,
@@ -397,7 +396,7 @@ class GameClaimDialog {
                                 const CircularProgressIndicator(color: AppColors.primary),
                                 const SizedBox(height: 16),
                                 Text(
-                                  context.tr('deducting_coins_claiming', selectedLanguage).replaceAll('{coins}', '30'),
+                                  context.tr('deducting_coins_claiming', selectedLanguage).replaceAll('{coins}', '25'),
                                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -411,7 +410,7 @@ class GameClaimDialog {
                       final result = await ref.read(userServiceProvider).endGameSession(
                         sessionId,
                         coinsEarned: coinsEarned,
-                        bypassFee: 30,
+                        bypassFee: 25,
                       );
                       
                       if (context.mounted) {
@@ -420,10 +419,10 @@ class GameClaimDialog {
 
                       if (result != null && result['success'] == true) {
                         final int coinsWon = result['coinsEarned'] ?? 0;
-                        await ref.read(userProvider.notifier).fetchProfile();
+                        ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
                         onClaimCompleted();
                         if (context.mounted) {
-                          _showPostClaimDialog(context, coinsWon - 30, onContinue, onExit, selectedLanguage); // Net coins won is coinsWon - 30
+                          _showPostClaimDialog(context, coinsWon - 25, onContinue, onExit, selectedLanguage); // Net coins won is coinsWon - 25
                         }
                       } else {
                         if (context.mounted) {

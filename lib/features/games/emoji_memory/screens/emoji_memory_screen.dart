@@ -13,6 +13,7 @@ import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_gullak_bar.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_claim_dialog.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
@@ -75,22 +76,39 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
     )..repeat(reverse: true);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final session = await ref.read(userServiceProvider).startGameSession('emoji_memory');
-      if (session != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final savedSession = prefs.getString('saved_session_emoji_memory');
+      final savedCoins = prefs.getInt('saved_coins_emoji_memory') ?? 0;
+
+      if (savedSession != null && savedSession.isNotEmpty && savedCoins > 0) {
         if (mounted) {
           setState(() {
-            _sessionId = session;
+            _sessionId = savedSession;
+            _sessionCoins = savedCoins;
             _isSessionLoading = false;
           });
           _startGame();
         }
       } else {
-        if (mounted) {
-          final selectedLanguage = ref.read(languageProvider);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.tr('failed_start_session', selectedLanguage))),
-          );
-          Navigator.of(context).pop();
+        final session = await ref.read(userServiceProvider).startGameSession('emoji_memory');
+        if (session != null) {
+          if (mounted) {
+            setState(() {
+              _sessionId = session;
+              _isSessionLoading = false;
+            });
+            _startGame();
+          }
+          await prefs.setString('saved_session_emoji_memory', session);
+          await prefs.setInt('saved_coins_emoji_memory', 0);
+        } else {
+          if (mounted) {
+            final selectedLanguage = ref.read(languageProvider);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(context.tr('failed_start_session', selectedLanguage))),
+            );
+            Navigator.of(context).pop();
+          }
         }
       }
     });
@@ -321,7 +339,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
       return;
     }
 
-    if (_sessionCoins >= 80) {
+    if (_sessionCoins >= 50) {
       final selectedLanguage = ref.read(languageProvider);
       GameNotifications.showCoinUpdate(context, selectedLanguage == 'Hindi' ? 'गुल्लक भर गई! पहले दावा करें' : 'Gullak Full! Claim first', isPenalty: true);
       return;
@@ -335,15 +353,26 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
       int reward = 3;
 
       setState(() {
-        _sessionCoins = (_sessionCoins + reward > 80) ? 80 : _sessionCoins + reward;
+        _sessionCoins = (_sessionCoins + reward > 50) ? 50 : _sessionCoins + reward;
         _showSuccessTick = true;
         _isRoundEnding = true;
         _revealedIndices.add(index);
       });
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setInt('saved_coins_emoji_memory', _sessionCoins);
+      });
 
       GameNotifications.showCoinUpdate(context, '+$reward Sikka (Gullak)');
       
-      _revealBoardSequentially();
+      if (_sessionCoins >= 50) {
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted) {
+            _claimGullak();
+          }
+        });
+      } else {
+        _revealBoardSequentially();
+      }
     } else {
       // Wrong!
       GameAudio.playWrong();
@@ -588,7 +617,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
   }
 
   void _claimGullak() {
-    if (_sessionCoins >= 80) {
+    if (_sessionCoins >= 50) {
       setState(() {
         _isPaused = true;
       });
@@ -610,13 +639,25 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
             });
           }
           WidgetsBinding.instance.addPostFrameCallback((_) async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove('saved_session_emoji_memory');
+            await prefs.remove('saved_coins_emoji_memory');
+
             final session = await ref.read(userServiceProvider).startGameSession('emoji_memory');
-            if (mounted) {
-              setState(() {
-                _sessionId = session;
-                _isSessionLoading = false;
-              });
-              _startGame();
+            if (session != null) {
+              if (mounted) {
+                setState(() {
+                  _sessionId = session;
+                  _isSessionLoading = false;
+                });
+                _startGame();
+              }
+              await prefs.setString('saved_session_emoji_memory', session);
+              await prefs.setInt('saved_coins_emoji_memory', 0);
+            } else {
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
             }
           });
         },
@@ -648,42 +689,40 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
     final selectedLanguage = ref.watch(languageProvider);
     return DoubleBackExit(
       onExitConfirmed: () async {
-        final isFull = _sessionCoins >= 80;
-        final shouldClaim = await showDialog<bool>(
+        final shouldExit = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             backgroundColor: const Color(0xFF1A1A24),
-            title: Text(context.tr('exit_game_title', selectedLanguage), style: const TextStyle(color: Colors.white)),
+            title: Text(
+              selectedLanguage == 'Hindi' ? 'गेम से बाहर निकलें?' : 'Exit Game?',
+              style: const TextStyle(color: Colors.white),
+            ),
             content: Text(
-                isFull 
-                  ? context.tr('exit_game_full_gullak', selectedLanguage)
-                  : (_sessionCoins > 0 
-                      ? context.tr('exit_game_warn_gullak', selectedLanguage).replaceAll('{coins}', '$_sessionCoins') 
-                      : context.tr('exit_game_confirm', selectedLanguage)),
-                style: const TextStyle(color: Colors.white70)),
+              selectedLanguage == 'Hindi'
+                  ? 'क्या आप गेम से बाहर निकलना चाहते हैं?'
+                  : 'Do you want to exit?',
+              style: const TextStyle(color: Colors.white70),
+            ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(null),
-                child: Text(context.tr('keep_playing_btn', selectedLanguage), style: const TextStyle(color: AppColors.textSecondary)),
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(
+                  selectedLanguage == 'Hindi' ? 'रद्द करें' : 'Cancel',
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
               ),
-              if (!isFull)
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(context.tr('exit_lose_coins_btn', selectedLanguage), style: const TextStyle(color: Colors.redAccent)),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(
+                  selectedLanguage == 'Hindi' ? 'बाहर निकलें' : 'Exit',
+                  style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
                 ),
-              if (isFull)
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(context.tr('claim_exit_btn', selectedLanguage), style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                ),
+              ),
             ],
           ),
         );
 
-        if (shouldClaim == true && isFull) {
-          if (!context.mounted) return;
-          _claimGullak();
-        } else if (shouldClaim == false) {
+        if (shouldExit == true) {
           _exitGame();
         }
       },
@@ -729,7 +768,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
                       // Wallet
                       GameGullakBar(
                         currentCoins: _sessionCoins,
-                        maxCoins: 80,
+                        maxCoins: 50,
                         onClaim: _claimGullak,
                       ),
                     ],
