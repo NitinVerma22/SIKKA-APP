@@ -509,12 +509,20 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
       routerConfig: router,
       // ── FIX 9: Offline overlay banner via builder ──────────────────────
       builder: (context, child) {
-        return Stack(
-          children: [
-            child ?? const SizedBox.shrink(),
-            // Show offline banner only when connectivity is lost
-            if (_isOffline)
-              Positioned(
+        final mediaQueryData = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQueryData.copyWith(
+            textScaler: mediaQueryData.textScaler.clamp(
+              minScaleFactor: 1.0,
+              maxScaleFactor: 1.15,
+            ),
+          ),
+          child: Stack(
+            children: [
+              child ?? const SizedBox.shrink(),
+              // Show offline banner only when connectivity is lost
+              if (_isOffline)
+                Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
@@ -557,10 +565,10 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
                   ),
                 ),
               ),
-          ],
+            ],
+          ),
         );
       },
-      // ──────────────────────────────────────────────────────────────────
     );
   }
 }

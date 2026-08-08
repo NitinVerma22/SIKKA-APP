@@ -230,13 +230,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: 'profile',
+                parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) {
-                  final username = state.extra as String;
+                  final username = state.extra as String? ?? '';
                   return PlaygroundProfileScreen(username: username);
                 },
               ),
               GoRoute(
                 path: 'search',
+                parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) => const PlaygroundSearchScreen(),
               ),
             ],

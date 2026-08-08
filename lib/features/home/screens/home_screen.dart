@@ -816,7 +816,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   Widget _buildPromoBanners(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.go('/games/spin_earn'), // Clicking the banner opens the spin wheel game
+      onTap: () => context.push('/games/spin_earn'), // Clicking the banner opens the spin wheel game
       child: Container(
         width: double.infinity,
         height: 120,

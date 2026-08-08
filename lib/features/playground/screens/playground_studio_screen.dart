@@ -1394,6 +1394,11 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
       final String msgSenderId = rawMsg['senderId'] ?? '';
       final partnerId = widget.partner['partnerId'] ?? '';
       final bool isMeMsg = (msgSenderId == _myUserId && _myUserId.isNotEmpty);
+
+      // Verify that this message belongs to the current chat session or was sent by me
+      if (!isMeMsg && msgSenderId != partnerId) {
+        return;
+      }
       if (msgSenderId == partnerId) {
         // Intercept signals
         if (text == '__GAME_REQUEST__') {
@@ -2048,6 +2053,12 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
         setState(() {
           _messages.clear();
         });
+        SharedPreferences.getInstance().then((prefs) {
+          prefs.setString(
+            'chat_clear_time_${widget.partner['partnerId']}',
+            DateTime.now().toUtc().toIso8601String(),
+          );
+        }).catchError((_) {});
         GameNotifications.showCoinUpdate(context, 'Chat history cleared');
       }
     } else {
@@ -2175,7 +2186,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
                         Navigator.pop(context); // Close bottom sheet
                         _showConfirmDialog(
                           'Confirm Report',
-                          'Are you sure you want to report this user for \$selectedReason?',
+                          'Are you sure you want to report this user for $selectedReason?',
                           () async {
                             final res = await _service.reportUser(widget.partner['partnerId'] ?? '', selectedReason);
                             if (mounted) {
@@ -2188,7 +2199,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
                           },
                         );
                       },
-                      child: const Text('SUBMIT REPORT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                      child: Text('SUBMIT REPORT', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
                 ],
@@ -2208,15 +2219,35 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
         setState(() {
           _gameActive = false;
         });
-        if (mounted) Navigator.pop(context);
+        if (mounted) {
+          if (_isMatchmakingChat) {
+            context.go('/playground');
+          } else {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/playground/friends');
+            }
+          }
+        }
       }
     } else if (_isMatchmakingChat && !_partnerHasLeft) {
       final shouldLeave = await _showLeaveChatConfirmationDialog();
       if (shouldLeave == true && mounted) {
-        Navigator.pop(context);
+        context.go('/playground');
       }
     } else {
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        if (_isMatchmakingChat) {
+          context.go('/playground');
+        } else {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          } else {
+            context.go('/playground/friends');
+          }
+        }
+      }
     }
   }
 
@@ -2491,20 +2522,23 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
                       }
                       final msg = _messages[index];
                       if (msg.isSystem) {
+                        final isJoin = msg.text.toLowerCase().contains('join');
                         return Container(
                           width: double.infinity,
                           margin: const EdgeInsets.symmetric(vertical: 12),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFEE2E2),
+                            color: isJoin ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFFECACA)),
+                            border: Border.all(
+                              color: isJoin ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+                            ),
                           ),
                           child: Center(
                             child: Text(
                               msg.text,
                               style: GoogleFonts.outfit(
-                                color: const Color(0xFFDC2626),
+                                color: isJoin ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),

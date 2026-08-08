@@ -219,7 +219,7 @@ class _TransactionHistoryScreenState
                     Expanded(
                       child: ListView.builder(
                         padding: const EdgeInsets.all(AppSizes.md),
-                        itemCount: _transactions.length + 1,
+                        itemCount: _transactions.length + (_currentPage == _totalPages ? 1 : 0),
                         itemBuilder: (context, index) {
                           if (index == _transactions.length) {
                             return Center(

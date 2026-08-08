@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:sikkaplay/core/auth/auth_service.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
+import 'package:sikkaplay/features/playground/services/playground_service.dart';
 
 class CompleteProfileScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> userData;
@@ -16,37 +18,109 @@ class CompleteProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
+  final _usernameController = TextEditingController();
   final _cityController = TextEditingController();
   final _referralController = TextEditingController();
   String? _selectedGender;
   final AuthService _authService = AuthService();
-  
+  final PlaygroundService _playgroundService = PlaygroundService();
+
+  Timer? _debounceTimer;
+  String _usernameStatus = ''; // 'loading', 'available', 'taken', 'invalid', ''
+  String _usernameError = '';
   bool _isLoading = false;
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _cityController.dispose();
     _referralController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
+  void _onUsernameChanged(String value) {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+
+    if (value.trim().isEmpty) {
+      setState(() {
+        _usernameStatus = '';
+        _usernameError = '';
+      });
+      return;
+    }
+
+    String clean = value.trim().toLowerCase();
+    if (clean.startsWith('@')) clean = clean.substring(1);
+
+    final regex = RegExp(r'^[a-zA-Z0-9_]{3,15}$');
+    if (!regex.hasMatch(clean)) {
+      setState(() {
+        _usernameStatus = 'invalid';
+        _usernameError = '3-15 chars, alphanumeric & underscores only';
+      });
+      return;
+    }
+
+    setState(() {
+      _usernameStatus = 'loading';
+      _usernameError = '';
+    });
+
+    _debounceTimer = Timer(const Duration(milliseconds: 600), () async {
+      final res = await _playgroundService.checkUsernameUnique(clean);
+      if (!mounted) return;
+
+      if (res['success'] == true) {
+        if (res['isUnique'] == true) {
+          setState(() {
+            _usernameStatus = 'available';
+            _usernameError = '';
+          });
+        } else {
+          setState(() {
+            _usernameStatus = 'taken';
+            _usernameError = 'This username is already taken';
+          });
+        }
+      } else {
+        setState(() {
+          _usernameStatus = 'error';
+          _usernameError = res['error'] ?? 'Uniqueness check failed';
+        });
+      }
+    });
+  }
 
   void _submitProfile() async {
     final selectedLanguage = ref.read(languageProvider);
-    if (_cityController.text.isEmpty || _selectedGender == null) {
+    final username = _usernameController.text.trim();
+
+    if (username.isEmpty || _cityController.text.isEmpty || _selectedGender == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('City and Gender are required')),
+        const SnackBar(content: Text('Username, City and Gender are required')),
+      );
+      return;
+    }
+
+    if (_usernameStatus != 'available') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_usernameError.isNotEmpty ? _usernameError : 'Please select a unique username'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
 
     setState(() => _isLoading = true);
-    
+
     final result = await _authService.completeGoogleSignup(
       firebaseUid: widget.userData['firebaseUid'],
       name: widget.userData['name'] ?? '',
       city: _cityController.text,
       gender: _selectedGender!,
+      username: username,
       referralCode: _referralController.text.isNotEmpty ? _referralController.text : null,
     );
 
@@ -95,8 +169,12 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.textSecondary, fontSize: 16),
               ),
-              const SizedBox(height: 40),
-              
+              const SizedBox(height: 30),
+
+              // Username input field
+              _buildUsernameField(selectedLanguage),
+              const SizedBox(height: 20),
+
               // Gender Dropdown
               Container(
                 decoration: BoxDecoration(
@@ -128,7 +206,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // City
               _buildInputField(
                 controller: _cityController,
@@ -144,7 +222,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                 icon: Icons.card_giftcard,
               ),
               const SizedBox(height: 40),
-              
+
               ElevatedButton(
                 onPressed: _isLoading ? null : _submitProfile,
                 style: ElevatedButton.styleFrom(
@@ -155,7 +233,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: _isLoading 
+                child: _isLoading
                   ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : Text(
                       context.tr('finish_signup', selectedLanguage),
@@ -166,6 +244,72 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildUsernameField(String selectedLanguage) {
+    Color statusColor = AppColors.borderLight;
+    Widget? suffix;
+
+    if (_usernameStatus == 'loading') {
+      suffix = const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+      );
+    } else if (_usernameStatus == 'available') {
+      statusColor = Colors.green;
+      suffix = const Icon(Icons.check_circle, color: Colors.green);
+    } else if (_usernameStatus == 'taken' || _usernameStatus == 'invalid') {
+      statusColor = Colors.redAccent;
+      suffix = const Icon(Icons.cancel, color: Colors.redAccent);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: statusColor),
+          ),
+          child: TextField(
+            controller: _usernameController,
+            onChanged: _onUsernameChanged,
+            style: const TextStyle(color: AppColors.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Username',
+              hintStyle: const TextStyle(color: AppColors.textLight),
+              prefixIcon: const Icon(Icons.alternate_email, color: AppColors.textSecondary),
+              suffixIcon: suffix != null
+                  ? Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: suffix,
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
+          ),
+        ),
+        if (_usernameError.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 12, top: 6),
+            child: Text(
+              _usernameError,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+            ),
+          ),
+        if (_usernameStatus == 'available')
+          const Padding(
+            padding: EdgeInsets.only(left: 12, top: 6),
+            child: Text(
+              'Username is available!',
+              style: TextStyle(color: Colors.green, fontSize: 12),
+            ),
+          ),
+      ],
     );
   }
 

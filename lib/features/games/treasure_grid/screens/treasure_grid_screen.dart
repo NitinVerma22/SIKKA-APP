@@ -134,59 +134,8 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
   }
 
   Future<void> _exitGame() async {
-    final selectedLanguage = ref.read(languageProvider);
-    BuildContext? dialogContext;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dContext) {
-        dialogContext = dContext;
-        return Dialog(
-          backgroundColor: const Color(0xFF1E1E2E),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(color: AppColors.primary),
-                const SizedBox(height: 24),
-                Text(
-                  context.tr('thank_you_playing', selectedLanguage),
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  context.tr('closing_session_wait', selectedLanguage),
-                  style: GoogleFonts.outfit(
-                    color: Colors.white70,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    try {
-      if (_sessionId != null) {
-        await ref.read(userServiceProvider).endGameSession(_sessionId!);
-      }
-    } catch (e) {
-      // ignore
-    } finally {
-      if (dialogContext != null && dialogContext!.mounted) {
-        Navigator.of(dialogContext!).pop();
-      }
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
+    if (mounted) {
+      Navigator.of(context).pop();
     }
   }
 

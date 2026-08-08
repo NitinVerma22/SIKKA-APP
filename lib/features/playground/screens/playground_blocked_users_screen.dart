@@ -146,11 +146,10 @@ class _PlaygroundBlockedUsersScreenState extends ConsumerState<PlaygroundBlocked
       ),
     );
   }
-
   String _formatDate(String dateStr) {
     try {
       final dt = DateTime.parse(dateStr).toLocal();
-      return "\${dt.day}/\${dt.month}/\${dt.year}";
+      return "${dt.day}/${dt.month}/${dt.year}";
     } catch (_) {
       return '';
     }

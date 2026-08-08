@@ -436,6 +436,7 @@ class GameClaimDialog {
                             SnackBar(content: Text(err)),
                           );
                         }
+                        if (onCancel != null) onCancel();
                       }
                     } catch (e) {
                       if (context.mounted) {
@@ -444,6 +445,7 @@ class GameClaimDialog {
                           SnackBar(content: Text('Error: $e')),
                         );
                       }
+                      if (onCancel != null) onCancel();
                     }
                   },
                   borderRadius: BorderRadius.circular(16),
@@ -503,6 +505,7 @@ class GameClaimDialog {
                 TextButton(
                   onPressed: () {
                     Navigator.of(dialogContext).pop(); // Close choice dialog
+                    if (onCancel != null) onCancel();
                   },
                   child: Text(
                     context.tr('maybe_later', selectedLanguage),

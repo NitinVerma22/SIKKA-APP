@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sikkaplay/routes/app_router.dart';
+import 'package:flutter/services.dart';
 
 class AuthService {
   // Centralized Base URL for the backend API.
@@ -38,8 +39,13 @@ class AuthService {
         return newId;
       }
       if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        return androidInfo.id; // SSAID
+        const MethodChannel methodChannel = MethodChannel('com.sikkaplay.app/device_info');
+        final String? ssaid = await methodChannel.invokeMethod<String>('getAndroidId');
+        if (ssaid != null && ssaid.isNotEmpty) {
+          final androidInfo = await deviceInfo.androidInfo;
+          final uniqueId = 'android_${androidInfo.brand}_${androidInfo.model}_$ssaid';
+          return uniqueId;
+        }
       } else if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
         return iosInfo.identifierForVendor ?? 'ios-fallback-id';
@@ -183,6 +189,7 @@ class AuthService {
     required String name,
     required String city,
     required String password,
+    required String username,
     String? gender,
     String? referralCode,
   }) async {
@@ -199,6 +206,7 @@ class AuthService {
           'city': city,
           'gender': gender,
           'password': password,
+          'username': username,
           'referredBy': referralCode,
           'deviceId': deviceId,
         }),
@@ -321,6 +329,7 @@ class AuthService {
     required String name,
     required String city,
     required String gender,
+    required String username,
     String? referralCode,
   }) async {
     try {
@@ -333,6 +342,7 @@ class AuthService {
           'name': name,
           'city': city,
           'gender': gender,
+          'username': username,
           'referredBy': referralCode,
           'deviceId': deviceId,
         }),

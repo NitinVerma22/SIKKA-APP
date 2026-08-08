@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sikkaplay/features/playground/services/playground_service.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
 import 'package:sikkaplay/features/playground/screens/playground_blocked_users_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'dart:ui';
 
@@ -26,6 +27,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
   List<dynamic> _pendingRequests = [];
   List<dynamic> _searchResults = [];
   bool _isSearching = false;
+  Map<String, String> _chatClearTimes = {};
 
   // Tabs state: 0 = All Friends, 1 = Online, 2 = Requests
   int _selectedTab = 0;
@@ -51,8 +53,22 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
     if (!mounted) return;
 
     if (res['success'] == true) {
+      final List<dynamic> loadedFriends = res['friends'] ?? [];
+      final Map<String, String> clearTimes = {};
+      final prefs = await SharedPreferences.getInstance();
+      for (var f in loadedFriends) {
+        final friendId = f['id']?.toString() ?? '';
+        if (friendId.isNotEmpty) {
+          final clearTime = prefs.getString('chat_clear_time_$friendId');
+          if (clearTime != null) {
+            clearTimes[friendId] = clearTime;
+          }
+        }
+      }
+
       setState(() {
-        _friends = res['friends'] ?? [];
+        _friends = loadedFriends;
+        _chatClearTimes = clearTimes;
         _pendingRequests = res['pendingRequests'] ?? [];
         _isLoading = false;
       });
@@ -663,12 +679,26 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
   }
 
   Widget _buildFriendCard(dynamic friend) {
+    final String friendId = friend['id']?.toString() ?? '';
+    final String? clearTimeStr = _chatClearTimes[friendId];
+    
+    bool isCleared = false;
+    if (clearTimeStr != null && friend['lastMessageTime'] != null) {
+      final clearTime = DateTime.tryParse(clearTimeStr);
+      final lastMsgTime = DateTime.tryParse(friend['lastMessageTime']);
+      if (clearTime != null && lastMsgTime != null) {
+        if (lastMsgTime.isBefore(clearTime)) {
+          isCleared = true;
+        }
+      }
+    }
+
     final bool isOnline = friend['isOnline'] == true;
-    final int unread = friend['unreadCount'] ?? 0;
+    final int unread = isCleared ? 0 : (friend['unreadCount'] ?? 0);
     
     // Parse time
     String timeStr = '';
-    if (friend['lastMessageTime'] != null) {
+    if (!isCleared && friend['lastMessageTime'] != null) {
       final lastMsgTimeUtc = DateTime.tryParse(friend['lastMessageTime']);
       if (lastMsgTimeUtc != null) {
         final lastMsgTime = lastMsgTimeUtc.toLocal();
@@ -677,6 +707,10 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
         timeStr = '${h}:${lastMsgTime.minute.toString().padLeft(2, '0')} $ampm';
       }
     }
+
+    final String lastMessageText = isCleared 
+        ? 'Tap to start chatting...' 
+        : (friend['lastMessageText'] ?? 'Tap to start chatting...');
 
     final String displayName = _capitalizeName(friend['name']);
 
@@ -744,7 +778,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    friend['lastMessageText'] ?? 'Tap to start chatting...',
+                    lastMessageText,
                     style: GoogleFonts.outfit(
                       color: unread > 0 ? const Color(0xFF1F2937) : Colors.black38,
                       fontSize: 12,

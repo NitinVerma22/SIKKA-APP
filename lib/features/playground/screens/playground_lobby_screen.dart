@@ -113,7 +113,7 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
         _dailyLogin = totalGifts;
 
         if (progress != null) {
-          _activeSecondsToday = progress['activeSecondsToday'] ?? 0;
+          _activeSecondsToday = progress['activeSeconds'] ?? 0;
           _bronzeClaimed = progress['bronzeClaimed'] ?? false;
           _silverClaimed = progress['silverClaimed'] ?? false;
           _goldClaimed = progress['goldClaimed'] ?? false;
@@ -124,6 +124,41 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
     setState(() {
       _isLoading = false;
     });
+  }
+
+  Future<void> _claimCrate(String level) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8A2BE2)),
+        ),
+      ),
+    );
+
+    final res = await _service.claimCrate(level);
+    if (mounted) {
+      Navigator.pop(context); // Close loading dialog
+    }
+
+    if (res['success'] == true) {
+      final int coinsReward = level == 'BRONZE' ? 300 : level == 'SILVER' ? 600 : 1200;
+      setState(() {
+        if (level == 'BRONZE') _bronzeClaimed = true;
+        if (level == 'SILVER') _silverClaimed = true;
+        if (level == 'GOLD') _goldClaimed = true;
+        _sikkaBalance += coinsReward;
+      });
+      
+      if (mounted) {
+        GameNotifications.showCoinUpdate(context, 'Claimed $level Crate! +$coinsReward Sikka');
+      }
+    } else {
+      if (mounted) {
+        GameNotifications.showCoinUpdate(context, res['error'] ?? 'Failed to claim crate', isPenalty: true);
+      }
+    }
   }
 
   void _showUsernameDialog() {
@@ -451,11 +486,44 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: _buildCrate('BRONZE', '60m', activeMinutes, 60, const Color(0xFFFFF1F2), const Color(0xFFE11D48), Icons.inventory_2_rounded)),
+                Expanded(
+                  child: _buildCrate(
+                    'BRONZE',
+                    '60m',
+                    activeMinutes,
+                    60,
+                    _bronzeClaimed,
+                    const Color(0xFFFFF1F2),
+                    const Color(0xFFE11D48),
+                    Icons.inventory_2_rounded,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _buildCrate('SILVER', '120m', activeMinutes, 120, const Color(0xFFF0F9FF), const Color(0xFF0284C7), Icons.inventory_2_rounded)),
+                Expanded(
+                  child: _buildCrate(
+                    'SILVER',
+                    '120m',
+                    activeMinutes,
+                    120,
+                    _silverClaimed,
+                    const Color(0xFFF0F9FF),
+                    const Color(0xFF0284C7),
+                    Icons.inventory_2_rounded,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _buildCrate('GOLD', '180m', activeMinutes, 180, const Color(0xFFFEF3C7), const Color(0xFFD97706), Icons.inventory_2_rounded)),
+                Expanded(
+                  child: _buildCrate(
+                    'GOLD',
+                    '180m',
+                    activeMinutes,
+                    180,
+                    _goldClaimed,
+                    const Color(0xFFFEF3C7),
+                    const Color(0xFFD97706),
+                    Icons.inventory_2_rounded,
+                  ),
+                ),
               ],
             )
           ],
@@ -464,33 +532,102 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
     );
   }
 
-  Widget _buildCrate(String name, String time, int current, int total, Color bgColor, Color progressColor, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Text(name, style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold, color: progressColor)),
-          const SizedBox(height: 8),
-          Icon(icon, size: 48, color: progressColor),
-          const SizedBox(height: 8),
-          Text(time, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF1F2937))),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: current / total,
-              backgroundColor: progressColor.withValues(alpha: 0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-              minHeight: 6,
-            ),
+  Widget _buildCrate(
+    String name,
+    String time,
+    int current,
+    int total,
+    bool isClaimed,
+    Color bgColor,
+    Color progressColor,
+    IconData icon,
+  ) {
+    final bool canClaim = current >= total && !isClaimed;
+    final double progressValue = (current / total).clamp(0.0, 1.0);
+
+    return InkWell(
+      onTap: () {
+        if (isClaimed) {
+          GameNotifications.showCoinUpdate(context, 'Already claimed this reward!', isPenalty: true);
+        } else if (current < total) {
+          final diff = total - current;
+          GameNotifications.showCoinUpdate(context, 'Play for $diff more minutes to unlock!', isPenalty: true);
+        } else {
+          _claimCrate(name);
+        }
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isClaimed ? Colors.grey[100] : bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: canClaim 
+                ? progressColor 
+                : (isClaimed ? Colors.transparent : progressColor.withValues(alpha: 0.1)),
+            width: canClaim ? 2.0 : 1.0,
           ),
-          const SizedBox(height: 4),
-          Text('$current / $total', style: GoogleFonts.outfit(fontSize: 10, color: progressColor)),
-        ],
+          boxShadow: canClaim 
+              ? [
+                  BoxShadow(
+                    color: progressColor.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : null,
+        ),
+        child: Column(
+          children: [
+            Text(
+              name,
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isClaimed ? Colors.grey[500] : progressColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Icon(
+              isClaimed ? Icons.check_circle_rounded : icon,
+              size: 48,
+              color: isClaimed ? const Color(0xFF10B981) : progressColor,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isClaimed ? 'Claimed' : time,
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: isClaimed ? Colors.grey[600] : const Color(0xFF1F2937),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: isClaimed ? 1.0 : progressValue,
+                backgroundColor: isClaimed 
+                    ? Colors.grey[300] 
+                    : progressColor.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  isClaimed ? const Color(0xFF10B981) : progressColor,
+                ),
+                minHeight: 6,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              isClaimed ? 'Claimed' : '$current / $total',
+              style: GoogleFonts.outfit(
+                fontSize: 10,
+                color: isClaimed ? Colors.grey[500] : progressColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

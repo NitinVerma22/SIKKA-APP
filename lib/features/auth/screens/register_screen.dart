@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:sikkaplay/core/auth/auth_service.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
+import 'package:sikkaplay/features/playground/services/playground_service.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -21,6 +23,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String _verificationId = '';
   String? _selectedGender;
   bool _acceptedTerms = false;
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -28,22 +31,100 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final TextEditingController _referralController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
   final AuthService _authService = AuthService();
+  final PlaygroundService _playgroundService = PlaygroundService();
+
+  Timer? _debounceTimer;
+  String _usernameStatus = ''; // 'loading', 'available', 'taken', 'invalid', ''
+  String _usernameError = '';
 
   @override
   void dispose() {
+    _usernameController.dispose();
     _nameController.dispose();
     _cityController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     _referralController.dispose();
     _otpController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
+  void _onUsernameChanged(String value) {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+
+    if (value.trim().isEmpty) {
+      setState(() {
+        _usernameStatus = '';
+        _usernameError = '';
+      });
+      return;
+    }
+
+    String clean = value.trim().toLowerCase();
+    if (clean.startsWith('@')) clean = clean.substring(1);
+
+    final regex = RegExp(r'^[a-zA-Z0-9_]{3,15}$');
+    if (!regex.hasMatch(clean)) {
+      setState(() {
+        _usernameStatus = 'invalid';
+        _usernameError = '3-15 chars, alphanumeric & underscores only';
+      });
+      return;
+    }
+
+    setState(() {
+      _usernameStatus = 'loading';
+      _usernameError = '';
+    });
+
+    _debounceTimer = Timer(const Duration(milliseconds: 600), () async {
+      final res = await _playgroundService.checkUsernameUnique(clean);
+      if (!mounted) return;
+
+      if (res['success'] == true) {
+        if (res['isUnique'] == true) {
+          setState(() {
+            _usernameStatus = 'available';
+            _usernameError = '';
+          });
+        } else {
+          setState(() {
+            _usernameStatus = 'taken';
+            _usernameError = 'This username is already taken';
+          });
+        }
+      } else {
+        setState(() {
+          _usernameStatus = 'error';
+          _usernameError = res['error'] ?? 'Uniqueness check failed';
+        });
+      }
+    });
+  }
 
   void _initiateRegistration() async {
     final selectedLanguage = ref.read(languageProvider);
     final phone = _phoneController.text.trim();
+    final username = _usernameController.text.trim();
+
+    if (username.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username is required')),
+      );
+      return;
+    }
+
+    if (_usernameStatus != 'available') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_usernameError.isNotEmpty ? _usernameError : 'Please select a unique username'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     if (phone.isEmpty || _passwordController.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.tr('register_validation', selectedLanguage))),
@@ -120,6 +201,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         name: _nameController.text.trim(),
         city: _cityController.text.trim(),
         password: _passwordController.text,
+        username: _usernameController.text.trim(),
         gender: _selectedGender?.toUpperCase(),
         referralCode: _referralController.text.trim().isEmpty ? null : _referralController.text.trim(),
       );
@@ -217,6 +299,75 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 
+  Widget _buildUsernameField(String selectedLanguage) {
+    Color statusColor = AppColors.borderLight;
+    Widget? suffix;
+
+    if (_usernameStatus == 'loading') {
+      suffix = const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+      );
+    } else if (_usernameStatus == 'available') {
+      statusColor = Colors.green;
+      suffix = const Icon(Icons.check_circle, color: Colors.green);
+    } else if (_usernameStatus == 'taken' || _usernameStatus == 'invalid') {
+      statusColor = Colors.redAccent;
+      suffix = const Icon(Icons.cancel, color: Colors.redAccent);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(bottom: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: statusColor),
+          ),
+          child: TextField(
+            controller: _usernameController,
+            onChanged: _onUsernameChanged,
+            style: const TextStyle(color: AppColors.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Username',
+              hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
+              prefixIcon: const Icon(Icons.alternate_email, color: AppColors.textSecondary),
+              suffixIcon: suffix != null
+                  ? Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: suffix,
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+          ),
+        ),
+        if (_usernameError.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 12, bottom: 10),
+            child: Text(
+              _usernameError,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 11),
+            ),
+          ),
+        if (_usernameStatus == 'available')
+          const Padding(
+            padding: EdgeInsets.only(left: 12, bottom: 10),
+            child: Text(
+              'Username is available!',
+              style: TextStyle(color: Colors.green, fontSize: 11),
+            ),
+          ),
+        if (_usernameStatus == '')
+          const SizedBox(height: 6),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedLanguage = ref.watch(languageProvider);
@@ -256,6 +407,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               const SizedBox(height: 12),
               
               if (!_isOtpSent) ...[
+                // Username field first
+                _buildUsernameField(selectedLanguage),
+
                 _buildInputField(
                   controller: _nameController,
                   hint: context.tr('full_name', selectedLanguage),
@@ -408,10 +562,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: _isLoading 
+                child: _isLoading
                   ? const SizedBox(
-                      height: 24, 
-                      width: 24, 
+                      height: 24,
+                      width: 24,
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
                     )
                   : Text(
@@ -480,5 +634,3 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 }
-
-

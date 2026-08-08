@@ -21,6 +21,7 @@ import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/features/playground/services/playground_service.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
+import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
 
 import 'package:sikkaplay/shared/models/badge_model.dart';
 
@@ -71,6 +72,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _loadStats();
     _loadSelectedAvatar();
     _loadPlaygroundGifts();
+    
+    // Refresh user profile and network silently on entering the profile screen to fetch latest referral count & balance
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(userProvider.notifier).refresh(silent: true);
+        ref.read(networkProvider.notifier).fetchNetwork();
+      }
+    });
   }
 
   Future<void> _loadPlaygroundGifts() async {
@@ -344,13 +353,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final homeState = ref.watch(homeProvider);
     final userState = ref.watch(userProvider);
     final selectedLanguage = ref.watch(languageProvider);
+    final networkState = ref.watch(networkProvider);
     final userData = userState.userData ?? {};
 
     final userName = userData['name'] ?? 'SikkaPlay User';
     final userPhone = userData['phoneNumber'] ?? '+91 -';
     final userCity = userData['city'] ?? 'Unknown City';
     final referralCode = userData['referralCode'] ?? 'SIKKA2026';
-    final referralCount = userData['referralCount'] ?? 0;
+    final referralCount = userData['referralCount'] ?? networkState.level1.length;
     
     // Fallback logic to get the latest lifetime earnings
     final int totalEarned = homeState.totalEarning > 0 
@@ -2672,15 +2682,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final coins = player['totalEarned'] ?? player['coins'] ?? 0;
     final String avatarUrl = player['avatarUrl'] as String? ?? '';
     final String playerId = player['id'] as String? ?? '';
+    final String username = player['username'] as String? ?? '';
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          if (playerId.isNotEmpty) {
+          if (username.isNotEmpty) {
             context.pop(); // close bottom sheet
-            context.push('/playground/profile', extra: playerId);
+            context.push('/playground/profile', extra: username);
           }
         },
         child: Container(
