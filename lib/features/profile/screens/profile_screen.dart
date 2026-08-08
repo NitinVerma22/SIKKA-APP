@@ -357,7 +357,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final userData = userState.userData ?? {};
 
     final userName = userData['name'] ?? 'SikkaPlay User';
-    final userPhone = userData['phoneNumber'] ?? '+91 -';
+    final String rawPhone = userData['phoneNumber'] ?? '';
+    final String userPhone = rawPhone.startsWith('G-') ? 'Google Account' : (rawPhone.isEmpty ? '+91 -' : rawPhone);
     final userCity = userData['city'] ?? 'Unknown City';
     final referralCode = userData['referralCode'] ?? 'SIKKA2026';
     final referralCount = userData['referralCount'] ?? networkState.level1.length;
