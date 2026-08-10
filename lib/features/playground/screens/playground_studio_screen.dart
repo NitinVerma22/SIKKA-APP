@@ -1139,7 +1139,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
         final String text = rawMsg['text'] ?? '';
         final String msgId = rawMsg['id'] ?? '';
         final String msgSenderId = rawMsg['senderId'] ?? '';
-        final bool isMeMsg = msgSenderId != partnerId;
+        final bool isMeMsg = myId.isNotEmpty ? msgSenderId == myId : msgSenderId != partnerId;
         final bool isSeenMsg = rawMsg['isSeen'] == true;
 
         // Skip call signaling messages in history display
