@@ -66,6 +66,8 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
       final savedSession = prefs.getString('saved_session_math_rush');
       final savedCoins = prefs.getInt('saved_coins_math_rush') ?? 0;
       final savedDifficulty = prefs.getString('saved_difficulty_math_rush');
+      final savedQuestionCount = prefs.getInt('saved_question_count_math_rush') ?? 0;
+      final savedCurrentLevel = prefs.getString('saved_current_level_math_rush') ?? 'easy';
 
       if (savedSession != null && savedSession.isNotEmpty) {
         if (mounted) {
@@ -74,13 +76,15 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
             _gullakCoins = savedCoins;
             _sessionCoins = savedCoins;
             _isSessionLoading = false;
+            _questionCount = savedQuestionCount;
+            _difficulty = savedCurrentLevel;
           });
           
           if (savedDifficulty != null && savedDifficulty.isNotEmpty) {
             setState(() {
               _selectedDifficultyMode = savedDifficulty;
             });
-            _startGame();
+            _startGame(isResume: true);
           } else {
             _showDifficultySelectionDialog();
           }
@@ -113,6 +117,8 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
   void _saveProgress() {
     SharedPreferences.getInstance().then((prefs) {
       prefs.setInt('saved_coins_math_rush', _gullakCoins);
+      prefs.setInt('saved_question_count_math_rush', _questionCount);
+      prefs.setString('saved_current_level_math_rush', _difficulty);
     });
   }
 
@@ -284,9 +290,11 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
     );
   }
 
-  void _startGame() {
+  void _startGame({bool isResume = false}) {
     _elapsedSeconds = 0;
-    _questionCount = 0;
+    if (!isResume) {
+      _questionCount = 0;
+    }
 
     if (_selectedDifficultyMode == 'easy') {
       _difficulty = 'easy';
@@ -298,8 +306,16 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
       _difficulty = 'hard';
       _questionTimeMax = 6;
     } else {
-      _difficulty = 'easy';
-      _questionTimeMax = 10;
+      if (!isResume) {
+        _difficulty = 'easy';
+      }
+      if (_difficulty == 'medium') {
+        _questionTimeMax = 8;
+      } else if (_difficulty == 'hard') {
+        _questionTimeMax = 6;
+      } else {
+        _questionTimeMax = 10;
+      }
     }
 
     _timerController.duration = Duration(seconds: _questionTimeMax);
@@ -684,6 +700,8 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
             await prefs.remove('saved_session_math_rush');
             await prefs.remove('saved_coins_math_rush');
             await prefs.remove('saved_difficulty_math_rush');
+            await prefs.remove('saved_question_count_math_rush');
+            await prefs.remove('saved_current_level_math_rush');
 
             final session = await ref.read(userServiceProvider).startGameSession('math_rush');
             if (session != null) {
