@@ -236,7 +236,7 @@ class _DailyCodeScreenState extends ConsumerState<DailyCodeScreen> {
 
   Future<void> _openInstagram() async {
     final selectedLanguage = ref.read(languageProvider);
-    final Uri url = Uri.parse('https://www.instagram.com/sikkaplay');
+    final Uri url = Uri.parse('https://www.instagram.com/sikka_play?igsh=MTJxZzFnajVidWszNA==');
     try {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
