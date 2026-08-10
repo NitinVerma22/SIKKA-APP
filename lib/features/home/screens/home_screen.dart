@@ -62,12 +62,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       ref.read(appConfigProvider.notifier).fetchConfig();
       _preloadAllData();
     });
-    // Set up periodic config check every 15 seconds to check config updates
-    _configTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
-      if (mounted) {
-        ref.read(appConfigProvider.notifier).fetchConfig();
-      }
-    });
   }
 
   @override
@@ -82,6 +76,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkPendingSocialClaim();
+      ref.read(appConfigProvider.notifier).fetchConfig();
     }
   }
 
