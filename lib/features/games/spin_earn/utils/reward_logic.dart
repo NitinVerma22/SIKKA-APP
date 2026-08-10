@@ -13,15 +13,14 @@ class RewardLogic {
 
   /// The wheel layout (used to draw the segments).
   static const List<RewardItem> wheelSlots = [
-    RewardItem(1, '1'),
-    RewardItem(10, '10'),
-    RewardItem(2, '2'),
-    RewardItem(15, '15'),
-    RewardItem(3, '3'),
-    RewardItem(30, '30'), // Ultra rare
-    RewardItem(5, '5'),
-    RewardItem(20, '20'),
-    RewardItem(7, '7'),
+    RewardItem(2, '2\nSPINS'),
+    RewardItem(15, '15\nSIKKA'),
+    RewardItem(3, '3\nSPINS'),
+    RewardItem(30, '30\nSIKKA'),
+    RewardItem(5, '5\nSPINS'),
+    RewardItem(20, '20\nSIKKA'),
+    RewardItem(1, '1\nSPIN'),
+    RewardItem(10, '10\nSIKKA'),
   ];
 
   /// Returns the index of the drawn reward based on weighted probabilities.
