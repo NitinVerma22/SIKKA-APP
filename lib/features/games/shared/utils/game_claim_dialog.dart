@@ -137,6 +137,16 @@ class GameClaimDialog {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error: $e')),
           );
+        }
+        if (onCancel != null) onCancel();
+      }
+    };
+
+    if (adType == 'none') {
+      showDirectClaimLoaderAndClaim();
+      return;
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
