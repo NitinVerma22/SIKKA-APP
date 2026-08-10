@@ -26,7 +26,7 @@ class SyncCoordinator {
   void triggerSync(List<SyncEvent> events) {
     _eventQueue.addAll(events);
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       _processQueue();
     });
   }
@@ -50,7 +50,6 @@ class SyncCoordinator {
         uniqueEvents.contains(SyncEvent.networkUpdated);
 
     final refreshHome = uniqueEvents.contains(SyncEvent.balanceChanged) ||
-        uniqueEvents.contains(SyncEvent.profileUpdated) ||
         uniqueEvents.contains(SyncEvent.tasksUpdated);
 
     final refreshWallet = uniqueEvents.contains(SyncEvent.balanceChanged);
