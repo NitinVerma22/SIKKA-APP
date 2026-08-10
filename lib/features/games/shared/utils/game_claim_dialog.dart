@@ -215,7 +215,7 @@ class GameClaimDialog {
                             style: GoogleFonts.outfit(
                               color: const Color(0xFF1E1B4B),
                               fontSize: 26,
-                              fontWeight: FontWeight.extrabold,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                           const Text(
@@ -468,7 +468,7 @@ class GameClaimDialog {
                                                 style: GoogleFonts.outfit(
                                                   color: const Color(0xFFD97706),
                                                   fontSize: 9,
-                                                  fontWeight: FontWeight.extrabold,
+                                                  fontWeight: FontWeight.w800,
                                                 ),
                                               ),
                                             ),
