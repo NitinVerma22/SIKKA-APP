@@ -1218,7 +1218,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
 
   @override
   void dispose() {
-    if (_myUserId.isNotEmpty && _chatSocket?.connected == true) {
+    if (_myUserId.isNotEmpty && _chatSocket?.connected == true && !_isBlocked) {
       _chatSocket?.emit('matchmaking_leave_chat', {
         'userId': _myUserId,
         'roomId': _privateChannelName,
@@ -1284,12 +1284,14 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
       if (_myUserId.isNotEmpty) {
         // Fallback room
         _chatSocket?.emit('join_room', 'friend-chat-$_myUserId');
-        // Let the partner know we rejoined the chat room
-        _chatSocket?.emit('game_signal', {
-          'channelName': dynChannelToJoin,
-          'signal': '__CHAT_REJOINED__',
-          'senderId': _myUserId,
-        });
+        // Let the partner know we rejoined the chat room (only if not blocked)
+        if (!_isBlocked) {
+          _chatSocket?.emit('game_signal', {
+            'channelName': dynChannelToJoin,
+            'signal': '__CHAT_REJOINED__',
+            'senderId': _myUserId,
+          });
+        }
       }
       
       // Fetch history on connect/reconnect to catch any messages missed during micro-disconnects
@@ -1304,16 +1306,18 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
       _chatSocket?.emit('join_room', dynChannelToJoin);
       if (_myUserId.isNotEmpty) {
         _chatSocket?.emit('join_room', 'friend-chat-$_myUserId');
-        _chatSocket?.emit('game_signal', {
-          'channelName': dynChannelToJoin,
-          'signal': '__CHAT_REJOINED__',
-          'senderId': _myUserId,
-        });
+        if (!_isBlocked) {
+          _chatSocket?.emit('game_signal', {
+            'channelName': dynChannelToJoin,
+            'signal': '__CHAT_REJOINED__',
+            'senderId': _myUserId,
+          });
+        }
       }
     }
 
     _chatSocket?.on('game_signal', (data) {
-      if (!mounted) return;
+      if (!mounted || _isBlocked) return;
       final String text = data['signal'] ?? '';
       final String msgSenderId = data['senderId'] ?? '';
       final partnerId = widget.partner['partnerId'] ?? '';
@@ -1387,7 +1391,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
     });
 
     _chatSocket?.on('new_message', (rawMsg) {
-      if (!mounted) return;
+      if (!mounted || _isBlocked) return;
       
       final String text = rawMsg['text'] ?? '';
       final String msgId = rawMsg['id'] ?? '';
@@ -1546,7 +1550,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
     });
 
     _chatSocket?.on('typing_status', (data) {
-      if (!mounted) return;
+      if (!mounted || _isBlocked) return;
       final partnerId = widget.partner['partnerId'];
       if (data['senderId'] == partnerId) {
         setState(() {
@@ -1557,7 +1561,7 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
     });
 
     void handlePartnerLeft(dynamic data) {
-      if (!mounted || _partnerHasLeft) return;
+      if (!mounted || _partnerHasLeft || _isBlocked) return;
       final partnerName = widget.partner['partnerName'] ?? 'Partner';
       final msg = data != null && data['message'] != null ? data['message'].toString() : '$partnerName left this chat';
       setState(() {

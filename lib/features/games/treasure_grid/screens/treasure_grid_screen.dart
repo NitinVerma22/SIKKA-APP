@@ -256,7 +256,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
       if (_grid[index].type == TileType.bomb) {
         GameAudio.playWrong();
         final penalty = _grid[index].coins; // negative value, e.g. -1, -2, -3
-        _roundCoins = max(0, _roundCoins + penalty);
+        _roundCoins = _roundCoins + penalty;
         _isPerfectStreak = false;
         HapticFeedback.vibrate();
         GameNotifications.showCoinUpdate(context, '$penalty Sikka', isPenalty: true);
@@ -281,7 +281,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
           }
           GameNotifications.showCoinUpdate(context, 'Perfect Streak! +2 Sikka Bonus! 🔥');
         }
-        _sessionCoins = min(50, _sessionCoins + _roundCoins);
+        _sessionCoins = max(0, min(50, _sessionCoins + _roundCoins));
         _isRoundEnding = true;
       });
       _saveProgress();
@@ -731,7 +731,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
                       ),
                       onPressed: () {
                         setState(() {
-                          _sessionCoins = min(50, _sessionCoins + _roundCoins);
+                          _sessionCoins = max(0, min(50, _sessionCoins + _roundCoins));
                           _isRoundEnding = true;
                         });
                         _saveProgress();
