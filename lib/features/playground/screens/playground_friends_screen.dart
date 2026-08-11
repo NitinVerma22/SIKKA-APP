@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,6 +22,7 @@ class PlaygroundFriendsScreen extends ConsumerStatefulWidget {
 class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScreen> {
   final PlaygroundService _service = PlaygroundService();
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   bool _isLoading = true;
   List<dynamic> _friends = [];
@@ -41,6 +43,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
   @override
   void dispose() {
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -81,6 +84,8 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
   }
 
   void _searchFriends(String val) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
     if (val.trim().isEmpty) {
       setState(() {
         _isSearching = false;
@@ -91,12 +96,19 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
 
     setState(() {
       _isSearching = true;
-      final query = val.trim().toLowerCase();
-      _searchResults = _friends.where((f) {
-        final name = (f['name'] ?? '').toString().toLowerCase();
-        final username = (f['username'] ?? '').toString().toLowerCase();
-        return name.contains(query) || username.contains(query);
-      }).toList();
+    });
+
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
+      if (!mounted || !_isSearching) return;
+      final query = val.trim();
+      final res = await _service.searchFriends(query);
+      if (!mounted || !_isSearching) return;
+
+      if (res['success'] == true) {
+        setState(() {
+          _searchResults = res['users'] ?? [];
+        });
+      }
     });
   }
 
@@ -422,7 +434,16 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
       return ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: _searchResults.length,
-        itemBuilder: (context, index) => _buildFriendCard(_searchResults[index]),
+        itemBuilder: (context, index) {
+          final user = _searchResults[index];
+          final isFriend = _friends.any((f) => f['id']?.toString() == user['id']?.toString());
+          if (isFriend) {
+            final friendObj = _friends.firstWhere((f) => f['id']?.toString() == user['id']?.toString());
+            return _buildFriendCard(friendObj);
+          } else {
+            return _buildUserCard(user, isSearch: true);
+          }
+        },
       );
     }
 

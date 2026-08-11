@@ -2507,6 +2507,8 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        _buildSecurityBanner(),
+                        const SizedBox(height: 32),
                         const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white24, size: 48),
                         const SizedBox(height: 12),
                         Text(
@@ -2519,12 +2521,16 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length + (_partnerIsTyping ? 1 : 0),
+                    itemCount: _messages.length + (_partnerIsTyping ? 1 : 0) + 1,
                     itemBuilder: (context, index) {
-                      if (index == _messages.length) {
+                      if (index == 0) {
+                        return _buildSecurityBanner();
+                      }
+                      final msgIndex = index - 1;
+                      if (msgIndex == _messages.length) {
                         return _buildTypingIndicatorBubble();
                       }
-                      final msg = _messages[index];
+                      final msg = _messages[msgIndex];
                       if (msg.isSystem) {
                         final isJoin = msg.text.toLowerCase().contains('join');
                         return Container(
@@ -2870,6 +2876,44 @@ class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
   ),
 ),
 );
+  }
+
+  Widget _buildSecurityBanner() {
+    final selectedLanguage = ref.read(languageProvider);
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16, top: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: const Color(0xFF052E16).withOpacity(0.4), // Dark translucent forest green
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFF22C55E).withOpacity(0.25),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.lock_rounded,
+              color: Color(0xFF4DDF81), // Premium glowing light green
+              size: 13,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              selectedLanguage == 'Hindi' ? 'सुरक्षित और निजी कनेक्शन' : 'Secure & Private Connection',
+              style: GoogleFonts.outfit(
+                color: const Color(0xFF4DDF81),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildTick(ChatMessage msg) {
