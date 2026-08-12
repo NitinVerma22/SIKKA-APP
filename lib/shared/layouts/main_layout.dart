@@ -96,12 +96,20 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
     _globalSocket?.onConnect((_) {
       debugPrint('[Socket] Connected globally');
-      // Request initial friends list upon connection
+      final myUserId = ref.read(userProvider).userData?['id']?.toString() ?? '';
+      if (myUserId.isNotEmpty) {
+        debugPrint('[Socket] Joining room on connect: friend-chat-$myUserId');
+        _globalSocket!.emit('join_room', 'friend-chat-$myUserId');
+      }
       _fetchFriendsAndCheckMessages();
     });
 
     _globalSocket?.on('friends_update', (_) {
       _fetchFriendsAndCheckMessages();
+    });
+
+    _globalSocket?.on('new_message', (data) {
+      _handleIncomingMessageSocket(data);
     });
   }
 
@@ -165,6 +173,57 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         }
         _lastMsgTimes[friendId] = lastMsgTime;
       }
+    }
+  }
+
+  void _handleIncomingMessageSocket(dynamic data) {
+    try {
+      final msg = data as Map<String, dynamic>;
+      final senderId = msg['senderId']?.toString() ?? '';
+      final channelName = msg['channelName']?.toString() ?? '';
+      final text = msg['text']?.toString() ?? '';
+      
+      final myUserId = ref.read(userProvider).userData?['id']?.toString() ?? '';
+      if (senderId == myUserId) return;
+
+      final activeChannel = PlaygroundStudioScreen.activeChannelName ?? '';
+      if (activeChannel == channelName) {
+        debugPrint('[Socket] Suppressed in-app notification because user is in active chat');
+        return;
+      }
+
+      final friends = ref.read(globalFriendsListProvider);
+      String friendName = 'SikkaPlay Friend';
+      final friend = friends.firstWhere(
+        (f) => f['id']?.toString() == senderId, 
+        orElse: () => null
+      );
+      if (friend != null) {
+        friendName = friend['friendName'] ?? friend['name'] ?? 'SikkaPlay Friend';
+      }
+
+      if (mounted) {
+        if (!text.startsWith('__')) {
+          GameNotifications.showChatNotification(
+            context,
+            friendName,
+            text.startsWith('[Reply to:') ? text.split('\n').sublist(1).join('\n') : text,
+            onTap: () {
+              context.push('/playground/studio', extra: {
+                'channelName': channelName,
+                'agoraToken': channelName,
+                'partnerId': senderId,
+                'partnerName': friendName,
+              });
+            },
+          );
+          _showSystemLocalNotification(friendName, text, channelName, senderId);
+        }
+      }
+      
+      _fetchFriendsAndCheckMessages();
+    } catch (e) {
+      debugPrint('Error handling incoming message socket: $e');
     }
   }
 
@@ -289,6 +348,14 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                         location.contains('/playground/studio') ||
                         location.contains('/search');
     final selectedLanguage = ref.watch(languageProvider);
+
+    ref.listen<UserState>(userProvider, (previous, next) {
+      final myUserId = next.userData?['id']?.toString() ?? '';
+      if (myUserId.isNotEmpty && _globalSocket != null && _globalSocket!.connected) {
+        debugPrint('[Socket] User ID loaded, joining room: friend-chat-$myUserId');
+        _globalSocket!.emit('join_room', 'friend-chat-$myUserId');
+      }
+    });
 
     return PopScope(
       canPop: false,
