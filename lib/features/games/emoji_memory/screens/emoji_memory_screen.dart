@@ -79,8 +79,90 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
       final prefs = await SharedPreferences.getInstance();
       final savedSession = prefs.getString('saved_session_emoji_memory');
       final savedCoins = prefs.getInt('saved_coins_emoji_memory') ?? 0;
+      final savedTime = prefs.getInt('saved_time_emoji_memory') ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
 
-      if (savedSession != null && savedSession.isNotEmpty && savedCoins > 0) {
+      bool isExpired = false;
+      if (savedTime > 0 && (now - savedTime) > 23 * 60 * 60 * 1000) {
+        isExpired = true;
+      }
+
+      if (isExpired && savedSession != null && savedSession.isNotEmpty) {
+        final clearAndStartNewSession = () async {
+          await prefs.remove('saved_session_emoji_memory');
+          await prefs.remove('saved_coins_emoji_memory');
+          await prefs.remove('saved_time_emoji_memory');
+
+          if (mounted) {
+            setState(() {
+              _isSessionLoading = true;
+            });
+          }
+          final session = await ref.read(userServiceProvider).startGameSession('emoji_memory');
+          if (session != null) {
+            if (mounted) {
+              setState(() {
+                _sessionId = session;
+                _isSessionLoading = false;
+              });
+              _startGame();
+            }
+            await prefs.setString('saved_session_emoji_memory', session);
+            await prefs.setInt('saved_coins_emoji_memory', 0);
+            await prefs.setInt('saved_time_emoji_memory', DateTime.now().millisecondsSinceEpoch);
+          } else {
+            if (mounted) {
+              final selectedLanguage = ref.read(languageProvider);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(context.tr('failed_start_session', selectedLanguage))),
+              );
+              Navigator.of(context).pop();
+            }
+          }
+        };
+
+        if (savedCoins > 0 && mounted) {
+          final selectedLanguage = ref.read(languageProvider);
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) => AlertDialog(
+              backgroundColor: const Color(0xFF1E1E2E),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  const Icon(Icons.timer_off_outlined, color: Colors.amber, size: 28),
+                  const SizedBox(width: 10),
+                  Text(
+                    selectedLanguage == 'Hindi' ? 'सत्र समाप्त' : 'Session Expired',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              content: Text(
+                selectedLanguage == 'Hindi'
+                    ? 'आपका पिछला गेम सत्र 23 घंटे से अधिक पुराना होने के कारण समाप्त हो गया है। उस सत्र के अनक्लेम किए गए सिक्के समाप्त हो गए हैं।'
+                    : 'Your previous game session has expired (exceeded 23 hours). Unclaimed coins from that session have expired.',
+                style: const TextStyle(color: Colors.white70),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    clearAndStartNewSession();
+                  },
+                  child: Text(
+                    selectedLanguage == 'Hindi' ? 'ठीक है' : 'Start Fresh',
+                    style: const TextStyle(color: Color(0xFF22C55E), fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          clearAndStartNewSession();
+        }
+      } else if (savedSession != null && savedSession.isNotEmpty && savedCoins > 0) {
         if (mounted) {
           setState(() {
             _sessionId = savedSession;
@@ -101,6 +183,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
           }
           await prefs.setString('saved_session_emoji_memory', session);
           await prefs.setInt('saved_coins_emoji_memory', 0);
+          await prefs.setInt('saved_time_emoji_memory', DateTime.now().millisecondsSinceEpoch);
         } else {
           if (mounted) {
             final selectedLanguage = ref.read(languageProvider);
@@ -591,6 +674,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
             final prefs = await SharedPreferences.getInstance();
             await prefs.remove('saved_session_emoji_memory');
             await prefs.remove('saved_coins_emoji_memory');
+            await prefs.remove('saved_time_emoji_memory');
 
             final session = await ref.read(userServiceProvider).startGameSession('emoji_memory');
             if (session != null) {
@@ -603,6 +687,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
               }
               await prefs.setString('saved_session_emoji_memory', session);
               await prefs.setInt('saved_coins_emoji_memory', 0);
+              await prefs.setInt('saved_time_emoji_memory', DateTime.now().millisecondsSinceEpoch);
             } else {
               if (mounted) {
                 Navigator.of(context).pop();

@@ -2229,11 +2229,7 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
           if (_isMatchmakingChat) {
             context.go('/playground');
           } else {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              context.go('/playground/friends');
-            }
+            context.go('/playground/friends');
           }
         }
       }
@@ -2247,11 +2243,7 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
         if (_isMatchmakingChat) {
           context.go('/playground');
         } else {
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          } else {
-            context.go('/playground/friends');
-          }
+          context.go('/playground/friends');
         }
       }
     }
