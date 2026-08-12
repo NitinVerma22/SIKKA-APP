@@ -143,6 +143,19 @@ class PlaygroundService {
     }
   }
 
+  // 9b. Fetch Friend Suggestions (paginated)
+  Future<Map<String, dynamic>> getFriendSuggestions(int page, {int limit = 8}) async {
+    try {
+      final res = await _get('/friends/suggestions?page=$page&limit=$limit');
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      }
+      return {'success': false, 'error': jsonDecode(res.body)['error'] ?? 'Server error'};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   // 10. Friends lookup search
   Future<Map<String, dynamic>> searchFriends(String query) async {
     try {

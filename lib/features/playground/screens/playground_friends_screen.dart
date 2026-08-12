@@ -31,16 +31,27 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
   bool _isSearching = false;
   Map<String, String> _chatClearTimes = {};
 
-  // Tabs state: 0 = All Friends, 1 = Online, 2 = Requests
+  // Tabs state: 0 = All Friends, 1 = Suggestions, 2 = Requests
   int _selectedTab = 0;
   bool _isSuspended = false;
   String? _suspendedUntil;
   String? _suspendedReason;
 
+  // Suggestions state
+  List<dynamic> _suggestions = [];
+  int _suggestionsPage = 1;
+  bool _loadingSuggestions = false;
+  bool _hasMoreSuggestions = true;
+  final Set<String> _sentSuggestionsRequestIds = {};
+
+  // Friends pagination limit
+  int _friendsLimit = 10;
+
   @override
   void initState() {
     super.initState();
     _loadFriendsData();
+    _loadSuggestions(isRefresh: true);
   }
 
   @override
@@ -86,6 +97,40 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
         _isLoading = false;
       });
       GameNotifications.showCoinUpdate(context, 'Failed to load friends');
+    }
+  }
+
+  Future<void> _loadSuggestions({bool isRefresh = false}) async {
+    if (_loadingSuggestions) return;
+
+    setState(() {
+      _loadingSuggestions = true;
+      if (isRefresh) {
+        _suggestionsPage = 1;
+        _suggestions = [];
+        _hasMoreSuggestions = true;
+      }
+    });
+
+    final res = await _service.getFriendSuggestions(_suggestionsPage, limit: 8);
+    if (!mounted) return;
+
+    if (res['success'] == true) {
+      final List<dynamic> loaded = res['suggestions'] ?? [];
+      setState(() {
+        if (isRefresh) {
+          _suggestions = loaded;
+        } else {
+          _suggestions.addAll(loaded);
+        }
+        _hasMoreSuggestions = loaded.length == 8;
+        _loadingSuggestions = false;
+      });
+    } else {
+      setState(() {
+        _loadingSuggestions = false;
+      });
+      GameNotifications.showCoinUpdate(context, res['error'] ?? 'Failed to load suggestions');
     }
   }
 
@@ -339,7 +384,6 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
   }
 
   Widget _buildTabs() {
-    final int onlineCount = _friends.where((f) => f['isOnline'] == true).length;
     final int requestCount = _pendingRequests.length;
 
     return Padding(
@@ -349,7 +393,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
         children: [
           Expanded(child: _buildTabItem(0, 'All', Icons.people_alt_rounded, null, false)),
           const SizedBox(width: 8),
-          Expanded(child: _buildTabItem(1, 'Online', Icons.notifications_active_rounded, null, true)),
+          Expanded(child: _buildTabItem(1, 'Suggestions', Icons.explore_rounded, null, false)),
           const SizedBox(width: 8),
           Expanded(child: _buildTabItem(2, 'Requests', Icons.person_add_alt_1_rounded, requestCount > 0 ? requestCount : null, false)),
         ],
@@ -462,11 +506,35 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
       );
     }
 
-    List<dynamic> displayList = List.from(_friends);
     if (_selectedTab == 1) {
-      displayList = displayList.where((f) => f['isOnline'] == true).toList();
-      if (displayList.isEmpty) return _buildEmptyState('No friends online right now.');
+      if (_suggestions.isEmpty) {
+        if (_loadingSuggestions) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF7B2CBF)));
+        }
+        return _suggestionsPage > 1 
+            ? _buildEmptyState('No more suggestions available.')
+            : _buildEmptyState('No suggestions available at the moment.');
+      }
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: _suggestions.length + (_hasMoreSuggestions ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index < _suggestions.length) {
+            return _buildSuggestionCard(_suggestions[index]);
+          } else {
+            return _buildLoadMoreButton(
+              isLoading: _loadingSuggestions,
+              onTap: () {
+                _suggestionsPage++;
+                _loadSuggestions();
+              },
+            );
+          }
+        },
+      );
     }
+
+    final List<dynamic> displayList = List.from(_friends);
 
     // Sort by lastMessageTime descending
     displayList.sort((a, b) {
@@ -480,10 +548,176 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
 
     if (displayList.isEmpty) return _buildEmptyState('No friends added yet. Use the search box to find users!');
 
+    final visibleFriends = displayList.take(_friendsLimit).toList();
+    final bool hasMoreFriends = displayList.length > _friendsLimit;
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: displayList.length,
-      itemBuilder: (context, index) => _buildFriendCard(displayList[index]),
+      itemCount: visibleFriends.length + (hasMoreFriends ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index < visibleFriends.length) {
+          return _buildFriendCard(visibleFriends[index]);
+        } else {
+          return _buildLoadMoreButton(
+            isLoading: false,
+            onTap: () {
+              setState(() {
+                _friendsLimit += 10;
+              });
+            },
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildLoadMoreButton({required VoidCallback onTap, required bool isLoading}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 140,
+          height: 40,
+          child: ElevatedButton(
+            onPressed: isLoading ? null : onTap,
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              backgroundColor: const Color(0xFFF3E8FF),
+              foregroundColor: const Color(0xFF7B2CBF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: const Color(0xFF7B2CBF).withValues(alpha: 0.15)),
+              ),
+            ),
+            child: isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF7B2CBF),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.arrow_downward_rounded, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Load More',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionCard(dynamic user) {
+    final String displayName = _capitalizeName(user['name'] ?? 'SikkaPlay User');
+    final String userId = user['id']?.toString() ?? '';
+    final String username = user['username']?.toString() ?? '';
+    final String gender = user['gender']?.toString().toLowerCase() ?? 'male';
+    final bool isSent = _sentSuggestionsRequestIds.contains(userId);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
+      ),
+      child: Row(
+        children: [
+          _buildAvatar(displayName, user['avatarUrl'], false),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFF3C096C),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: gender == 'female'
+                            ? const Color(0xFFFFF0F5)
+                            : const Color(0xFFE6F0FA),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        gender == 'female' ? '♀ F' : '♂ M',
+                        style: GoogleFonts.outfit(
+                          color: gender == 'female'
+                              ? const Color(0xFFFF1493)
+                              : const Color(0xFF1E90FF),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '@$username',
+                  style: GoogleFonts.outfit(
+                    color: Colors.black45,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            height: 38,
+            child: ElevatedButton(
+              onPressed: isSent
+                  ? null
+                  : () {
+                      _sendRequest(userId);
+                      setState(() {
+                        _sentSuggestionsRequestIds.add(userId);
+                      });
+                    },
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                backgroundColor: isSent ? Colors.black12 : const Color(0xFF7B2CBF),
+                disabledBackgroundColor: Colors.black12,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              child: Text(
+                isSent ? 'Pending' : 'Add',
+                style: GoogleFonts.outfit(
+                  color: isSent ? Colors.black38 : Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
