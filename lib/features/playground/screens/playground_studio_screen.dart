@@ -13,6 +13,8 @@ import 'package:sikkaplay/features/playground/screens/playground_profile_screen.
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:sikkaplay/core/auth/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sikkaplay/core/localization/translation_provider.dart';
 
 class ChatMessage {
   final String text;
@@ -36,7 +38,7 @@ class ChatMessage {
   });
 }
 
-class PlaygroundStudioScreen extends StatefulWidget {
+class PlaygroundStudioScreen extends ConsumerStatefulWidget {
   final dynamic partner;
   static String? activeChannelName;
   static String currentUserId = '';
@@ -44,10 +46,10 @@ class PlaygroundStudioScreen extends StatefulWidget {
   const PlaygroundStudioScreen({super.key, required this.partner});
 
   @override
-  State<PlaygroundStudioScreen> createState() => _PlaygroundStudioScreenState();
+  ConsumerState<PlaygroundStudioScreen> createState() => _PlaygroundStudioScreenState();
 }
 
-class _PlaygroundStudioScreenState extends State<PlaygroundStudioScreen> {
+class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen> {
   final PlaygroundService _service = PlaygroundService();
   final TextEditingController _msgController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
