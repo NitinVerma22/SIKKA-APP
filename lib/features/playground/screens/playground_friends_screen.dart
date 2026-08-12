@@ -33,6 +33,9 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
 
   // Tabs state: 0 = All Friends, 1 = Online, 2 = Requests
   int _selectedTab = 0;
+  bool _isSuspended = false;
+  String? _suspendedUntil;
+  String? _suspendedReason;
 
   @override
   void initState() {
@@ -73,6 +76,9 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
         _friends = loadedFriends;
         _chatClearTimes = clearTimes;
         _pendingRequests = res['pendingRequests'] ?? [];
+        _isSuspended = res['isSuspended'] == true;
+        _suspendedUntil = res['suspendedUntil']?.toString();
+        _suspendedReason = res['suspendedReason']?.toString();
         _isLoading = false;
       });
     } else {
@@ -952,8 +958,138 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
   }
 
 
+  String _formatSuspensionTime(String? untilStr) {
+    if (untilStr == null) return 'N/A';
+    try {
+      final dt = DateTime.tryParse(untilStr);
+      if (dt == null) return untilStr;
+      final localDt = dt.toLocal();
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final h = localDt.hour % 12 == 0 ? 12 : localDt.hour % 12;
+      final ampm = localDt.hour >= 12 ? 'PM' : 'AM';
+      return '${localDt.day} ${months[localDt.month - 1]} ${localDt.year}, ${h}:${localDt.minute.toString().padLeft(2, '0')} $ampm';
+    } catch (_) {
+      return untilStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isSuspended) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFAFBFD),
+        appBar: _buildAppBar(),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFE9D5FF), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF7B2CBF).withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF3E8FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.lock_clock_rounded,
+                      color: Color(0xFF7B2CBF),
+                      size: 40,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Chat Access Suspended',
+                    style: GoogleFonts.outfit(
+                      color: const Color(0xFF3C096C),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Your chat privileges have been temporarily suspended due to multiple reports from other users.',
+                    style: GoogleFonts.outfit(
+                      color: const Color(0xFF6B7280),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFAFBFD),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFF3E8FF)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_suspendedReason != null && _suspendedReason!.isNotEmpty) ...[
+                          Text(
+                            'Reason:',
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF7B2CBF),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            _suspendedReason!,
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF374151),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        Text(
+                          'Suspension Expires:',
+                          style: GoogleFonts.outfit(
+                            color: const Color(0xFF7B2CBF),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          _formatSuspensionTime(_suspendedUntil),
+                          style: GoogleFonts.outfit(
+                            color: const Color(0xFF374151),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     // Determine the list size for the header
     int currentCount = 0;
     if (_isSearching) {
