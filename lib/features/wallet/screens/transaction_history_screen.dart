@@ -239,7 +239,8 @@ class _TransactionHistoryScreenState
                           final tx = _transactions[index];
                           final isEarning = tx['type'] == 'earning';
                           final txTitle = tx['title'] ?? 'Transaction';
-                          final txAmount = tx['rewardAmount'] ?? 0;
+                          final rawAmount = tx['rewardAmount'] ?? 0;
+                          final txAmount = rawAmount.toString().replaceAll('-', '');
                           final txTime = tx['timeAgo'] ?? 'Recent';
                           final txStatus = tx['status'] ?? 'Completed';
 

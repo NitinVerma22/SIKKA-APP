@@ -76,14 +76,14 @@ class _DailyCodeScreenState extends ConsumerState<DailyCodeScreen> {
   }
 
   void _updateTime() {
-    // Current UTC time
-    final nowUtc = DateTime.now().toUtc();
-    // Indian Standard Time (IST) is UTC+5:30
-    final nowIst = nowUtc.add(const Duration(hours: 5, minutes: 30));
-    
-    // Target is midnight IST of next day
-    final tomorrowIst = DateTime(nowIst.year, nowIst.month, nowIst.day + 1);
-    final difference = tomorrowIst.difference(nowIst);
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final difference = tomorrow.difference(now);
+
+    if (difference.isNegative) {
+      _timeRemaining = '00h 00m 00s';
+      return;
+    }
 
     final hours = difference.inHours.toString().padLeft(2, '0');
     final minutes = (difference.inMinutes % 60).toString().padLeft(2, '0');

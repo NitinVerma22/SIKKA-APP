@@ -483,10 +483,52 @@ class _PlaygroundProfileScreenState extends State<PlaygroundProfileScreen> {
     );
   }
 
+  Future<void> _unblockUser() async {
+    if (_user == null) return;
+    GameNotifications.showCoinUpdate(context, 'Unblocking user...');
+    final res = await _service.unblockUser(_user['id']);
+    if (!mounted) return;
+
+    if (res['success'] == true) {
+      GameNotifications.showCoinUpdate(context, 'User unblocked successfully!');
+      _loadProfileData();
+    } else {
+      GameNotifications.showCoinUpdate(context, res['error'] ?? 'Unblock failed');
+    }
+  }
+
   Widget _buildFriendActionButton() {
     final state = _user['friendshipState'] ?? 'NONE';
 
-    if (state == 'FRIENDS') {
+    if (state == 'BLOCKED_BY_ME') {
+      return ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF7B2CBF),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        onPressed: _unblockUser,
+        icon: const Icon(Icons.lock_open_rounded, size: 18),
+        label: Text(
+          'UNBLOCK',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14),
+        ),
+      );
+    } else if (state == 'BLOCKED_BY_OTHER') {
+      return OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.black.withValues(alpha: 0.05),
+          side: BorderSide(color: Colors.black.withValues(alpha: 0.1)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        onPressed: null,
+        icon: const Icon(Icons.block_rounded, size: 18, color: Colors.black38),
+        label: Text(
+          'BLOCKED',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.black38),
+        ),
+      );
+    } else if (state == 'FRIENDS') {
       return OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
           backgroundColor: const Color(0xFFFFEBEB),
