@@ -347,6 +347,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                         location.contains('/playground/shop') || 
                         location.contains('/playground/studio') ||
                         location.contains('/search');
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final selectedLanguage = ref.watch(languageProvider);
 
     ref.listen<UserState>(userProvider, (previous, next) {
@@ -396,7 +397,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
           // Content Area
           Positioned.fill(
             child: Padding(
-              padding: EdgeInsets.only(bottom: isNavHidden ? 0.0 : 80.0), // Room for bottom nav bar only when visible
+              padding: EdgeInsets.only(bottom: (isNavHidden || isKeyboardOpen) ? 0.0 : 80.0), // Room for bottom nav bar only when visible and keyboard closed
               child: widget.child,
             ),
           ),
@@ -422,7 +423,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             ),
 
           // Bottom Navigation Bar
-          if (!isNavHidden)
+          if (!isNavHidden && !isKeyboardOpen)
             Positioned(
               left: AppSizes.md,
               right: AppSizes.md,

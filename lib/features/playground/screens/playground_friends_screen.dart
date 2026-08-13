@@ -622,70 +622,92 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
     final String gender = user['gender']?.toString().toLowerCase() ?? 'male';
     final bool isSent = _sentSuggestionsRequestIds.contains(userId);
 
+    final openProfile = () {
+      final target = username.isNotEmpty ? username : userId;
+      if (target.isNotEmpty) {
+        context.push('/playground/profile', extra: target);
+      }
+    };
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
-          _buildAvatar(displayName, user['avatarUrl'], false),
+          // Left: Avatar (Zoom)
+          GestureDetector(
+            onTap: () => _showZoomedAvatarDialog(displayName, user['avatarUrl'], userId),
+            child: Hero(
+              tag: 'avatar_$userId',
+              child: _buildAvatar(displayName, user['avatarUrl'], false),
+            ),
+          ),
           const SizedBox(width: 16),
+
+          // Center: Name & Username (Public Profile)
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.outfit(
-                          color: const Color(0xFF3C096C),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: openProfile,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.outfit(
+                            color: const Color(0xFF3C096C),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: gender == 'female'
-                            ? const Color(0xFFFFF0F5)
-                            : const Color(0xFFE6F0FA),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        gender == 'female' ? '♀ F' : '♂ M',
-                        style: GoogleFonts.outfit(
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
                           color: gender == 'female'
-                              ? const Color(0xFFFF1493)
-                              : const Color(0xFF1E90FF),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
+                              ? const Color(0xFFFFF0F5)
+                              : const Color(0xFFE6F0FA),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          gender == 'female' ? '♀ F' : '♂ M',
+                          style: GoogleFonts.outfit(
+                            color: gender == 'female'
+                                ? const Color(0xFFFF1493)
+                                : const Color(0xFF1E90FF),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '@$username',
-                  style: GoogleFonts.outfit(
-                    color: Colors.black45,
-                    fontSize: 13,
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    '@$username',
+                    style: GoogleFonts.outfit(
+                      color: Colors.black45,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 12),
+
+          // Action Button: Add Friend
           SizedBox(
             height: 38,
             child: ElevatedButton(
@@ -721,6 +743,59 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
     );
   }
 
+  void _showZoomedAvatarDialog(String name, String? avatarUrl, String userId) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Dismiss',
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Blur effect
+                BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                  child: Container(color: Colors.transparent),
+                ),
+                // Center Image
+                Center(
+                  child: GestureDetector(
+                    onTap: () {}, // Prevent closing when tapping the image itself
+                    child: Hero(
+                      tag: 'avatar_$userId',
+                      child: Container(
+                        width: MediaQuery.of(context).size.width * 0.7,
+                        height: MediaQuery.of(context).size.width * 0.7,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF7B2CBF).withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: _buildAvatar(name, avatarUrl, false, size: MediaQuery.of(context).size.width * 0.7),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildEmptyState(String msg) {
     return Center(
       child: Text(
@@ -733,34 +808,59 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
 
   Widget _buildRequestCard(dynamic req) {
     final String displayName = _capitalizeName(req['name']);
+    final String reqId = req['id']?.toString() ?? '';
+    final String username = req['username']?.toString() ?? '';
+
+    final openProfile = () {
+      final target = username.isNotEmpty ? username : reqId;
+      if (target.isNotEmpty) {
+        context.push('/playground/profile', extra: target);
+      }
+    };
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
-          _buildAvatar(displayName, req['avatarUrl'], false),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  displayName,
-                  style: GoogleFonts.outfit(color: const Color(0xFF3C096C), fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Sent you a request',
-                  style: GoogleFonts.outfit(color: Colors.black38, fontSize: 12),
-                ),
-              ],
+          // Left: Avatar (Zoom)
+          GestureDetector(
+            onTap: () => _showZoomedAvatarDialog(displayName, req['avatarUrl'], reqId),
+            child: Hero(
+              tag: 'avatar_$reqId',
+              child: _buildAvatar(displayName, req['avatarUrl'], false),
             ),
           ),
+          const SizedBox(width: 16),
+
+          // Center: Name & Subtitle (Public Profile)
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: openProfile,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName,
+                    style: GoogleFonts.outfit(color: const Color(0xFF3C096C), fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Sent you a request',
+                    style: GoogleFonts.outfit(color: Colors.black38, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Action Button: Accept
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF7B2CBF),
@@ -781,6 +881,16 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
 
   Widget _buildUserCard(dynamic user, {required bool isSearch}) {
     final String displayName = _capitalizeName(user['name']);
+    final String userId = user['id']?.toString() ?? '';
+    final String username = user['username']?.toString() ?? '';
+
+    final openProfile = () {
+      final target = username.isNotEmpty ? username : userId;
+      if (target.isNotEmpty) {
+        context.push('/playground/profile', extra: target);
+      }
+    };
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -798,61 +908,11 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
       ),
       child: Row(
         children: [
+          // Left: Avatar (Zoom)
           GestureDetector(
-            onTap: () {
-              showGeneralDialog(
-                context: context,
-                barrierDismissible: true,
-                barrierLabel: 'Dismiss',
-                barrierColor: Colors.black.withValues(alpha: 0.5),
-                transitionDuration: const Duration(milliseconds: 300),
-                pageBuilder: (context, animation, secondaryAnimation) {
-                  return Scaffold(
-                    backgroundColor: Colors.transparent,
-                    body: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // Blur effect
-                          BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                            child: Container(color: Colors.transparent),
-                          ),
-                          // Center Image
-                          Center(
-                            child: GestureDetector(
-                              onTap: () {}, // Prevent closing when tapping the image itself
-                              child: Hero(
-                                tag: 'avatar_${user['id']}',
-                                child: Container(
-                                  width: MediaQuery.of(context).size.width * 0.7,
-                                  height: MediaQuery.of(context).size.width * 0.7,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 4),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF7B2CBF).withValues(alpha: 0.3),
-                                        blurRadius: 20,
-                                        spreadRadius: 5,
-                                      ),
-                                    ],
-                                  ),
-                                  child: _buildAvatar(displayName, user['avatarUrl'], false, size: MediaQuery.of(context).size.width * 0.7),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+            onTap: () => _showZoomedAvatarDialog(displayName, user['avatarUrl'], userId),
             child: Hero(
-              tag: 'avatar_${user['id']}',
+              tag: 'avatar_$userId',
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -863,33 +923,39 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
             ),
           ),
           const SizedBox(width: 16),
+
+          // Center: Name & Username (Public Profile)
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        displayName,
-                        style: GoogleFonts.outfit(color: const Color(0xFF3C096C), fontWeight: FontWeight.w900, fontSize: 16),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: openProfile,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          displayName,
+                          style: GoogleFonts.outfit(color: const Color(0xFF3C096C), fontWeight: FontWeight.w900, fontSize: 16),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    if (user['gender']?.toString().toLowerCase() == 'female')
-                      const Icon(Icons.female_rounded, color: Colors.pinkAccent, size: 16)
-                    else if (user['gender']?.toString().toLowerCase() == 'male')
-                      const Icon(Icons.male_rounded, color: Colors.blueAccent, size: 16),
-                  ],
-                ),
-                if (user['username'] != null && user['username'].toString().isNotEmpty)
-                  Text(
-                    '@${user['username']}',
-                    style: GoogleFonts.outfit(color: const Color(0xFF7B2CBF).withValues(alpha: 0.7), fontWeight: FontWeight.bold, fontSize: 12),
+                      const SizedBox(width: 4),
+                      if (user['gender']?.toString().toLowerCase() == 'female')
+                        const Icon(Icons.female_rounded, color: Colors.pinkAccent, size: 16)
+                      else if (user['gender']?.toString().toLowerCase() == 'male')
+                        const Icon(Icons.male_rounded, color: Colors.blueAccent, size: 16),
+                    ],
                   ),
-              ],
+                  if (user['username'] != null && user['username'].toString().isNotEmpty)
+                    Text(
+                      '@${user['username']}',
+                      style: GoogleFonts.outfit(color: const Color(0xFF7B2CBF).withValues(alpha: 0.7), fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                ],
+              ),
             ),
           ),
           if (isSearch)
@@ -941,6 +1007,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
 
   Widget _buildFriendCard(dynamic friend) {
     final String friendId = friend['id']?.toString() ?? '';
+    final String username = friend['username']?.toString() ?? '';
     final String? clearTimeStr = _chatClearTimes[friendId];
     
     bool isCleared = false;
@@ -965,7 +1032,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
         final lastMsgTime = lastMsgTimeUtc.toLocal();
         final int h = lastMsgTime.hour % 12 == 0 ? 12 : lastMsgTime.hour % 12;
         final String ampm = lastMsgTime.hour >= 12 ? 'PM' : 'AM';
-        timeStr = '${h}:${lastMsgTime.minute.toString().padLeft(2, '0')} $ampm';
+        timeStr = '$h:${lastMsgTime.minute.toString().padLeft(2, '0')} $ampm';
       }
     }
 
@@ -975,42 +1042,61 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
 
     final String displayName = _capitalizeName(friend['name']);
 
-    return GestureDetector(
-      onTap: () async {
-        GameNotifications.showCoinUpdate(context, 'Connecting to $displayName...');
-        final mockMatchResult = {
-          'channelName': 'friend-chat-${friend['id']}',
-          'agoraToken': 'friend-chat-${friend['id']}',
-          'partnerId': friend['id'],
-          'partnerName': displayName,
-          'partnerGender': friend['gender'] ?? 'male',
-          'partnerUsername': friend['username'],
-          'partnerAvatar': friend['avatarUrl'],
-        };
-        await GoRouter.of(context).push('/playground/studio', extra: mockMatchResult);
-        // Refresh chats after coming back
-        _loadFriendsData();
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.black.withOpacity(0.03)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    final openChat = () async {
+      GameNotifications.showCoinUpdate(context, 'Connecting to $displayName...');
+      final mockMatchResult = {
+        'channelName': 'friend-chat-${friend['id']}',
+        'agoraToken': 'friend-chat-${friend['id']}',
+        'partnerId': friend['id'],
+        'partnerName': displayName,
+        'partnerGender': friend['gender'] ?? 'male',
+        'partnerUsername': friend['username'],
+        'partnerAvatar': friend['avatarUrl'],
+      };
+      await GoRouter.of(context).push('/playground/studio', extra: mockMatchResult);
+      // Refresh chats after coming back
+      _loadFriendsData();
+    };
+
+    final openProfile = () {
+      final target = username.isNotEmpty ? username : friendId;
+      if (target.isNotEmpty) {
+        context.push('/playground/profile', extra: target);
+      }
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Left: Avatar (Zoom Dialog)
+          GestureDetector(
+            onTap: () => _showZoomedAvatarDialog(displayName, friend['avatarUrl'], friendId),
+            child: Hero(
+              tag: 'avatar_$friendId',
+              child: _buildAvatar(displayName, friend['avatarUrl'], isOnline),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            _buildAvatar(displayName, friend['avatarUrl'], isOnline),
-            const SizedBox(width: 16),
-            Expanded(
+          ),
+          const SizedBox(width: 16),
+
+          // Center: Name & Subtitle (Public Profile)
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: openProfile,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1051,8 +1137,14 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            Column(
+          ),
+          const SizedBox(width: 12),
+
+          // Right: Message Icon & Time (Chat Studio)
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: openChat,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (unread > 0)
@@ -1086,9 +1178,9 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
                   child: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF7B2CBF), size: 16),
                 )
               ],
-            )
-          ],
-        ),
+            ),
+          )
+        ],
       ),
     );
   }
