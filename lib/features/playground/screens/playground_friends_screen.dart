@@ -1331,7 +1331,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
     } else if (_selectedTab == 0) {
       currentCount = _friends.length;
     } else if (_selectedTab == 1) {
-      currentCount = _friends.where((f) => f['isOnline'] == true).length;
+      currentCount = _suggestions.length;
     } else if (_selectedTab == 2) {
       currentCount = _pendingRequests.length;
     }
@@ -1342,7 +1342,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (_friends.isEmpty) _buildGrowCircleBanner(),
+          if (_selectedTab == 0 && _friends.isEmpty && !_isSearching) _buildGrowCircleBanner(),
           _buildSearchBar(),
           _buildTabs(),
           _buildListHeader(currentCount),
