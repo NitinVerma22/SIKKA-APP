@@ -33,26 +33,50 @@ class _MyNetworkScreenState extends ConsumerState<MyNetworkScreen> {
 
   Future<void> _shareReferral(String referralCode, String appLink, String language) async {
     try {
-      final ByteData bytes = await rootBundle.load('assets/images/referral_share_banner.webp');
-      final Uint8List list = bytes.buffer.asUint8List();
-      
-      final tempDir = await getTemporaryDirectory();
-      final file = await File('${tempDir.path}/referral_share_banner.png').create();
-      await file.writeAsBytes(list);
-      
+      List<XFile> shareFiles = [];
+      try {
+        ByteData bytes;
+        try {
+          bytes = await rootBundle.load('assets/images/referral_share_banner.png');
+        } catch (_) {
+          bytes = await rootBundle.load('assets/images/referral_share_banner.webp');
+        }
+        final Uint8List list = bytes.buffer.asUint8List();
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/referral_share_banner.png');
+        await file.writeAsBytes(list);
+        shareFiles.add(XFile(file.path));
+      } catch (e) {
+        debugPrint('Referral image asset load fallback: $e');
+      }
+
+      final String cleanCode = referralCode.trim().isNotEmpty ? referralCode.trim() : 'SIKKAPLAY';
+      final String cleanLink = appLink.trim().isNotEmpty ? appLink.trim() : 'https://sikkaplay.com';
+
       final String shareText = language == 'Hindi'
-          ? '🎮 अरे! SikkaPlay से जुड़ें और गेम खेलकर तथा रील्स देखकर वास्तविक पुरस्कार कमाएं! 💰\n\nमेरे रेफरल कोड का उपयोग करें: * $referralCode *\n\nअभी ऐप डाउनलोड करें: $appLink'
-          : '🎮 Hey! Join SikkaPlay and earn real rewards playing games and watching reels! 💰\n\n'
-              'Use my referral code: * $referralCode *\n\n'
-              'Download the app now: $appLink';
-          
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          text: shareText,
-          subject: language == 'Hindi' ? 'सिक्काप्ले में दोस्तों को आमंत्रित करें' : 'Invite Friends to SikkaPlay',
-        ),
-      );
+          ? '🚀 SikkaPlay से जुड़ें! गेम्स खेलें, रील्स देखें और असली कैश इनाम जीतें! 🎁💰\n\n'
+            '🔥 मेरा रेफरल कोड: 💎 $cleanCode 💎\n\n'
+            '📲 अभी ऐप डाउनलोड करें और बोनस पाएं:\n$cleanLink'
+          : '🚀 Join SikkaPlay to play games, watch reels & win real rewards! 🎁💰\n\n'
+            '🔥 Use My Referral Code: 💎 $cleanCode 💎\n\n'
+            '📲 Download the app & claim your bonus now:\n$cleanLink';
+
+      if (shareFiles.isNotEmpty) {
+        await SharePlus.instance.share(
+          ShareParams(
+            files: shareFiles,
+            text: shareText,
+            subject: language == 'Hindi' ? 'सिक्काप्ले में दोस्तों को आमंत्रित करें' : 'Invite Friends to SikkaPlay',
+          ),
+        );
+      } else {
+        await SharePlus.instance.share(
+          ShareParams(
+            text: shareText,
+            subject: language == 'Hindi' ? 'सिक्काप्ले में दोस्तों को आमंत्रित करें' : 'Invite Friends to SikkaPlay',
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Sharing failed: $e');
     }

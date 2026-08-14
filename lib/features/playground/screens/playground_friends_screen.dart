@@ -11,6 +11,12 @@ import 'package:sikkaplay/features/playground/screens/playground_blocked_users_s
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import 'dart:ui';
+import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
+import 'package:sikkaplay/core/config/config_service.dart';
 
 class PlaygroundFriendsScreen extends ConsumerStatefulWidget {
   const PlaygroundFriendsScreen({super.key});
@@ -316,9 +322,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              GameNotifications.showCoinUpdate(context, 'Invite friends feature coming soon!');
-            },
+            onPressed: _shareReferral,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF7B2CBF),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -335,6 +339,60 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
         ],
       ),
     );
+  }
+
+  Future<void> _shareReferral() async {
+    try {
+      final userState = ref.read(userProvider);
+      final userData = userState.userData ?? {};
+      final String referralCode = userData['referralCode']?.toString() ?? 'SIKKAPLAY';
+      final appConfig = ref.read(appConfigProvider).config;
+      final String appLink = appConfig?['apkDownloadUrl'] ?? 'https://sikkaplay.com';
+
+      List<XFile> shareFiles = [];
+      try {
+        ByteData bytes;
+        try {
+          bytes = await rootBundle.load('assets/images/referral_share_banner.png');
+        } catch (_) {
+          bytes = await rootBundle.load('assets/images/referral_share_banner.webp');
+        }
+        final Uint8List list = bytes.buffer.asUint8List();
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/referral_share_banner.png');
+        await file.writeAsBytes(list);
+        shareFiles.add(XFile(file.path));
+      } catch (e) {
+        debugPrint('Referral image asset load fallback: $e');
+      }
+
+      final String cleanCode = referralCode.trim().isNotEmpty ? referralCode.trim() : 'SIKKAPLAY';
+      final String cleanLink = appLink.trim().isNotEmpty ? appLink.trim() : 'https://sikkaplay.com';
+
+      final String shareText =
+          '🚀 Join SikkaPlay to play games, watch reels & win real rewards! 🎁💰\n\n'
+          '🔥 Use My Referral Code: 💎 $cleanCode 💎\n\n'
+          '📲 Download the app & claim your bonus now:\n$cleanLink';
+
+      if (shareFiles.isNotEmpty) {
+        await SharePlus.instance.share(
+          ShareParams(
+            files: shareFiles,
+            text: shareText,
+            subject: 'Invite Friends to SikkaPlay',
+          ),
+        );
+      } else {
+        await SharePlus.instance.share(
+          ShareParams(
+            text: shareText,
+            subject: 'Invite Friends to SikkaPlay',
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Sharing failed: $e');
+    }
   }
 
   Widget _buildSearchBar() {
