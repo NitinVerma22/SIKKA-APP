@@ -280,7 +280,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     if (location.startsWith('/games')) return 1;
     
     if (isPgMode) {
-      if (location.startsWith('/playground/friends')) return 3; // Chats highlighted
+      if (location.startsWith('/playground/friends') || location.startsWith('/playground/profile')) return 3; // Chats highlighted
       return 2; // Rocket highlighted for main playground
     }
     
@@ -352,6 +352,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     final isNavHidden = location.contains('/matchmaking') || 
                         location.contains('/playground/shop') || 
                         location.contains('/playground/studio') ||
+                        location.contains('/playground/profile') ||
                         location.contains('/search');
     final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final selectedLanguage = ref.watch(languageProvider);

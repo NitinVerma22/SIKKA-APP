@@ -209,42 +209,58 @@ class _PlaygroundProfileScreenState extends State<PlaygroundProfileScreen> {
     );
   }
 
+  void _handleExit() {
+    if (mounted) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/playground/friends');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFBFD),
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        _handleExit();
+      },
+      child: Scaffold(
         backgroundColor: const Color(0xFFFAFBFD),
-        elevation: 0,
-        leadingWidth: 56,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12.0, top: 8.0, bottom: 8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF3C096C), size: 14),
-              onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFFAFBFD),
+          elevation: 0,
+          leadingWidth: 56,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 12.0, top: 8.0, bottom: 8.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF3C096C), size: 14),
+                onPressed: _handleExit,
+              ),
             ),
           ),
+          title: Text(
+            'User Profile',
+            style: GoogleFonts.outfit(color: const Color(0xFF3C096C), fontWeight: FontWeight.w900, fontSize: 18),
+          ),
+          centerTitle: true,
         ),
-        title: Text(
-          'User Profile',
-          style: GoogleFonts.outfit(color: const Color(0xFF3C096C), fontWeight: FontWeight.w900, fontSize: 18),
-        ),
-        centerTitle: true,
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF7B2CBF)))
           : _error != null
