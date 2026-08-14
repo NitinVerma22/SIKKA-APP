@@ -41,6 +41,7 @@ class ChatMessage {
 class PlaygroundStudioScreen extends ConsumerStatefulWidget {
   final dynamic partner;
   static String? activeChannelName;
+  static String? activePartnerId;
   static String currentUserId = '';
 
   const PlaygroundStudioScreen({super.key, required this.partner});
@@ -1088,6 +1089,7 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
   void initState() {
     super.initState();
     PlaygroundStudioScreen.activeChannelName = widget.partner['channelName'] ?? '';
+    PlaygroundStudioScreen.activePartnerId = widget.partner['partnerId'] ?? '';
     _loadSavedWallpaper();
     _loadChatHistory().then((_) {
       if (mounted) {
@@ -1235,6 +1237,7 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
     _chatSocket?.disconnect();
     _chatSocket?.dispose();
     PlaygroundStudioScreen.activeChannelName = null;
+    PlaygroundStudioScreen.activePartnerId = null;
     _heartbeatTimer?.cancel();
     _typingTimer?.cancel();
     _gameRequestTimeoutTimer?.cancel();
@@ -2226,7 +2229,9 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
           _gameActive = false;
         });
         if (mounted) {
-          if (_isMatchmakingChat) {
+          if (context.canPop()) {
+            context.pop();
+          } else if (_isMatchmakingChat) {
             context.go('/playground');
           } else {
             context.go('/playground/friends');
@@ -2236,11 +2241,17 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
     } else if (_isMatchmakingChat && !_partnerHasLeft) {
       final shouldLeave = await _showLeaveChatConfirmationDialog();
       if (shouldLeave == true && mounted) {
-        context.go('/playground');
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/playground');
+        }
       }
     } else {
       if (mounted) {
-        if (_isMatchmakingChat) {
+        if (context.canPop()) {
+          context.pop();
+        } else if (_isMatchmakingChat) {
           context.go('/playground');
         } else {
           context.go('/playground/friends');

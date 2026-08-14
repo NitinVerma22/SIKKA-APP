@@ -140,8 +140,11 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
         final cachedTime = _lastMsgTimes[friendId];
         if (cachedTime != null && cachedTime != lastMsgTime) {
-          final active = PlaygroundStudioScreen.activeChannelName;
-          if (active != channelName) {
+          final activeChannel = PlaygroundStudioScreen.activeChannelName ?? '';
+          final activePartner = PlaygroundStudioScreen.activePartnerId ?? '';
+          final isCurrentChat = (activeChannel.isNotEmpty && (activeChannel == channelName || activeChannel.contains(friendId))) ||
+                                (activePartner.isNotEmpty && activePartner == friendId);
+          if (!isCurrentChat) {
             if (lastMsgText == '__CALL_REQUEST__') {
               context.push('/playground/call', extra: {
                 'isIncoming': true,
@@ -187,8 +190,11 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       if (senderId == myUserId) return;
 
       final activeChannel = PlaygroundStudioScreen.activeChannelName ?? '';
-      if (activeChannel == channelName) {
-        debugPrint('[Socket] Suppressed in-app notification because user is in active chat');
+      final activePartner = PlaygroundStudioScreen.activePartnerId ?? '';
+      final isCurrentChat = (activeChannel.isNotEmpty && (activeChannel == channelName || (channelName.isNotEmpty && activeChannel.contains(channelName)) || (channelName.isNotEmpty && channelName.contains(activeChannel)) || activeChannel.contains(senderId))) ||
+                            (activePartner.isNotEmpty && (activePartner == senderId || (channelName.isNotEmpty && channelName.contains(activePartner))));
+      if (isCurrentChat) {
+        debugPrint('[Socket] Suppressed in-app notification because user is in active chat with $senderId / $channelName');
         return;
       }
 

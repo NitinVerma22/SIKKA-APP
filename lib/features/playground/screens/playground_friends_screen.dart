@@ -1065,122 +1065,126 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
       }
     };
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Left: Avatar (Zoom Dialog)
-          GestureDetector(
-            onTap: () => _showZoomedAvatarDialog(displayName, friend['avatarUrl'], friendId),
-            child: Hero(
-              tag: 'avatar_$friendId',
-              child: _buildAvatar(displayName, friend['avatarUrl'], isOnline),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: openChat,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const SizedBox(width: 16),
-
-          // Center: Name & Subtitle (Public Profile)
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: openProfile,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        displayName,
-                        style: GoogleFonts.outfit(color: const Color(0xFF1F2937), fontWeight: FontWeight.bold, fontSize: 15),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(width: 8),
-                      if (isOnline)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3E8FF),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'Online',
-                            style: GoogleFonts.outfit(color: const Color(0xFF7B2CBF), fontSize: 9, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    lastMessageText,
-                    style: GoogleFonts.outfit(
-                      color: unread > 0 ? const Color(0xFF1F2937) : Colors.black38,
-                      fontSize: 12,
-                      fontWeight: unread > 0 ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+          ],
+        ),
+        child: Row(
+          children: [
+            // Left: Avatar (Tap opens Chat)
+            GestureDetector(
+              onTap: openChat,
+              child: Hero(
+                tag: 'avatar_$friendId',
+                child: _buildAvatar(displayName, friend['avatarUrl'], isOnline),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
+            const SizedBox(width: 16),
 
-          // Right: Message Icon & Time (Chat Studio)
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: openChat,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (unread > 0)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF7B2CBF),
-                      shape: BoxShape.circle,
+            // Center: Name & Subtitle (Tap opens Chat)
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: openChat,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          displayName,
+                          style: GoogleFonts.outfit(color: const Color(0xFF1F2937), fontWeight: FontWeight.bold, fontSize: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(width: 8),
+                        if (isOnline)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3E8FF),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Online',
+                              style: GoogleFonts.outfit(color: const Color(0xFF7B2CBF), fontSize: 9, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                      ],
                     ),
-                    child: Text(
-                      '$unread',
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    const SizedBox(height: 4),
+                    Text(
+                      lastMessageText,
+                      style: GoogleFonts.outfit(
+                        color: unread > 0 ? const Color(0xFF1F2937) : Colors.black38,
+                        fontSize: 12,
+                        fontWeight: unread > 0 ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  )
-                else if (timeStr.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      timeStr,
-                      style: GoogleFonts.outfit(color: const Color(0xFF7B2CBF), fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFAFBFD),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFF3E8FF)),
-                  ),
-                  child: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF7B2CBF), size: 16),
-                )
-              ],
+                  ],
+                ),
+              ),
             ),
-          )
-        ],
+            const SizedBox(width: 12),
+
+            // Right: Message Icon & Time (Tap opens Chat)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: openChat,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (unread > 0)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF7B2CBF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$unread',
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  else if (timeStr.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Text(
+                        timeStr,
+                        style: GoogleFonts.outfit(color: const Color(0xFF7B2CBF), fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFAFBFD),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF3E8FF)),
+                    ),
+                    child: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF7B2CBF), size: 16),
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
