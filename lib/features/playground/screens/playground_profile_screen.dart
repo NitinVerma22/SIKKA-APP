@@ -495,7 +495,8 @@ class _PlaygroundProfileScreenState extends State<PlaygroundProfileScreen> {
                         ),
                     ],
                   ),
-    ),
+                ),
+      ),
     );
   }
 
