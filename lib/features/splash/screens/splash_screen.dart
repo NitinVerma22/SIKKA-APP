@@ -208,8 +208,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       }
 
       if (mounted) {
-        context.go('/home'); // Session active, verified, and preloaded
-        
         final pendingRouteStr = prefs.getString('pending_chat_route');
         if (pendingRouteStr != null && pendingRouteStr.isNotEmpty) {
           try {
@@ -219,24 +217,28 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             final String partnerName = data['partnerName'] ?? 'SikkaPlay Friend';
             final String partnerAvatar = data['senderAvatar'] ?? '';
             
-            if (channelName.isNotEmpty && partnerId.isNotEmpty) {
+            if (partnerId.isNotEmpty || channelName.isNotEmpty) {
               await prefs.remove('pending_chat_route');
-              Future.delayed(const Duration(milliseconds: 100), () {
-                if (mounted) {
-                  context.push('/playground/studio', extra: {
-                    'channelName': channelName,
-                    'agoraToken': channelName,
-                    'partnerId': partnerId,
-                    'partnerName': partnerName,
-                    'partnerUsername': '',
-                    'partnerAvatar': partnerAvatar,
-                  });
-                }
-              });
+              final String effectiveChannel = partnerId.isNotEmpty ? 'friend-chat-$partnerId' : channelName;
+              if (mounted) {
+                context.go('/playground/friends');
+                context.push('/playground/studio', extra: {
+                  'channelName': effectiveChannel,
+                  'agoraToken': effectiveChannel,
+                  'partnerId': partnerId,
+                  'partnerName': partnerName,
+                  'partnerUsername': '',
+                  'partnerAvatar': partnerAvatar,
+                });
+              }
+              return;
             }
           } catch (e) {
             debugPrint('Error parsing pending chat route: $e');
           }
+        }
+        if (mounted) {
+          context.go('/home'); // Session active, verified, and preloaded
         }
       }
     } else if (!hasChosenLanguage) {

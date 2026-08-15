@@ -108,9 +108,11 @@ void globalPushChatScreenWithRetry(String channelName, String partnerId, String 
     return;
   }
   
+  final String effectiveChannel = partnerId.trim().isNotEmpty ? 'friend-chat-${partnerId.trim()}' : channelName;
+  
   rootNavigatorKey.currentContext?.push('/playground/studio', extra: {
-    'channelName': channelName,
-    'agoraToken': channelName,
+    'channelName': effectiveChannel,
+    'agoraToken': effectiveChannel,
     'partnerId': partnerId,
     'partnerName': partnerName,
     'partnerUsername': '',
@@ -424,9 +426,11 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
       return;
     }
     
+    final String effectiveChannel = partnerId.trim().isNotEmpty ? 'friend-chat-${partnerId.trim()}' : channelName;
+
     rootNavigatorKey.currentContext?.push('/playground/studio', extra: {
-      'channelName': channelName,
-      'agoraToken': channelName,
+      'channelName': effectiveChannel,
+      'agoraToken': effectiveChannel,
       'partnerId': partnerId,
       'partnerName': partnerName,
       'partnerUsername': '',

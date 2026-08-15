@@ -160,9 +160,10 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
               GameNotifications.showChatNotification(
                 context, friendName, lastMsgText,
                 onTap: () {
+                  final String effectiveChannel = friendId.isNotEmpty ? 'friend-chat-$friendId' : channelName;
                   context.push('/playground/studio', extra: {
-                    'channelName': channelName,
-                    'agoraToken': channelName,
+                    'channelName': effectiveChannel,
+                    'agoraToken': effectiveChannel,
                     'partnerId': friendId,
                     'partnerName': friendName,
                     'partnerUsername': friend['username'] ?? '',
@@ -215,9 +216,10 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             friendName,
             text.startsWith('[Reply to:') ? text.split('\n').sublist(1).join('\n') : text,
             onTap: () {
+              final String effectiveChannel = senderId.isNotEmpty ? 'friend-chat-$senderId' : channelName;
               context.push('/playground/studio', extra: {
-                'channelName': channelName,
-                'agoraToken': channelName,
+                'channelName': effectiveChannel,
+                'agoraToken': effectiveChannel,
                 'partnerId': senderId,
                 'partnerName': friendName,
               });
