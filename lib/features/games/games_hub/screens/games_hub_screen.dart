@@ -307,6 +307,8 @@ class GamesHubScreen extends ConsumerWidget {
                     description: selectedLanguage == 'Hindi' ? 'रंगों को छांटें और सिक्के जीतें' : 'Sort colorful liquids & win coins',
                     icon: Icons.science_rounded,
                     colors: [const Color(0xFF8B5CF6), const Color(0xFFC084FC)],
+                    leftImagePath: '',
+                    rightImagePath: '',
                     onTap: () {
                       context.push('/games/water_sort');
                     },

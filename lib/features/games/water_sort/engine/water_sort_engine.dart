@@ -74,19 +74,29 @@ class WaterSortEngine {
     return true;
   }
 
-  /// Procedural Level Generator for Level 1 to 200+
-  /// Dynamically computes number of colors, capacity, and empty tubes.
+  /// Tougher Procedural Level Generator for Level 1 to 200+
+  /// Dynamically computes number of colors (4 to 8), capacity, and high-entropy mixing.
   static WaterSortGameState generateLevel(int levelNumber) {
-    final Random rng = Random(levelNumber * 7919);
+    final Random rng = Random(levelNumber * 7919 + 104729);
 
-    // Scaling difficulty based on level number
-    int colorCount = 3 + (levelNumber ~/ 15);
-    colorCount = min(8, colorCount); // Cap at 8 distinct colors
+    // Harder difficulty curve
+    int colorCount;
+    if (levelNumber <= 4) {
+      colorCount = 4; // Start at 4 colors right away
+    } else if (levelNumber <= 12) {
+      colorCount = 5;
+    } else if (levelNumber <= 30) {
+      colorCount = 6;
+    } else if (levelNumber <= 60) {
+      colorCount = 7;
+    } else {
+      colorCount = 8;
+    }
 
     int capacity = 4;
     int emptyTubes = 2;
 
-    // Build solved state pool (each color repeated `capacity` times)
+    // Build liquid pool
     List<int> liquidPool = [];
     for (int c = 0; c < colorCount; c++) {
       for (int k = 0; k < capacity; k++) {
@@ -94,8 +104,10 @@ class WaterSortEngine {
       }
     }
 
-    // Shuffle liquid pool
-    liquidPool.shuffle(rng);
+    // High entropy shuffle (multiple rounds)
+    for (int round = 0; round < 5; round++) {
+      liquidPool.shuffle(rng);
+    }
 
     // Distribute liquid into filled tubes
     List<TubeState> tubes = [];

@@ -5,7 +5,8 @@ import '../engine/water_sort_engine.dart';
 import '../models/water_sort_models.dart';
 import '../services/water_sort_service.dart';
 import '../widgets/water_sort_tube_widget.dart';
-import '../../shared/utils/ad_helper.dart';
+import '../../shared/widgets/game_banner_ad.dart';
+import '../../../../core/ads/ad_service.dart';
 
 class WaterSortGameScreen extends StatefulWidget {
   final int levelNumber;
@@ -21,7 +22,7 @@ class WaterSortGameScreen extends StatefulWidget {
   State<WaterSortGameScreen> createState() => _WaterSortGameScreenState();
 }
 
-class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
+class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTickerProviderStateMixin {
   final WaterSortService _service = WaterSortService();
   late WaterSortGameState _gameState;
   final List<WaterSortGameState> _history = [];
@@ -29,6 +30,7 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
   int? _selectedTubeIndex;
   bool _isLevelWon = false;
   bool _isClaiming = false;
+  bool _isPouring = false;
   int _earnedCoins = 0;
 
   // Power-up Usage Allocations
@@ -37,11 +39,22 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
   int _extraBottlesAdded = 0; // 0 FREE by default! Only via Rewarded Ads!
 
   WaterSortMove? _activeHintMove;
+  late AnimationController _pourController;
 
   @override
   void initState() {
     super.initState();
+    _pourController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
     _initLevel();
+  }
+
+  @override
+  void dispose() {
+    _pourController.dispose();
+    super.dispose();
   }
 
   void _initLevel() {
@@ -51,6 +64,7 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
       _selectedTubeIndex = null;
       _isLevelWon = false;
       _isClaiming = false;
+      _isPouring = false;
       _earnedCoins = 0;
       _freeUndosRemaining = 1;
       _freeHintsRemaining = 1;
@@ -59,50 +73,81 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
     });
   }
 
-  void _onTubeTap(int index) {
-    if (_isLevelWon) return;
+  void _showRewardedAdHelper(VoidCallback onEarned) {
+    if (!AdService.instance.isRewardedAdLoaded()) {
+      AdService.instance.loadRewardedAd();
+    }
 
-    setState(() {
-      _activeHintMove = null;
+    AdService.instance.showRewardedAd(
+      context: context,
+      userId: 'water_sort_user',
+      onAdDismissed: () {},
+      onUserEarnedReward: (reward) {
+        onEarned();
+      },
+    );
+  }
 
-      if (_selectedTubeIndex == null) {
-        // Select tube if non-empty
-        if (_gameState.tubes[index].isNotEmpty) {
+  Future<void> _onTubeTap(int index) async {
+    if (_isLevelWon || _isPouring) return;
+
+    if (_selectedTubeIndex == null) {
+      // Select tube if non-empty
+      if (_gameState.tubes[index].isNotEmpty) {
+        setState(() {
           _selectedTubeIndex = index;
-        }
-      } else if (_selectedTubeIndex == index) {
-        // Deselect if same tube tapped again
+          _activeHintMove = null;
+        });
+      }
+    } else if (_selectedTubeIndex == index) {
+      // Deselect if same tube tapped again
+      setState(() {
         _selectedTubeIndex = null;
-      } else {
-        // Attempt pour from _selectedTubeIndex to index
-        final from = _selectedTubeIndex!;
-        final to = index;
+      });
+    } else {
+      // Attempt pour from _selectedTubeIndex to index
+      final from = _selectedTubeIndex!;
+      final to = index;
 
-        if (WaterSortEngine.canPour(_gameState, from, to)) {
+      if (WaterSortEngine.canPour(_gameState, from, to)) {
+        setState(() {
+          _isPouring = true;
+        });
+
+        // Play pour animation duration (450ms)
+        _pourController.forward(from: 0.0);
+        await Future.delayed(const Duration(milliseconds: 450));
+
+        if (!mounted) return;
+
+        setState(() {
           // Save history for Undo
           _history.add(_gameState.clone());
 
           WaterSortEngine.executePour(_gameState, from, to);
           _selectedTubeIndex = null;
+          _isPouring = false;
 
           // Check win condition
           if (WaterSortEngine.isLevelComplete(_gameState)) {
             _onLevelComplete();
           }
-        } else {
-          // Change selection if another non-empty tube is tapped
+        });
+      } else {
+        // Change selection if another non-empty tube is tapped
+        setState(() {
           if (_gameState.tubes[index].isNotEmpty) {
             _selectedTubeIndex = index;
           } else {
             _selectedTubeIndex = null;
           }
-        }
+        });
       }
-    });
+    }
   }
 
   void _handleUndo() {
-    if (_history.isEmpty) return;
+    if (_history.isEmpty || _isPouring || _isLevelWon) return;
 
     if (_freeUndosRemaining > 0) {
       setState(() {
@@ -113,21 +158,20 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
       });
     } else {
       // Watch Rewarded Video Ad for Extra Undo
-      AdHelper.showRewardedAd(
-        context: context,
-        onRewarded: () {
-          setState(() {
-            _freeUndosRemaining++;
-            _gameState = _history.removeLast();
-            _selectedTubeIndex = null;
-            _activeHintMove = null;
-          });
-        },
-      );
+      _showRewardedAdHelper(() {
+        setState(() {
+          _freeUndosRemaining++;
+          _gameState = _history.removeLast();
+          _selectedTubeIndex = null;
+          _activeHintMove = null;
+        });
+      });
     }
   }
 
   void _handleHint() {
+    if (_isPouring || _isLevelWon) return;
+
     if (_freeHintsRemaining > 0) {
       final hint = WaterSortEngine.findHint(_gameState);
       if (hint != null) {
@@ -139,23 +183,22 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
       }
     } else {
       // Watch Rewarded Video Ad for Extra Hint
-      AdHelper.showRewardedAd(
-        context: context,
-        onRewarded: () {
-          final hint = WaterSortEngine.findHint(_gameState);
-          if (hint != null) {
-            setState(() {
-              _freeHintsRemaining++;
-              _activeHintMove = hint;
-              _selectedTubeIndex = hint.fromIndex;
-            });
-          }
-        },
-      );
+      _showRewardedAdHelper(() {
+        final hint = WaterSortEngine.findHint(_gameState);
+        if (hint != null) {
+          setState(() {
+            _freeHintsRemaining++;
+            _activeHintMove = hint;
+            _selectedTubeIndex = hint.fromIndex;
+          });
+        }
+      });
     }
   }
 
   void _handleAddExtraBottle() {
+    if (_isPouring || _isLevelWon) return;
+
     if (_extraBottlesAdded >= 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Maximum 2 extra bottles allowed per level!')),
@@ -164,15 +207,12 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
     }
 
     // EXTRA BOTTLE REQUIRES REWARDED AD (NOT FREE BY DEFAULT)
-    AdHelper.showRewardedAd(
-      context: context,
-      onRewarded: () {
-        setState(() {
-          _gameState.tubes.add([]);
-          _extraBottlesAdded++;
-        });
-      },
-    );
+    _showRewardedAdHelper(() {
+      setState(() {
+        _gameState.tubes.add([]);
+        _extraBottlesAdded++;
+      });
+    });
   }
 
   Future<void> _onLevelComplete() async {
@@ -182,11 +222,25 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
     });
 
     final int stars = _gameState.movesCount <= 18 ? 3 : (_gameState.movesCount <= 28 ? 2 : 1);
+    
+    // 1. Save local progress immediately so Level Select Screen updates level unlock!
+    final progress = await _service.loadProgress();
+    final int nextMax = _service.max(progress.maxUnlockedLevel, widget.levelNumber + 1);
+    final Map<int, int> newStars = Map<int, int>.from(progress.starsMap);
+    newStars[widget.levelNumber] = stars;
+    await _service.saveLocalProgress(nextMax, newStars);
+
+    // 2. Claim reward from backend
     final result = await _service.claimLevelReward(
       levelNumber: widget.levelNumber,
       stars: stars,
       movesCount: _gameState.movesCount,
     );
+
+    // 3. Show Interstitial Ad every 15 completed levels!
+    if (widget.levelNumber % 15 == 0) {
+      AdService.instance.showInterstitialAd(onAdDismissed: () {});
+    }
 
     if (mounted) {
       setState(() {
@@ -197,9 +251,8 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
   }
 
   void _handleExit() {
-    AdHelper.showInterstitialAd(
-      context: context,
-      onDismissed: () {
+    AdService.instance.showInterstitialAd(
+      onAdDismissed: () {
         if (mounted) Navigator.pop(context);
       },
     );
@@ -287,6 +340,9 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
                 ),
               ),
 
+              // Game Banner Ad
+              const GameBannerAd(),
+
               // Power-ups Bar
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -350,7 +406,7 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
                       'LEVEL CLEARED!',
                       style: GoogleFonts.outfit(
                         color: const Color(0xFFFACC15),
-                        fontWeight: FontWeight.extrabold,
+                        fontWeight: FontWeight.w800,
                         fontSize: 24,
                         letterSpacing: 1.2,
                       ),
