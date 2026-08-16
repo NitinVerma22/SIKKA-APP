@@ -1,0 +1,479 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../engine/water_sort_engine.dart';
+import '../models/water_sort_models.dart';
+import '../services/water_sort_service.dart';
+import '../widgets/water_sort_tube_widget.dart';
+import '../../shared/utils/ad_helper.dart';
+
+class WaterSortGameScreen extends StatefulWidget {
+  final int levelNumber;
+  final int multiplier;
+
+  const WaterSortGameScreen({
+    super.key,
+    required this.levelNumber,
+    this.multiplier = 2,
+  });
+
+  @override
+  State<WaterSortGameScreen> createState() => _WaterSortGameScreenState();
+}
+
+class _WaterSortGameScreenState extends State<WaterSortGameScreen> {
+  final WaterSortService _service = WaterSortService();
+  late WaterSortGameState _gameState;
+  final List<WaterSortGameState> _history = [];
+
+  int? _selectedTubeIndex;
+  bool _isLevelWon = false;
+  bool _isClaiming = false;
+  int _earnedCoins = 0;
+
+  // Power-up Usage Allocations
+  int _freeUndosRemaining = 1;
+  int _freeHintsRemaining = 1;
+  int _extraBottlesAdded = 0; // 0 FREE by default! Only via Rewarded Ads!
+
+  WaterSortMove? _activeHintMove;
+
+  @override
+  void initState() {
+    super.initState();
+    _initLevel();
+  }
+
+  void _initLevel() {
+    setState(() {
+      _gameState = WaterSortEngine.generateLevel(widget.levelNumber);
+      _history.clear();
+      _selectedTubeIndex = null;
+      _isLevelWon = false;
+      _isClaiming = false;
+      _earnedCoins = 0;
+      _freeUndosRemaining = 1;
+      _freeHintsRemaining = 1;
+      _extraBottlesAdded = 0;
+      _activeHintMove = null;
+    });
+  }
+
+  void _onTubeTap(int index) {
+    if (_isLevelWon) return;
+
+    setState(() {
+      _activeHintMove = null;
+
+      if (_selectedTubeIndex == null) {
+        // Select tube if non-empty
+        if (_gameState.tubes[index].isNotEmpty) {
+          _selectedTubeIndex = index;
+        }
+      } else if (_selectedTubeIndex == index) {
+        // Deselect if same tube tapped again
+        _selectedTubeIndex = null;
+      } else {
+        // Attempt pour from _selectedTubeIndex to index
+        final from = _selectedTubeIndex!;
+        final to = index;
+
+        if (WaterSortEngine.canPour(_gameState, from, to)) {
+          // Save history for Undo
+          _history.add(_gameState.clone());
+
+          WaterSortEngine.executePour(_gameState, from, to);
+          _selectedTubeIndex = null;
+
+          // Check win condition
+          if (WaterSortEngine.isLevelComplete(_gameState)) {
+            _onLevelComplete();
+          }
+        } else {
+          // Change selection if another non-empty tube is tapped
+          if (_gameState.tubes[index].isNotEmpty) {
+            _selectedTubeIndex = index;
+          } else {
+            _selectedTubeIndex = null;
+          }
+        }
+      }
+    });
+  }
+
+  void _handleUndo() {
+    if (_history.isEmpty) return;
+
+    if (_freeUndosRemaining > 0) {
+      setState(() {
+        _freeUndosRemaining--;
+        _gameState = _history.removeLast();
+        _selectedTubeIndex = null;
+        _activeHintMove = null;
+      });
+    } else {
+      // Watch Rewarded Video Ad for Extra Undo
+      AdHelper.showRewardedAd(
+        context: context,
+        onRewarded: () {
+          setState(() {
+            _freeUndosRemaining++;
+            _gameState = _history.removeLast();
+            _selectedTubeIndex = null;
+            _activeHintMove = null;
+          });
+        },
+      );
+    }
+  }
+
+  void _handleHint() {
+    if (_freeHintsRemaining > 0) {
+      final hint = WaterSortEngine.findHint(_gameState);
+      if (hint != null) {
+        setState(() {
+          _freeHintsRemaining--;
+          _activeHintMove = hint;
+          _selectedTubeIndex = hint.fromIndex;
+        });
+      }
+    } else {
+      // Watch Rewarded Video Ad for Extra Hint
+      AdHelper.showRewardedAd(
+        context: context,
+        onRewarded: () {
+          final hint = WaterSortEngine.findHint(_gameState);
+          if (hint != null) {
+            setState(() {
+              _freeHintsRemaining++;
+              _activeHintMove = hint;
+              _selectedTubeIndex = hint.fromIndex;
+            });
+          }
+        },
+      );
+    }
+  }
+
+  void _handleAddExtraBottle() {
+    if (_extraBottlesAdded >= 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Maximum 2 extra bottles allowed per level!')),
+      );
+      return;
+    }
+
+    // EXTRA BOTTLE REQUIRES REWARDED AD (NOT FREE BY DEFAULT)
+    AdHelper.showRewardedAd(
+      context: context,
+      onRewarded: () {
+        setState(() {
+          _gameState.tubes.add([]);
+          _extraBottlesAdded++;
+        });
+      },
+    );
+  }
+
+  Future<void> _onLevelComplete() async {
+    setState(() {
+      _isLevelWon = true;
+      _isClaiming = true;
+    });
+
+    final int stars = _gameState.movesCount <= 18 ? 3 : (_gameState.movesCount <= 28 ? 2 : 1);
+    final result = await _service.claimLevelReward(
+      levelNumber: widget.levelNumber,
+      stars: stars,
+      movesCount: _gameState.movesCount,
+    );
+
+    if (mounted) {
+      setState(() {
+        _earnedCoins = result['coinsEarned'] ?? (widget.levelNumber * widget.multiplier);
+        _isClaiming = false;
+      });
+    }
+  }
+
+  void _handleExit() {
+    AdHelper.showInterstitialAd(
+      context: context,
+      onDismissed: () {
+        if (mounted) Navigator.pop(context);
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleExit();
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0F172A),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Top Bar Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                color: const Color(0xFF1E293B),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: _handleExit,
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Level ${widget.levelNumber}',
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    // Move Counter
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF334155),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Moves: ${_gameState.movesCount}',
+                        style: GoogleFonts.outfit(
+                          color: const Color(0xFF94A3B8),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Game Canvas Board (Bottles Grid)
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 16,
+                      runSpacing: 24,
+                      children: List.generate(_gameState.tubes.length, (index) {
+                        final tube = _gameState.tubes[index];
+                        final isSelected = _selectedTubeIndex == index;
+                        final isCompleted = tube.length == _gameState.capacity &&
+                            tube.isNotEmpty &&
+                            tube.every((c) => c == tube.first);
+
+                        return WaterSortTubeWidget(
+                          tube: tube,
+                          capacity: _gameState.capacity,
+                          isSelected: isSelected,
+                          isCompleted: isCompleted,
+                          onTap: () => _onTubeTap(index),
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Power-ups Bar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E293B),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    // Undo Power-up
+                    _buildPowerUpBtn(
+                      icon: Icons.undo_rounded,
+                      label: 'Undo',
+                      badge: _freeUndosRemaining > 0 ? 'Free' : 'Ad',
+                      onTap: _handleUndo,
+                    ),
+
+                    // Hint Power-up
+                    _buildPowerUpBtn(
+                      icon: Icons.lightbulb_rounded,
+                      label: 'Hint',
+                      badge: _freeHintsRemaining > 0 ? 'Free' : 'Ad',
+                      onTap: _handleHint,
+                    ),
+
+                    // Extra Bottle Power-up (REQUIRES AD - NOT FREE)
+                    _buildPowerUpBtn(
+                      icon: Icons.add_rounded,
+                      label: '+Bottle',
+                      badge: 'Ad 📺',
+                      isAdRequired: true,
+                      onTap: _handleAddExtraBottle,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Victory Dialog Overlay
+        bottomSheet: _isLevelWon
+            ? Container(
+                height: 320,
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E1B4B),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black54, blurRadius: 20, spreadRadius: 5),
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('🎉', style: TextStyle(fontSize: 48)),
+                    const SizedBox(height: 8),
+                    Text(
+                      'LEVEL CLEARED!',
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFFFACC15),
+                        fontWeight: FontWeight.extrabold,
+                        fontSize: 24,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (_isClaiming)
+                      const CircularProgressIndicator(color: Color(0xFFFACC15))
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF059669).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF34D399)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('🪙', style: TextStyle(fontSize: 20)),
+                            const SizedBox(width: 8),
+                            Text(
+                              '+$_earnedCoins Sikka Coins',
+                              style: GoogleFonts.outfit(
+                                color: const Color(0xFF34D399),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B5CF6),
+                        minimumSize: const Size(200, 52),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => WaterSortGameScreen(
+                              levelNumber: widget.levelNumber + 1,
+                              multiplier: widget.multiplier,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'NEXT LEVEL',
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildPowerUpBtn({
+    required IconData icon,
+    required String label,
+    required String badge,
+    bool isAdRequired = false,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isAdRequired
+              ? const Color(0xFF0284C7).withValues(alpha: 0.2)
+              : const Color(0xFF334155),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isAdRequired
+                ? const Color(0xFF38BDF8).withValues(alpha: 0.5)
+                : const Color(0xFF475569),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: isAdRequired ? const Color(0xFF38BDF8) : Colors.white, size: 22),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: isAdRequired
+                    ? const Color(0xFF0284C7)
+                    : (badge == 'Free' ? const Color(0xFF059669) : const Color(0xFFD97706)),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                badge,
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

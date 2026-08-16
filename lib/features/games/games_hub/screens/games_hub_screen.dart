@@ -294,6 +294,24 @@ class GamesHubScreen extends ConsumerWidget {
                     },
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // Game Card 5: Water Sort Puzzle
+                FadeInSlideWidget(
+                  slideOffset: 50,
+                  duration: const Duration(milliseconds: 900),
+                  child: _buildGameCard(
+                    context: context,
+                    selectedLanguage: selectedLanguage,
+                    title: 'Water Sort Puzzle',
+                    description: selectedLanguage == 'Hindi' ? 'रंगों को छांटें और सिक्के जीतें' : 'Sort colorful liquids & win coins',
+                    icon: Icons.science_rounded,
+                    colors: [const Color(0xFF8B5CF6), const Color(0xFFC084FC)],
+                    onTap: () {
+                      context.push('/games/water_sort');
+                    },
+                  ),
+                ),
                 const SizedBox(height: 24),
                 const GameBannerAd(),
                 const SizedBox(height: 16),

@@ -24,6 +24,7 @@ import 'package:sikkaplay/features/profile/screens/profile_screen.dart';
 import 'package:sikkaplay/features/games/treasure_grid/screens/treasure_grid_screen.dart';
 import 'package:sikkaplay/features/games/emoji_memory/screens/emoji_memory_screen.dart';
 import 'package:sikkaplay/features/games/math_rush/screens/math_rush_screen.dart';
+import 'package:sikkaplay/features/games/water_sort/screens/water_sort_level_select_screen.dart';
 import 'package:sikkaplay/features/games/shared/screens/game_rules_screen.dart';
 import 'package:sikkaplay/features/rewards/screens/my_network_screen.dart';
 import 'package:sikkaplay/features/notifications/screens/notification_screen.dart';
@@ -178,6 +179,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/games/math_rush',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const MathRushScreen(),
+      ),
+      GoRoute(
+        path: '/games/water_sort',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const WaterSortLevelSelectScreen(),
       ),
       ShellRoute(
         navigatorKey: shellNavigatorKey,
