@@ -290,7 +290,11 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
       movesCount: _gameState.movesCount,
     );
 
-    if (widget.levelNumber % 15 == 0) {
+    // 3. Show Interstitial / Milestone Ad every 10 completed levels!
+    if (widget.levelNumber % 10 == 0) {
+      if (!AdService.instance.isInterstitialAdLoaded()) {
+        AdService.instance.loadInterstitialAd();
+      }
       AdService.instance.showInterstitialAd(onAdDismissed: () {});
     }
 
