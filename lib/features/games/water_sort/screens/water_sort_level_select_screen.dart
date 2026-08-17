@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/water_sort_service.dart';
 import 'water_sort_game_screen.dart';
+import '../../../../core/ads/ad_service.dart';
 
 class WaterSortLevelSelectScreen extends StatefulWidget {
   const WaterSortLevelSelectScreen({super.key});
@@ -193,17 +194,21 @@ class _WaterSortLevelSelectScreenState extends State<WaterSortLevelSelectScreen>
   }) {
     return InkWell(
       onTap: isUnlocked
-          ? () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => WaterSortGameScreen(
-                    levelNumber: levelNum,
-                    multiplier: _multiplier,
-                  ),
-                ),
+          ? () {
+              AdService.instance.showInterstitialAd(
+                onAdDismissed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => WaterSortGameScreen(
+                        levelNumber: levelNum,
+                        multiplier: _multiplier,
+                      ),
+                    ),
+                  );
+                  _fetchProgress(); // Refresh progress when returning
+                },
               );
-              _fetchProgress(); // Refresh progress when returning
             }
           : null,
       borderRadius: BorderRadius.circular(16),

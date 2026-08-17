@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../engine/water_sort_engine.dart';
 import '../models/water_sort_models.dart';
 import '../services/water_sort_service.dart';
+import '../services/water_sort_audio_service.dart';
 import '../widgets/water_sort_tube_widget.dart';
 import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
@@ -48,12 +49,14 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
       vsync: this,
       duration: const Duration(milliseconds: 450),
     );
+    WaterSortAudioService.instance.startBgm();
     _initLevel();
   }
 
   @override
   void dispose() {
     _pourController.dispose();
+    WaterSortAudioService.instance.stopBgm();
     super.dispose();
   }
 
@@ -114,6 +117,9 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
           _isPouring = true;
         });
 
+        // Play liquid pouring sound effect!
+        WaterSortAudioService.instance.playPourSfx();
+
         // Play pour animation duration (450ms)
         _pourController.forward(from: 0.0);
         await Future.delayed(const Duration(milliseconds: 450));
@@ -127,6 +133,12 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
           WaterSortEngine.executePour(_gameState, from, to);
           _selectedTubeIndex = null;
           _isPouring = false;
+
+          // Check if target tube is completed
+          final targetTube = _gameState.tubes[to];
+          if (targetTube.length == _gameState.capacity && targetTube.every((c) => c == targetTube.first)) {
+            WaterSortAudioService.instance.playBottleCompleteSfx();
+          }
 
           // Check win condition
           if (WaterSortEngine.isLevelComplete(_gameState)) {
@@ -216,6 +228,8 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
   }
 
   Future<void> _onLevelComplete() async {
+    WaterSortAudioService.instance.playVictorySfx();
+
     setState(() {
       _isLevelWon = true;
       _isClaiming = true;
@@ -291,6 +305,22 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
                       ),
                     ),
                     const Spacer(),
+                    // Audio Mute Toggle
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          WaterSortAudioService.instance.toggleMute();
+                        });
+                      },
+                      icon: Icon(
+                        WaterSortAudioService.instance.isMuted
+                            ? Icons.volume_off_rounded
+                            : Icons.volume_up_rounded,
+                        color: Colors.white70,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
                     // Move Counter
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -446,14 +476,19 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => WaterSortGameScreen(
-                              levelNumber: widget.levelNumber + 1,
-                              multiplier: widget.multiplier,
-                            ),
-                          ),
+                        AdService.instance.showInterstitialAd(
+                          onAdDismissed: () {
+                            if (!mounted) return;
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WaterSortGameScreen(
+                                  levelNumber: widget.levelNumber + 1,
+                                  multiplier: widget.multiplier,
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
                       child: Text(

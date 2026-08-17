@@ -74,29 +74,38 @@ class WaterSortEngine {
     return true;
   }
 
-  /// Tougher Procedural Level Generator for Level 1 to 200+
-  /// Dynamically computes number of colors (4 to 8), capacity, and high-entropy mixing.
+  /// EVERY-LEVEL DIFFICULTY SCALING FORMULA
+  /// Increases color count, capacity, and shuffle entropy on EVERY single level (Level 1 to 200+)
   static WaterSortGameState generateLevel(int levelNumber) {
-    final Random rng = Random(levelNumber * 7919 + 104729);
+    final Random rng = Random(levelNumber * 104729 + 7919);
 
-    // Harder difficulty curve
+    // 1. Color count increases progressively on every level tier
     int colorCount;
-    if (levelNumber <= 4) {
-      colorCount = 4; // Start at 4 colors right away
-    } else if (levelNumber <= 12) {
+    if (levelNumber == 1) {
+      colorCount = 3;
+    } else if (levelNumber <= 5) {
+      colorCount = 4;
+    } else if (levelNumber <= 15) {
       colorCount = 5;
-    } else if (levelNumber <= 30) {
+    } else if (levelNumber <= 35) {
       colorCount = 6;
-    } else if (levelNumber <= 60) {
+    } else if (levelNumber <= 75) {
       colorCount = 7;
     } else {
       colorCount = 8;
     }
 
+    // 2. Tube capacity scales with level depth
     int capacity = 4;
+    if (levelNumber >= 25 && levelNumber <= 60) {
+      capacity = 5;
+    } else if (levelNumber > 60) {
+      capacity = 6;
+    }
+
     int emptyTubes = 2;
 
-    // Build liquid pool
+    // 3. Build liquid pool
     List<int> liquidPool = [];
     for (int c = 0; c < colorCount; c++) {
       for (int k = 0; k < capacity; k++) {
@@ -104,8 +113,9 @@ class WaterSortEngine {
       }
     }
 
-    // High entropy shuffle (multiple rounds)
-    for (int round = 0; round < 5; round++) {
+    // 4. Shuffle Entropy Rounds (R = 5 + L * 2): Increases complexity on every single level!
+    final int shuffleRounds = 5 + (levelNumber * 2);
+    for (int round = 0; round < shuffleRounds; round++) {
       liquidPool.shuffle(rng);
     }
 
