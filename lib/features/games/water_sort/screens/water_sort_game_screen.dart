@@ -6,6 +6,7 @@ import '../models/water_sort_models.dart';
 import '../services/water_sort_service.dart';
 import '../services/water_sort_audio_service.dart';
 import '../widgets/water_sort_tube_widget.dart';
+import '../widgets/water_sort_pour_overlay.dart';
 import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
 
@@ -23,10 +24,11 @@ class WaterSortGameScreen extends StatefulWidget {
   State<WaterSortGameScreen> createState() => _WaterSortGameScreenState();
 }
 
-class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTickerProviderStateMixin {
+class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerProviderStateMixin {
   final WaterSortService _service = WaterSortService();
   late WaterSortGameState _gameState;
   final List<WaterSortGameState> _history = [];
+  final Map<int, GlobalKey> _tubeKeys = {};
 
   int? _selectedTubeIndex;
   bool _isLevelWon = false;
@@ -34,10 +36,17 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
   bool _isPouring = false;
   int _earnedCoins = 0;
 
+  // Active Pouring Animation Data
+  Offset? _srcOffset;
+  Offset? _dstOffset;
+  int? _pourColorId;
+  int? _pourFromIdx;
+  int? _pourToIdx;
+
   // Power-up Usage Allocations
   int _freeUndosRemaining = 1;
   int _freeHintsRemaining = 1;
-  int _extraBottlesAdded = 0; // 0 FREE by default! Only via Rewarded Ads!
+  int _extraBottlesAdded = 0;
 
   WaterSortMove? _activeHintMove;
   late AnimationController _pourController;
@@ -47,8 +56,11 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
     super.initState();
     _pourController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 450),
+      duration: const Duration(milliseconds: 600),
     );
+    _pourController.addListener(() {
+      setState(() {});
+    });
     WaterSortAudioService.instance.startBgm();
     _initLevel();
   }
@@ -73,6 +85,11 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
       _freeHintsRemaining = 1;
       _extraBottlesAdded = 0;
       _activeHintMove = null;
+
+      _tubeKeys.clear();
+      for (int i = 0; i < _gameState.tubes.length; i++) {
+        _tubeKeys[i] = GlobalKey();
+      }
     });
   }
 
@@ -95,7 +112,6 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
     if (_isLevelWon || _isPouring) return;
 
     if (_selectedTubeIndex == null) {
-      // Select tube if non-empty
       if (_gameState.tubes[index].isNotEmpty) {
         setState(() {
           _selectedTubeIndex = index;
@@ -103,50 +119,68 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
         });
       }
     } else if (_selectedTubeIndex == index) {
-      // Deselect if same tube tapped again
       setState(() {
         _selectedTubeIndex = null;
       });
     } else {
-      // Attempt pour from _selectedTubeIndex to index
       final from = _selectedTubeIndex!;
       final to = index;
 
       if (WaterSortEngine.canPour(_gameState, from, to)) {
+        // Measure global screen positions for smooth floating pour animation!
+        final srcKey = _tubeKeys[from];
+        final dstKey = _tubeKeys[to];
+
+        Offset? srcPos;
+        Offset? dstPos;
+
+        if (srcKey?.currentContext != null && dstKey?.currentContext != null) {
+          final srcBox = srcKey!.currentContext!.findRenderObject() as RenderBox;
+          final dstBox = dstKey!.currentContext!.findRenderObject() as RenderBox;
+          srcPos = srcBox.localToGlobal(Offset.zero);
+          dstPos = dstBox.localToGlobal(Offset.zero);
+        }
+
+        final pourColor = _gameState.tubes[from].last;
+
         setState(() {
           _isPouring = true;
+          _srcOffset = srcPos;
+          _dstOffset = dstPos;
+          _pourColorId = pourColor;
+          _pourFromIdx = from;
+          _pourToIdx = to;
         });
 
-        // Play liquid pouring sound effect!
+        // Play liquid pour SFX!
         WaterSortAudioService.instance.playPourSfx();
 
-        // Play pour animation duration (450ms)
+        // Run 600ms Floating Bottle Animation
         _pourController.forward(from: 0.0);
-        await Future.delayed(const Duration(milliseconds: 450));
+        await Future.delayed(const Duration(milliseconds: 600));
 
         if (!mounted) return;
 
         setState(() {
-          // Save history for Undo
           _history.add(_gameState.clone());
 
           WaterSortEngine.executePour(_gameState, from, to);
           _selectedTubeIndex = null;
           _isPouring = false;
+          _srcOffset = null;
+          _dstOffset = null;
 
-          // Check if target tube is completed
+          // Check if target tube complete
           final targetTube = _gameState.tubes[to];
           if (targetTube.length == _gameState.capacity && targetTube.every((c) => c == targetTube.first)) {
             WaterSortAudioService.instance.playBottleCompleteSfx();
           }
 
-          // Check win condition
           if (WaterSortEngine.isLevelComplete(_gameState)) {
             _onLevelComplete();
           }
         });
       } else {
-        // Change selection if another non-empty tube is tapped
         setState(() {
           if (_gameState.tubes[index].isNotEmpty) {
             _selectedTubeIndex = index;
@@ -169,7 +203,6 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
         _activeHintMove = null;
       });
     } else {
-      // Watch Rewarded Video Ad for Extra Undo
       _showRewardedAdHelper(() {
         setState(() {
           _freeUndosRemaining++;
@@ -194,7 +227,6 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
         });
       }
     } else {
-      // Watch Rewarded Video Ad for Extra Hint
       _showRewardedAdHelper(() {
         final hint = WaterSortEngine.findHint(_gameState);
         if (hint != null) {
@@ -218,10 +250,11 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
       return;
     }
 
-    // EXTRA BOTTLE REQUIRES REWARDED AD (NOT FREE BY DEFAULT)
     _showRewardedAdHelper(() {
       setState(() {
+        final newIdx = _gameState.tubes.length;
         _gameState.tubes.add([]);
+        _tubeKeys[newIdx] = GlobalKey();
         _extraBottlesAdded++;
       });
     });
@@ -237,21 +270,18 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
 
     final int stars = _gameState.movesCount <= 18 ? 3 : (_gameState.movesCount <= 28 ? 2 : 1);
     
-    // 1. Save local progress immediately so Level Select Screen updates level unlock!
     final progress = await _service.loadProgress();
     final int nextMax = _service.max(progress.maxUnlockedLevel, widget.levelNumber + 1);
     final Map<int, int> newStars = Map<int, int>.from(progress.starsMap);
     newStars[widget.levelNumber] = stars;
     await _service.saveLocalProgress(nextMax, newStars);
 
-    // 2. Claim reward from backend
     final result = await _service.claimLevelReward(
       levelNumber: widget.levelNumber,
       stars: stars,
       movesCount: _gameState.movesCount,
     );
 
-    // 3. Show Interstitial Ad every 15 completed levels!
     if (widget.levelNumber % 15 == 0) {
       AdService.instance.showInterstitialAd(onAdDismissed: () {});
     }
@@ -282,136 +312,146 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with SingleTi
       },
       child: Scaffold(
         backgroundColor: const Color(0xFF0F172A),
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Top Bar Header
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                color: const Color(0xFF1E293B),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: _handleExit,
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+        body: Stack(
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
+                  // Top Bar Header
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    color: const Color(0xFF1E293B),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: _handleExit,
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Level ${widget.levelNumber}',
+                          style: GoogleFonts.outfit(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              WaterSortAudioService.instance.toggleMute();
+                            });
+                          },
+                          icon: Icon(
+                            WaterSortAudioService.instance.isMuted
+                                ? Icons.volume_off_rounded
+                                : Icons.volume_up_rounded,
+                            color: Colors.white70,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF334155),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Moves: ${_gameState.movesCount}',
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF94A3B8),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Level ${widget.levelNumber}',
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    // Audio Mute Toggle
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          WaterSortAudioService.instance.toggleMute();
-                        });
-                      },
-                      icon: Icon(
-                        WaterSortAudioService.instance.isMuted
-                            ? Icons.volume_off_rounded
-                            : Icons.volume_up_rounded,
-                        color: Colors.white70,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    // Move Counter
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF334155),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Moves: ${_gameState.movesCount}',
-                        style: GoogleFonts.outfit(
-                          color: const Color(0xFF94A3B8),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                  ),
+
+                  // Game Canvas Board (Bottles Grid)
+                  Expanded(
+                    child: Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 16,
+                          runSpacing: 24,
+                          children: List.generate(_gameState.tubes.length, (index) {
+                            final tube = _gameState.tubes[index];
+                            final isSelected = _selectedTubeIndex == index;
+                            final isCompleted = tube.length == _gameState.capacity &&
+                                tube.isNotEmpty &&
+                                tube.every((c) => c == tube.first);
+
+                            return WaterSortTubeWidget(
+                              key: _tubeKeys[index],
+                              tube: tube,
+                              capacity: _gameState.capacity,
+                              isSelected: isSelected,
+                              isCompleted: isCompleted,
+                              onTap: () => _onTubeTap(index),
+                            );
+                          }),
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // Game Canvas Board (Bottles Grid)
-              Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 16,
-                      runSpacing: 24,
-                      children: List.generate(_gameState.tubes.length, (index) {
-                        final tube = _gameState.tubes[index];
-                        final isSelected = _selectedTubeIndex == index;
-                        final isCompleted = tube.length == _gameState.capacity &&
-                            tube.isNotEmpty &&
-                            tube.every((c) => c == tube.first);
+                  // Game Banner Ad
+                  const GameBannerAd(),
 
-                        return WaterSortTubeWidget(
-                          tube: tube,
-                          capacity: _gameState.capacity,
-                          isSelected: isSelected,
-                          isCompleted: isCompleted,
-                          onTap: () => _onTubeTap(index),
-                        );
-                      }),
+                  // Power-ups Bar
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF1E293B),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildPowerUpBtn(
+                          icon: Icons.undo_rounded,
+                          label: 'Undo',
+                          badge: _freeUndosRemaining > 0 ? 'Free' : 'Ad',
+                          onTap: _handleUndo,
+                        ),
+                        _buildPowerUpBtn(
+                          icon: Icons.lightbulb_rounded,
+                          label: 'Hint',
+                          badge: _freeHintsRemaining > 0 ? 'Free' : 'Ad',
+                          onTap: _handleHint,
+                        ),
+                        _buildPowerUpBtn(
+                          icon: Icons.add_rounded,
+                          label: '+Bottle',
+                          badge: 'Ad 📺',
+                          isAdRequired: true,
+                          onTap: _handleAddExtraBottle,
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                ],
               ),
+            ),
 
-              // Game Banner Ad
-              const GameBannerAd(),
-
-              // Power-ups Bar
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1E293B),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    // Undo Power-up
-                    _buildPowerUpBtn(
-                      icon: Icons.undo_rounded,
-                      label: 'Undo',
-                      badge: _freeUndosRemaining > 0 ? 'Free' : 'Ad',
-                      onTap: _handleUndo,
-                    ),
-
-                    // Hint Power-up
-                    _buildPowerUpBtn(
-                      icon: Icons.lightbulb_rounded,
-                      label: 'Hint',
-                      badge: _freeHintsRemaining > 0 ? 'Free' : 'Ad',
-                      onTap: _handleHint,
-                    ),
-
-                    // Extra Bottle Power-up (REQUIRES AD - NOT FREE)
-                    _buildPowerUpBtn(
-                      icon: Icons.add_rounded,
-                      label: '+Bottle',
-                      badge: 'Ad 📺',
-                      isAdRequired: true,
-                      onTap: _handleAddExtraBottle,
-                    ),
-                  ],
-                ),
+            // 3. Floating Tilted Bottle Pouring Animation Overlay
+            if (_isPouring && _srcOffset != null && _dstOffset != null && _pourColorId != null)
+              WaterSortPourOverlay(
+                srcPos: _srcOffset!,
+                dstPos: _dstOffset!,
+                liquidColorId: _pourColorId!,
+                srcTube: _gameState.tubes[_pourFromIdx!],
+                dstTube: _gameState.tubes[_pourToIdx!],
+                capacity: _gameState.capacity,
+                progress: _pourController.value,
               ),
-            ],
-          ),
+          ],
         ),
 
         // Victory Dialog Overlay
