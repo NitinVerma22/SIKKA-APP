@@ -28,10 +28,10 @@ class WaterSortPourOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 3-Phase Animation Interpolation:
-    // Phase 1 (0.0 -> 0.3): Lift and translate from srcPos to (dstPos.dx + 25, dstPos.dy - 45)
-    // Phase 2 (0.3 -> 0.75): Rotate tilt angle to 75 deg and pour liquid stream
-    // Phase 3 (0.75 -> 1.0): Un-tilt and translate back to srcPos
+    // 3-Phase Animation Interpolation (1000ms Total Duration):
+    // Phase 1 (0.0 -> 0.25, 0-250ms): Lift and translate from srcPos to target mouth
+    // Phase 2 (0.25 -> 0.80, 250-800ms): Liquid stream active, pour audio playing
+    // Phase 3 (0.80 -> 1.0, 800-1000ms): Un-tilt and translate back to srcPos
 
     double currentX;
     double currentY;
@@ -40,21 +40,21 @@ class WaterSortPourOverlay extends StatelessWidget {
 
     final Offset targetMouthPos = Offset(dstPos.dx + bottleWidth * 0.45, dstPos.dy - bottleHeight * 0.25);
 
-    if (progress <= 0.3) {
-      final t = progress / 0.3;
-      final curvedT = Curves.easeOutCubic.transform(t);
+    if (progress <= 0.25) {
+      final t = progress / 0.25;
+      final curvedT = Curves.easeInOutCubic.transform(t);
       currentX = Offset.lerp(srcPos, targetMouthPos, curvedT)!.dx;
       currentY = Offset.lerp(srcPos, targetMouthPos, curvedT)!.dy;
       rotationAngle = math.pi * 0.42 * curvedT;
       streamAlpha = 0.0;
-    } else if (progress <= 0.75) {
+    } else if (progress <= 0.80) {
       currentX = targetMouthPos.dx;
       currentY = targetMouthPos.dy;
       rotationAngle = math.pi * 0.42; // ~75 degrees
       streamAlpha = 1.0;
     } else {
-      final t = (progress - 0.75) / 0.25;
-      final curvedT = Curves.easeInCubic.transform(t);
+      final t = (progress - 0.80) / 0.20;
+      final curvedT = Curves.easeInOutCubic.transform(t);
       currentX = Offset.lerp(targetMouthPos, srcPos, curvedT)!.dx;
       currentY = Offset.lerp(targetMouthPos, srcPos, curvedT)!.dy;
       rotationAngle = math.pi * 0.42 * (1.0 - curvedT);
@@ -75,7 +75,7 @@ class WaterSortPourOverlay extends StatelessWidget {
                   streamStart: Offset(currentX + 10, currentY + 15),
                   streamEnd: Offset(dstPos.dx + bottleWidth * 0.5, dstPos.dy + 25),
                   color: liquidColor,
-                  progress: (progress - 0.3) / 0.45,
+                  progress: (progress - 0.25) / 0.55,
                 ),
               ),
 

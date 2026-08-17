@@ -56,7 +56,7 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
     super.initState();
     _pourController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 1000),
     );
     _pourController.addListener(() {
       setState(() {});
@@ -152,12 +152,20 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
           _pourToIdx = to;
         });
 
-        // Play liquid pour SFX!
-        WaterSortAudioService.instance.playPourSfx();
-
-        // Run 600ms Floating Bottle Animation
         _pourController.forward(from: 0.0);
-        await Future.delayed(const Duration(milliseconds: 600));
+
+        // Phase 1: Lift & Travel (0-250ms)
+        await Future.delayed(const Duration(milliseconds: 250));
+
+        // Phase 2: Liquid Stream Active -> Start Pour SFX!
+        WaterSortAudioService.instance.playPourSfx();
+        await Future.delayed(const Duration(milliseconds: 550));
+
+        // Phase 2 Ends -> Stop Pour SFX immediately!
+        WaterSortAudioService.instance.stopPourSfx();
+
+        // Phase 3: Un-tilt & Return to grid (200ms)
+        await Future.delayed(const Duration(milliseconds: 200));
 
         if (!mounted) return;
 

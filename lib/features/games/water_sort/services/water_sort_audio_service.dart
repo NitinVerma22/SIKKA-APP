@@ -30,6 +30,14 @@ class WaterSortAudioService {
     }
   }
 
+  Future<void> stopPourSfx() async {
+    try {
+      await _sfxPlayer.stop();
+    } catch (e) {
+      debugPrint('Error stopping pour sfx: $e');
+    }
+  }
+
   Future<void> playBottleCompleteSfx() async {
     if (_isMuted) return;
     try {
