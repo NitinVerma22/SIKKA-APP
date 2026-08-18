@@ -139,7 +139,7 @@ class _WaterSortLevelSelectScreenState extends State<WaterSortLevelSelectScreen>
                           ),
                         ),
                         Text(
-                          'Complete levels to earn coins (Level × $_multiplier Multiplier)',
+                          'Complete levels to earn Sikka coins!',
                           style: GoogleFonts.outfit(
                             color: const Color(0xFFDDD6FE),
                             fontSize: 12,

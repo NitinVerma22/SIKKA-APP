@@ -64,30 +64,6 @@ class _BubbleShooterLevelSelectScreenState extends State<BubbleShooterLevelSelec
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF334155),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF0EA5E9)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('🪙', style: TextStyle(fontSize: 14)),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Multiplier: ${_multiplier}x',
-                          style: GoogleFonts.outfit(
-                            color: const Color(0xFF38BDF8),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -122,7 +98,7 @@ class _BubbleShooterLevelSelectScreenState extends State<BubbleShooterLevelSelec
                           ),
                         ),
                         Text(
-                          'Solve 3-5 min puzzle levels to earn coins (Level × $_multiplier)',
+                          'Solve puzzle levels to earn Sikka coins!',
                           style: GoogleFonts.outfit(
                             color: const Color(0xFFBAE6FD),
                             fontSize: 12,
