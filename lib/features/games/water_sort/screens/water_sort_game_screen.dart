@@ -42,6 +42,8 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
   int? _pourColorId;
   int? _pourFromIdx;
   int? _pourToIdx;
+  double _activeBottleWidth = 60.0;
+  double _activeBottleHeight = 170.0;
 
   // Power-up Usage Allocations
   int _freeUndosRemaining = 1;
@@ -127,18 +129,22 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
       final to = index;
 
       if (WaterSortEngine.canPour(_gameState, from, to)) {
-        // Measure global screen positions for smooth floating pour animation!
+        // Measure global screen positions and bottle sizes for floating pour animation!
         final srcKey = _tubeKeys[from];
         final dstKey = _tubeKeys[to];
 
         Offset? srcPos;
         Offset? dstPos;
+        double bWidth = 60.0;
+        double bHeight = 170.0;
 
         if (srcKey?.currentContext != null && dstKey?.currentContext != null) {
           final srcBox = srcKey!.currentContext!.findRenderObject() as RenderBox;
           final dstBox = dstKey!.currentContext!.findRenderObject() as RenderBox;
           srcPos = srcBox.localToGlobal(Offset.zero);
           dstPos = dstBox.localToGlobal(Offset.zero);
+          bWidth = srcBox.size.width;
+          bHeight = srcBox.size.height;
         }
 
         final pourColor = _gameState.tubes[from].last;
@@ -150,6 +156,8 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
           _pourColorId = pourColor;
           _pourFromIdx = from;
           _pourToIdx = to;
+          _activeBottleWidth = bWidth;
+          _activeBottleHeight = bHeight;
         });
 
         _pourController.forward(from: 0.0);
@@ -178,11 +186,8 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
           _srcOffset = null;
           _dstOffset = null;
 
-          // Check if target tube complete
-          final targetTube = _gameState.tubes[to];
-          if (targetTube.length == _gameState.capacity && targetTube.every((c) => c == targetTube.first)) {
-            WaterSortAudioService.instance.playBottleCompleteSfx();
-          }
+          // Note: Extra bottle complete long sound removed as per user request!
+          // Only pour SFX played during transfer.
 
           if (WaterSortEngine.isLevelComplete(_gameState)) {
             _onLevelComplete();
@@ -290,7 +295,6 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
       movesCount: _gameState.movesCount,
     );
 
-    // 3. Show Interstitial / Milestone Ad every 10 completed levels!
     if (widget.levelNumber % 10 == 0) {
       if (!AdService.instance.isInterstitialAdLoaded()) {
         AdService.instance.loadInterstitialAd();
@@ -383,32 +387,73 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
                     ),
                   ),
 
-                  // Game Canvas Board (Bottles Grid)
+                  // DYNAMIC NO-SCROLL RESPONSIVE BOTTLES GRID
                   Expanded(
-                    child: Center(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 16,
-                          runSpacing: 24,
-                          children: List.generate(_gameState.tubes.length, (index) {
-                            final tube = _gameState.tubes[index];
-                            final isSelected = _selectedTubeIndex == index;
-                            final isCompleted = tube.length == _gameState.capacity &&
-                                tube.isNotEmpty &&
-                                tube.every((c) => c == tube.first);
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final double availW = constraints.maxWidth;
+                          final double availH = constraints.maxHeight;
+                          final int totalTubes = _gameState.tubes.length;
 
-                            return WaterSortTubeWidget(
-                              key: _tubeKeys[index],
-                              tube: tube,
-                              capacity: _gameState.capacity,
-                              isSelected: isSelected,
-                              isCompleted: isCompleted,
-                              onTap: () => _onTubeTap(index),
-                            );
-                          }),
-                        ),
+                          // Determine optimal column count for NO SCROLLING!
+                          int cols;
+                          if (totalTubes <= 4) {
+                            cols = totalTubes;
+                          } else if (totalTubes <= 8) {
+                            cols = (totalTubes / 2).ceil();
+                          } else if (totalTubes <= 12) {
+                            cols = (totalTubes / 3).ceil();
+                          } else {
+                            cols = 5;
+                          }
+
+                          final int rows = (totalTubes / cols).ceil();
+
+                          // Dynamic Spacing based on tube density
+                          final double spacing = totalTubes > 7 ? 8.0 : 12.0;
+                          final double runSpacing = totalTubes > 7 ? 8.0 : 14.0;
+
+                          // Calculate bottle dimensions to fit exact constraints
+                          double computedWidth = (availW - (cols - 1) * spacing) / cols;
+                          double computedHeight = computedWidth * 2.65;
+
+                          final double neededTotalH = rows * computedHeight + (rows - 1) * runSpacing;
+                          if (neededTotalH > availH) {
+                            computedHeight = (availH - (rows - 1) * runSpacing) / rows;
+                            computedWidth = computedHeight / 2.65;
+                          }
+
+                          final double tubeWidth = computedWidth.clamp(34.0, 68.0);
+                          final double tubeHeight = computedHeight.clamp(86.0, 180.0);
+
+                          return Center(
+                            child: Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: spacing,
+                              runSpacing: runSpacing,
+                              children: List.generate(totalTubes, (index) {
+                                final tube = _gameState.tubes[index];
+                                final isSelected = _selectedTubeIndex == index;
+                                final isCompleted = tube.length == _gameState.capacity &&
+                                    tube.isNotEmpty &&
+                                    tube.every((c) => c == tube.first);
+
+                                return WaterSortTubeWidget(
+                                  key: _tubeKeys[index],
+                                  tube: tube,
+                                  capacity: _gameState.capacity,
+                                  isSelected: isSelected,
+                                  isCompleted: isCompleted,
+                                  tubeWidth: tubeWidth,
+                                  tubeHeight: tubeHeight,
+                                  onTap: () => _onTubeTap(index),
+                                );
+                              }),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -452,7 +497,7 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
               ),
             ),
 
-            // 3. Floating Tilted Bottle Pouring Animation Overlay
+            // Floating Tilted Bottle Pouring Animation Overlay
             if (_isPouring && _srcOffset != null && _dstOffset != null && _pourColorId != null)
               WaterSortPourOverlay(
                 srcPos: _srcOffset!,
@@ -462,6 +507,8 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
                 dstTube: _gameState.tubes[_pourToIdx!],
                 capacity: _gameState.capacity,
                 progress: _pourController.value,
+                bottleWidth: _activeBottleWidth,
+                bottleHeight: _activeBottleHeight,
               ),
           ],
         ),
