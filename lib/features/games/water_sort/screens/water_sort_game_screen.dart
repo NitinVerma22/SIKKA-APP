@@ -274,8 +274,6 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
   }
 
   Future<void> _onLevelComplete() async {
-    WaterSortAudioService.instance.playVictorySfx();
-
     setState(() {
       _isLevelWon = true;
       _isClaiming = true;
