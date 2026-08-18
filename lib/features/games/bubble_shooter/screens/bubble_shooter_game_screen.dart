@@ -206,7 +206,7 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
         if (_gameState.grid[targetR][targetC] != null) {
           final neighbors = BubbleShooterEngine.getNeighbors(targetR, targetC, _gameState.maxRows, _gameState.maxCols);
           double minDistance = 999999.0;
-          Point<int>? bestCell;
+          math.Point<int>? bestCell;
 
           for (final n in neighbors) {
             if (_gameState.grid[n.x][n.y] == null) {
