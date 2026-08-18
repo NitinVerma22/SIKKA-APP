@@ -314,6 +314,26 @@ class GamesHubScreen extends ConsumerWidget {
                     },
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // Game Card 6: Bubble Shooter 2D
+                FadeInSlideWidget(
+                  slideOffset: 50,
+                  duration: const Duration(milliseconds: 1000),
+                  child: _buildGameCard(
+                    context: context,
+                    selectedLanguage: selectedLanguage,
+                    title: 'Bubble Shooter 2D',
+                    description: selectedLanguage == 'Hindi' ? 'बबल्स फोड़ें और सिक्के कमाएं' : 'Match & pop colorful bubbles for coins',
+                    icon: Icons.bubble_chart_rounded,
+                    colors: [const Color(0xFF0284C7), const Color(0xFF38BDF8)],
+                    leftImagePath: '',
+                    rightImagePath: '',
+                    onTap: () {
+                      context.push('/games/bubble_shooter');
+                    },
+                  ),
+                ),
                 const SizedBox(height: 24),
                 const GameBannerAd(),
                 const SizedBox(height: 16),

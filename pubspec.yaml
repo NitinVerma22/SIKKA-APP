@@ -59,6 +59,7 @@ flutter:
   assets:
     - assets/audio/spin/
     - assets/audio/water_sort/
+    - assets/audio/bubble_shooter/
     - assets/audio/calling.wav
     - assets/audio/ringing.wav
     - assets/images/

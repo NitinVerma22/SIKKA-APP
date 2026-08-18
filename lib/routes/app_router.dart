@@ -25,6 +25,7 @@ import 'package:sikkaplay/features/games/treasure_grid/screens/treasure_grid_scr
 import 'package:sikkaplay/features/games/emoji_memory/screens/emoji_memory_screen.dart';
 import 'package:sikkaplay/features/games/math_rush/screens/math_rush_screen.dart';
 import 'package:sikkaplay/features/games/water_sort/screens/water_sort_level_select_screen.dart';
+import 'package:sikkaplay/features/games/bubble_shooter/screens/bubble_shooter_level_select_screen.dart';
 import 'package:sikkaplay/features/games/shared/screens/game_rules_screen.dart';
 import 'package:sikkaplay/features/rewards/screens/my_network_screen.dart';
 import 'package:sikkaplay/features/notifications/screens/notification_screen.dart';
@@ -253,6 +254,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/games',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: GamesHubScreen()),
+          ),
+          GoRoute(
+            path: '/games/water_sort',
+            builder: (context, state) => const WaterSortLevelSelectScreen(),
+          ),
+          GoRoute(
+            path: '/games/bubble_shooter',
+            builder: (context, state) => const BubbleShooterLevelSelectScreen(),
           ),
           GoRoute(
             path: '/wallet',
