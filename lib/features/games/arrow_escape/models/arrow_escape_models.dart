@@ -1,16 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-enum ArrowDir {
-  up,
-  down,
-  left,
-  right,
-  upLeft,
-  upRight,
-  downLeft,
-  downRight,
-}
+enum ArrowDir { up, down, left, right }
 
 extension ArrowDirExtension on ArrowDir {
   Offset get vector {
@@ -23,14 +14,6 @@ extension ArrowDirExtension on ArrowDir {
         return const Offset(-1, 0);
       case ArrowDir.right:
         return const Offset(1, 0);
-      case ArrowDir.upLeft:
-        return const Offset(-0.707, -0.707);
-      case ArrowDir.upRight:
-        return const Offset(0.707, -0.707);
-      case ArrowDir.downLeft:
-        return const Offset(-0.707, 0.707);
-      case ArrowDir.downRight:
-        return const Offset(0.707, 0.707);
     }
   }
 
@@ -44,14 +27,6 @@ extension ArrowDirExtension on ArrowDir {
         return math.pi;
       case ArrowDir.right:
         return 0.0;
-      case ArrowDir.upLeft:
-        return -3 * math.pi / 4;
-      case ArrowDir.upRight:
-        return -math.pi / 4;
-      case ArrowDir.downLeft:
-        return 3 * math.pi / 4;
-      case ArrowDir.downRight:
-        return math.pi / 4;
     }
   }
 }
@@ -133,10 +108,10 @@ class ArrowEscapeGameState {
 
 class ArrowEscapeColors {
   static const List<Color> arrowColors = [
-    Color(0xFF38BDF8), // Cyan Blue
+    Color(0xFF38BDF8), // Cyan
     Color(0xFFF43F5E), // Rose Pink
     Color(0xFF10B981), // Emerald Green
-    Color(0xFFF59E0B), // Amber Gold
+    Color(0xFFF59E0B), // Amber
     Color(0xFF8B5CF6), // Purple
     Color(0xFFEC4899), // Hot Pink
   ];

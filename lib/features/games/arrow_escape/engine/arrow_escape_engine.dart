@@ -1,129 +1,130 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
 import '../models/arrow_escape_models.dart';
 
 class ArrowEscapeEngine {
-  /// Generates progressive 200 solvable arrow puzzle levels
+  /// Generates progressive guaranteed solvable arrow puzzle levels
   static ArrowEscapeGameState generateLevel(int levelNumber) {
-    final rng = math.Random(levelNumber * 7919 + 313);
+    final rng = math.Random(levelNumber * 10007 + 7919);
 
-    // Determine grid dimensions based on level
-    int gridRows;
-    int gridCols;
+    int rows = 4;
+    int cols = 4;
 
     if (levelNumber <= 5) {
-      gridRows = 4;
-      gridCols = 4;
+      rows = 4;
+      cols = 4;
     } else if (levelNumber <= 20) {
-      gridRows = 5;
-      gridCols = 5;
-    } else if (levelNumber <= 60) {
-      gridRows = 6;
-      gridCols = 5;
-    } else if (levelNumber <= 120) {
-      gridRows = 6;
-      gridCols = 6;
+      rows = 5;
+      cols = 4;
+    } else if (levelNumber <= 50) {
+      rows = 5;
+      cols = 5;
+    } else if (levelNumber <= 100) {
+      rows = 6;
+      cols = 5;
     } else {
-      gridRows = 7;
-      gridCols = 6;
+      rows = 6;
+      cols = 6;
     }
 
     final grid = List.generate(
-      gridRows,
-      (r) => List<ArrowNode?>.filled(gridCols, null),
+      rows,
+      (r) => List<ArrowNode?>.filled(cols, null),
     );
 
-    final List<ArrowDir> cardinalDirs = [
+    final List<ArrowDir> dirs = [
       ArrowDir.up,
       ArrowDir.down,
       ArrowDir.left,
       ArrowDir.right,
     ];
 
-    final List<ArrowDir> allDirs = [
-      ArrowDir.up,
-      ArrowDir.down,
-      ArrowDir.left,
-      ArrowDir.right,
-      ArrowDir.upLeft,
-      ArrowDir.upRight,
-      ArrowDir.downLeft,
-      ArrowDir.downRight,
-    ];
+    // Guaranteed Solvable Reverse-Placement Simulation
+    final int targetCount = (rows * cols * 0.75).round();
+    int placed = 0;
+    int attempts = 0;
 
-    // Populate grid ensuring edge nodes point outwards
-    int nodeCounter = 0;
-    for (int r = 0; r < gridRows; r++) {
-      for (int c = 0; c < gridCols; c++) {
-        // Density probability
-        if (rng.nextDouble() < 0.85) {
-          List<ArrowDir> candidateDirs = [];
+    while (placed < targetCount && attempts < 250) {
+      attempts++;
+      final r = rng.nextInt(rows);
+      final c = rng.nextInt(cols);
 
-          // Edge bias for clean escape paths
-          if (r == 0) candidateDirs.add(ArrowDir.up);
-          if (r == gridRows - 1) candidateDirs.add(ArrowDir.down);
-          if (c == 0) candidateDirs.add(ArrowDir.left);
-          if (c == gridCols - 1) candidateDirs.add(ArrowDir.right);
+      if (grid[r][c] != null) continue;
 
-          ArrowDir chosenDir;
-          if (candidateDirs.isNotEmpty && rng.nextDouble() < 0.6) {
-            chosenDir = candidateDirs[rng.nextInt(candidateDirs.length)];
-          } else {
-            chosenDir = (levelNumber > 15 && rng.nextDouble() < 0.3)
-                ? allDirs[rng.nextInt(allDirs.length)]
-                : cardinalDirs[rng.nextInt(cardinalDirs.length)];
-          }
+      // Pick a direction that has a clear path out of the current grid state
+      final shuffledDirs = List<ArrowDir>.from(dirs)..shuffle(rng);
+      ArrowDir? validDir;
 
-          final color = ArrowEscapeColors.getColor((r + c) % ArrowEscapeColors.arrowColors.length);
-
-          grid[r][c] = ArrowNode(
-            id: 'node_${nodeCounter++}',
-            row: r,
-            col: c,
-            dir: chosenDir,
-            color: color,
-          );
+      for (final dir in shuffledDirs) {
+        if (_canEscapeInCurrentGrid(grid, rows, cols, r, c, dir)) {
+          validDir = dir;
+          break;
         }
+      }
+
+      if (validDir != null) {
+        final color = ArrowEscapeColors.getColor((r * cols + c) % ArrowEscapeColors.arrowColors.length);
+        grid[r][c] = ArrowNode(
+          id: 'node_${r}_${c}_$placed',
+          row: r,
+          col: c,
+          dir: validDir,
+          color: color,
+        );
+        placed++;
       }
     }
 
     return ArrowEscapeGameState(
       levelNumber: levelNumber,
       grid: grid,
-      rows: gridRows,
-      cols: gridCols,
+      rows: rows,
+      cols: cols,
       livesCount: 3,
     );
   }
 
-  /// Checks if launching the arrow at (row, col) is unblocked and will escape cleanly
+  static bool _canEscapeInCurrentGrid(
+    List<List<ArrowNode?>> grid,
+    int maxRows,
+    int maxCols,
+    int r,
+    int c,
+    ArrowDir dir,
+  ) {
+    final vec = dir.vector;
+    int currR = r + vec.dy.toInt();
+    int currC = c + vec.dx.toInt();
+
+    while (currR >= 0 && currR < maxRows && currC >= 0 && currC < maxCols) {
+      if (grid[currR][currC] != null) {
+        return false; // Path currently blocked by existing node
+      }
+      currR += vec.dy.toInt();
+      currC += vec.dx.toInt();
+    }
+
+    return true; // Path is completely clear to grid edge!
+  }
+
+  /// Checks if an arrow at (row, col) has an unblocked path to escape off the board
   static bool isPathClear(ArrowEscapeGameState state, int row, int col) {
     final arrow = state.grid[row][col];
     if (arrow == null || arrow.isEscaping) return false;
 
     final vec = arrow.dir.vector;
-    double stepR = arrow.row + vec.dy * 0.8;
-    double stepC = arrow.col + vec.dx * 0.8;
+    int currR = row + vec.dy.toInt();
+    int currC = col + vec.dx.toInt();
 
-    while (stepR >= 0 && stepR < state.rows && stepC >= 0 && stepC < state.cols) {
-      final int checkR = stepR.round();
-      final int checkC = stepC.round();
-
-      if (checkR >= 0 && checkR < state.rows && checkC >= 0 && checkC < state.cols) {
-        // Skip current cell itself
-        if (checkR != row || checkC != col) {
-          final blockingNode = state.grid[checkR][checkC];
-          if (blockingNode != null && !blockingNode.isEscaping) {
-            return false; // Path blocked!
-          }
-        }
+    while (currR >= 0 && currR < state.rows && currC >= 0 && currC < state.cols) {
+      final blockingNode = state.grid[currR][currC];
+      if (blockingNode != null && !blockingNode.isEscaping) {
+        return false; // Blocked by another un-escaped arrow!
       }
-
-      stepR += vec.dy * 0.5;
-      stepC += vec.dx * 0.5;
+      currR += vec.dy.toInt();
+      currC += vec.dx.toInt();
     }
 
-    return true; // Path clear!
+    return true; // Unblocked path!
   }
 
   /// Finds a valid unblocked arrow that can escape immediately (Hint)
@@ -139,7 +140,7 @@ class ArrowEscapeEngine {
     return null;
   }
 
-  /// Checks if the level is completely won (all arrows escaped)
+  /// Checks if all arrows have escaped
   static bool isLevelWon(ArrowEscapeGameState state) {
     for (int r = 0; r < state.rows; r++) {
       for (int c = 0; c < state.cols; c++) {

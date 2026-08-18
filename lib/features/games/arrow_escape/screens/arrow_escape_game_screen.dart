@@ -44,14 +44,7 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> with Tick
   @override
   void initState() {
     super.initState();
-    ArrowEscapeAudioService.instance.startBgm();
     _initLevel();
-  }
-
-  @override
-  void dispose() {
-    ArrowEscapeAudioService.instance.stopBgm();
-    super.dispose();
   }
 
   void _initLevel() {
@@ -96,7 +89,7 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> with Tick
       _history.add(_gameState.clone());
     });
 
-    ArrowEscapeAudioService.instance.playLaunchSfx();
+    ArrowEscapeAudioService.instance.playTapSfx();
 
     final bool canEscape = ArrowEscapeEngine.isPathClear(_gameState, row, col);
     final vec = targetNode.dir.vector;

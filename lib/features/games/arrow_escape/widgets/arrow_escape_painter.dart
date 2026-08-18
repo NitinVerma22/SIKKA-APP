@@ -30,7 +30,7 @@ class ArrowEscapePainter extends CustomPainter {
         final Rect cellRect = Rect.fromLTWH(left + 3, top + 3, cellSize - 6, cellSize - 6);
 
         final Paint tilePaint = Paint()
-          ..color = const Color(0xFF1E293B).withValues(alpha: 0.85)
+          ..color = const Color(0xFF1E293B).withValues(alpha: 0.9)
           ..style = PaintingStyle.fill;
 
         canvas.drawRRect(
@@ -39,7 +39,7 @@ class ArrowEscapePainter extends CustomPainter {
         );
 
         final Paint borderPaint = Paint()
-          ..color = const Color(0xFF334155).withValues(alpha: 0.6)
+          ..color = const Color(0xFF334155).withValues(alpha: 0.5)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.2;
 
@@ -50,7 +50,7 @@ class ArrowEscapePainter extends CustomPainter {
       }
     }
 
-    // 2. Draw Arrow Nodes & Flying Flight Trails
+    // 2. Draw Arrow Nodes & Flight Animation
     for (int r = 0; r < state.rows; r++) {
       for (int c = 0; c < state.cols; c++) {
         final node = state.grid[r][c];
@@ -58,12 +58,11 @@ class ArrowEscapePainter extends CustomPainter {
           final double baseCx = paddingX + c * cellSize + cellSize / 2.0;
           final double baseCy = paddingY + r * cellSize + cellSize / 2.0;
 
-          // Apply animated flight offset
           final double cx = baseCx + node.flightOffset.dx;
           final double cy = baseCy + node.flightOffset.dy;
 
           final isHinted = (node.id == hintArrowId);
-          _drawArrow(canvas, Offset(cx, cy), cellSize * 0.4, node, isHinted);
+          _drawArrow(canvas, Offset(cx, cy), cellSize * 0.38, node, isHinted);
         }
       }
     }
@@ -77,45 +76,43 @@ class ArrowEscapePainter extends CustomPainter {
     // Hint Glow Ring
     if (isHinted) {
       final Paint glowPaint = Paint()
-        ..color = const Color(0xFFFACC15).withValues(alpha: 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-      canvas.drawCircle(Offset.zero, radius * 1.3, glowPaint);
+        ..color = const Color(0xFFFACC15).withValues(alpha: 0.7)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+      canvas.drawCircle(Offset.zero, radius * 1.35, glowPaint);
     }
 
-    // 3D Arrow Shaft & Head Gradient Paint
+    // 3D Arrow Head & Shaft Gradient
     final Paint arrowPaint = Paint()
       ..shader = LinearGradient(
         colors: [
           Colors.white,
           node.color,
-          Color.lerp(node.color, Colors.black, 0.35)!,
+          Color.lerp(node.color, Colors.black, 0.4)!,
         ],
         stops: const [0.0, 0.5, 1.0],
       ).createShader(Rect.fromCircle(center: Offset.zero, radius: radius));
 
     final Path path = Path();
-    final double headLen = radius * 0.7;
-    final double headWidth = radius * 0.75;
-    final double shaftWidth = radius * 0.35;
-    final double shaftLen = radius * 0.7;
+    final double headLen = radius * 0.75;
+    final double headWidth = radius * 0.7;
+    final double shaftWidth = radius * 0.32;
+    final double shaftLen = radius * 0.75;
 
-    // Pointing Right by default at angle 0.0
-    path.moveTo(headLen, 0); // Arrow Tip
-    path.lineTo(0, -headWidth); // Upper Head Wing
-    path.lineTo(0, -shaftWidth); // Upper Shaft Join
-    path.lineTo(-shaftLen, -shaftWidth); // Upper Shaft End
-    path.lineTo(-shaftLen, shaftWidth); // Lower Shaft End
-    path.lineTo(0, shaftWidth); // Lower Shaft Join
-    path.lineTo(0, headWidth); // Lower Head Wing
+    path.moveTo(headLen, 0);
+    path.lineTo(0, -headWidth);
+    path.lineTo(0, -shaftWidth);
+    path.lineTo(-shaftLen, -shaftWidth);
+    path.lineTo(-shaftLen, shaftWidth);
+    path.lineTo(0, shaftWidth);
+    path.lineTo(0, headWidth);
     path.close();
 
     canvas.drawPath(path, arrowPaint);
 
-    // Outline Border
     final Paint outline = Paint()
-      ..color = Colors.white.withValues(alpha: 0.8)
+      ..color = Colors.white.withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8;
+      ..strokeWidth = 1.6;
     canvas.drawPath(path, outline);
 
     canvas.restore();
