@@ -1,0 +1,7 @@
+- [x] Restore project files from `jupiter-properties-app` to `jupiter`
+- [x] Install dependencies in `jupiter`
+- [x] Configure `next.config.ts` in `jupiter` for dynamic `basePath`
+- [x] Add build scripts to `package.json` in `jupiter`
+- [x] Build for root deployment and generate release ZIP
+- [x] Build for `/jupiter` subdirectory deployment and generate release ZIP
+- [x] Verify generated build outputs

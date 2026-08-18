@@ -1,0 +1,25 @@
+# SikkaPlay Phase 1 UI Foundation Tasklist
+
+- [x] Core Setup & Design System Constants
+  - [x] Create `lib/core/constants/app_sizes.dart` (scalable spacing/typography helper)
+  - [x] Create `lib/core/constants/app_colors.dart` (harmonies, gradients, shadows)
+  - [x] Create `lib/core/animations/custom_animations.dart` (performance-friendly hover and pulse widgets)
+- [x] Reusable Premium Components
+  - [x] Create `lib/shared/widgets/premium_card.dart` (high-performance card)
+  - [x] Create `lib/shared/widgets/premium_button.dart` (interactive scaling button)
+  - [x] Create `lib/shared/widgets/streak_indicator.dart` (clean linear/circular progress track)
+  - [x] Create `lib/shared/widgets/gullak_orb.dart` (interactive coin-generating orb)
+- [x] Core Shell Layout
+  - [x] Create `lib/shared/layouts/main_layout.dart` (capsule navigation bottom-bar frame)
+- [x] Feature Screen Implementations
+  - [x] Splash Screen (`lib/features/splash/screens/splash_screen.dart`)
+  - [x] Onboarding Screen (`lib/features/onboarding/screens/onboarding_screen.dart`)
+  - [x] Home Dashboard (`lib/features/home/screens/home_screen.dart`)
+  - [x] Reels Screen (`lib/features/reels/screens/reels_screen.dart`)
+  - [x] Games Screen (`lib/features/games/screens/games_screen.dart`)
+  - [x] Wallet Screen (`lib/features/wallet/screens/wallet_screen.dart`)
+  - [x] Profile Screen (`lib/features/profile/screens/profile_screen.dart`)
+  - [x] Claim Reward overlay/effects (`lib/features/rewards/widgets/rewards_overlay.dart`)
+- [x] Verification & Quality Check
+  - [x] Execute `flutter analyze` and resolve any warnings
+  - [x] Run `flutter test` to ensure robust compilation

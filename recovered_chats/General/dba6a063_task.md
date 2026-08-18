@@ -1,0 +1,9 @@
+- [x] Create `.htaccess` in `public/` directory
+- [x] Run `npm run build` to compile the static site
+- [x] Compress `out/` folder contents into `out_deploy.zip`
+- [x] Verify the contents of `out_deploy.zip`
+- [x] Create `post-build.js` script to rename `_next` folder to `next_assets`
+- [x] Modify `package.json` to run `post-build.js` after build
+- [x] Re-run `npm run build` to generate the new build
+- [x] Re-compress the new build into `out_deploy.zip`
+- [x] Verify the contents of `out_deploy.zip`

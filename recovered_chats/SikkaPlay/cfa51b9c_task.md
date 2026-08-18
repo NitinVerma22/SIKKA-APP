@@ -1,0 +1,11 @@
+- [x] Fix Frontend Lobby Navigation
+  - [x] Add `_gender` variable and save from API response in `playground_lobby_screen.dart`
+  - [x] Pass `extra: {'gender': _gender}` when pushing `/playground/matchmaking`
+- [x] Fix Backend Socket & Matchmaking Service
+  - [x] Track `socket.data.userId` and handle disconnect in `index.ts`
+  - [x] Add `handleDisconnect` method in `matchmaking.service.ts`
+  - [x] Fetch profile metadata from Prisma and emit in `createMatch` in `matchmaking.service.ts`
+- [x] Clean up Legacy Matchmaking Controller Code
+  - [x] Remove in-memory arrays and simplify `joinMatchmaking` / `checkMatchmakingStatus` in `playground.controller.ts`
+- [x] Verification
+  - [x] Run syntax and type checks on backend and frontend code

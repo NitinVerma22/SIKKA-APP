@@ -1,0 +1,12 @@
+- `[x]` Update `schema.prisma` (BlockedUser, HiddenChat) & run migrations
+- `[x]` Update `unfriendUser` API to NOT delete chats
+- `[x]` Implement new Backend APIs (`blockUser`, `unblockUser`, `getBlockedUsers`, `hideChatHistory`)
+- `[x]` Implement Backend Middleware (block checks in `sendPlaygroundMessage`, `sendFriendRequest`, `syncPlaygroundMessages`)
+- `[x]` Update `matchmaking.service.ts` to prevent matching blocked users
+- `[x]` Add `user_blocked` socket event in `index.ts`
+- `[x]` Update `playground_service.dart` (Frontend API bindings)
+- `[x]` Update `PlaygroundProfileScreen` (Add Block button)
+- `[x]` Create `PlaygroundBlockedUsersScreen` (Settings UI)
+- `[x]` Update `PlaygroundFriendsScreen` (Add Settings gear)
+- `[x]` Update `PlaygroundStudioScreen` (UI lockdown if blocked, socket listener)
+- `[x]` Test end-to-end functionality

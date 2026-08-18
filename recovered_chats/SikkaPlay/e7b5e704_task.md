@@ -1,0 +1,5 @@
+- `[x]` 1. Modify `auth_service.dart` to add `resetPassword`.
+- `[x]` 2. Modify `register_screen.dart` to implement OTP dialog logic.
+- `[x]` 3. Create `forgot_password_screen.dart`.
+- `[x]` 4. Modify `login_screen.dart` to link to Forgot Password screen.
+- `[x]` 5. Modify `app_router.dart` to include the `/forgot_password` route.

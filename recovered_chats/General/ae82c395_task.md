@@ -1,0 +1,13 @@
+- [x] Update `src/lib/properties.ts` with 3 client properties and correct stats/client images
+- [x] Update `src/routes/about.tsx` with US English, revised vision list, and client images
+- [x] Update `src/routes/what-we-do.tsx` with US English and client images
+- [x] Update `src/routes/index.tsx` with US English and client images
+- [x] Clean up `src/components/SiteHeader.tsx` and `src/components/SiteFooter.tsx` for US English
+- [x] Run `npm run build` to verify
+- [x] Zip updated `dist/client` to `dist.zip`
+- [x] Update email `nadeem.investor@makaanventures.com` in PHP, Contact page, and Footer
+- [x] Create `src/routes/privacy-policy.tsx` page
+- [x] Create `src/routes/disclaimer.tsx` page
+- [x] Create `src/routes/terms-and-conditions.tsx` page
+- [x] Update Footer to replace "Strategies" with the new clickable legal links
+- [x] Rebuild and re-zip

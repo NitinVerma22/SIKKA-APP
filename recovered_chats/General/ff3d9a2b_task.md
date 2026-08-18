@@ -1,0 +1,9 @@
+- `[/]` Convert TanStack Start to pure SPA
+  - `[ ]` Replace vite.config.ts configuration
+  - `[ ]` Create root index.html
+  - `[ ]` Create src/main.tsx
+  - `[ ]` Update src/routes/__root.tsx (remove Start components)
+  - `[ ]` Delete src/start.ts and src/server.ts
+- `[ ]` Run build to generate static `dist`
+- `[ ]` Compress `dist` to `static-build.zip`
+- `[ ]` Write walkthrough

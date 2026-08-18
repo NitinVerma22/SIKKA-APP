@@ -1,0 +1,4 @@
+- `[x]` Correct transaction parsing logic to detect "spend" transactions properly (negative amounts and 'withdrawal' types).
+- `[x]` Use absolute value of amount for rendering so the UI correctly prepends negative signs.
+- `[x]` Ensure spends are shown in red with a `-` sign and earnings in green with a `+` sign.
+- `[ ]` Wait for user to verify the wallet UI.

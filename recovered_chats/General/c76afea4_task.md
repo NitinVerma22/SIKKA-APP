@@ -1,0 +1,30 @@
+# Kidvardaan E-Store Laravel PHP Conversion Tasks
+
+- [x] Initialize Laravel 11 Project & React Stack
+  - [x] Run `composer create-project laravel/laravel Kidvardaan-Laravel` in parent directory
+  - [x] Install Laravel Breeze (React + Inertia + Tailwind CSS stack)
+  - [x] Configure SQLite/MySQL database connection
+- [x] Setup Database Migrations & Models
+  - [x] Create `products` migration, model, and seeder
+  - [x] Create `orders` and `order_items` migrations and models
+  - [x] Create `contacts` migration and model
+  - [x] Run database migrations and seed initial Nutrimix product
+- [x] Migrate Frontend Assets & Styles
+  - [x] Copy product images and favicon to Laravel `public/`
+  - [x] Configure Tailwind CSS and Google Fonts (Fraunces, Inter)
+- [x] Migrate React Components & Pages to Inertia.js
+  - [x] Copy and adapt `Navbar.tsx`, `Footer.tsx`, and `ProductJar.tsx`
+  - [x] Migrate `Home` and `Product` pages
+  - [x] Migrate `About`, `Benefits`, and `Faq` pages
+  - [x] Migrate `Cart`, `Checkout`, and `OrderConfirmed` pages with database submission
+  - [x] Migrate `Contact` page with form submission
+- [x] Implement Laravel Controllers & Routing
+  - [x] Create `ProductController` and wire up web routes
+  - [x] Create `OrderController` to store orders in DB and generate Order IDs
+  - [x] Create `ContactController` to store contact inquiries
+- [x] Implement Admin Dashboard
+  - [x] Create Admin route and `AdminController`
+  - [x] Create `Orders.tsx` page to view customer orders and status
+- [x] Verification & Production Build
+  - [x] Run `npm run build` to verify hPanel static asset bundle creation
+  - [x] Test complete user checkout and contact flow

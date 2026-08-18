@@ -334,26 +334,6 @@ class GamesHubScreen extends ConsumerWidget {
                     },
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // Game Card 7: Arrow Escape
-                FadeInSlideWidget(
-                  slideOffset: 50,
-                  duration: const Duration(milliseconds: 1100),
-                  child: _buildGameCard(
-                    context: context,
-                    selectedLanguage: selectedLanguage,
-                    title: 'Arrow Escape',
-                    description: selectedLanguage == 'Hindi' ? 'तीरों को रास्ता देकर निकालें' : 'Unblock & clear arrows to escape',
-                    icon: Icons.navigation_rounded,
-                    colors: [const Color(0xFF0D9488), const Color(0xFF2DD4BF)],
-                    leftImagePath: '',
-                    rightImagePath: '',
-                    onTap: () {
-                      context.push('/games/arrow_escape');
-                    },
-                  ),
-                ),
                 const SizedBox(height: 24),
                 const GameBannerAd(),
                 const SizedBox(height: 16),

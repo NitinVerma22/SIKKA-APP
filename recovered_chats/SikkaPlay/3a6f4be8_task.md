@@ -1,0 +1,10 @@
+- `[x]` Update frontend: `playground_studio_screen.dart` (Tic-Tac-Toe changes)
+- `[x]` Update frontend: Profile Received Gifts Icons in `lib/features/profile/screens/profile_screen.dart`
+  - `[x]` Add `_getGiftEmoji` mapping helper
+  - `[x]` Update grid builder to render matching emoji on image error / non-http url
+- `[x]` Update daily streak missed notification (cost remains * 15)
+  - `[x]` Update frontend: dialog text and claim success snackbar in `daily_streak_widget.dart`
+- `[x]` Update Watch Video confirmation options for rewarded ads
+  - `[x]` Update frontend: `AdService.showRewardedAd` to show AlertDialog and accept `BuildContext`
+  - `[x]` Update callers of `showRewardedAd` in 5 files (pass context)
+- `[x]` Verify changes compile and build successfully

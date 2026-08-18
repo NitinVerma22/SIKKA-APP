@@ -1,0 +1,6 @@
+- [x] Add custom CSS animations to styles.css & app.css
+- [x] Create ScrollReveal component in both projects
+- [x] Implement animations in index.tsx & Home.tsx
+- [x] Implement animations in product.tsx & Product.tsx
+- [x] Implement animations in benefits.tsx & Benefits.tsx
+- [x] Verify the animations work as expected
