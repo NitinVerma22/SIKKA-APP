@@ -58,18 +58,19 @@ class BubbleShooterPainter extends CustomPainter {
     final Offset cannonCenter = Offset(width * 0.5, height - 70);
     _drawAimTrajectory(canvas, cannonCenter, cannonAngle, width, height - 120, bubbleRadius);
     _drawCannonBase(canvas, cannonCenter, cannonAngle, bubbleRadius);
+
+    // 4. Draw Next 3 Upcoming Bubbles Queue Glass Holder
+    _drawUpcomingBubblesQueue(canvas, cannonCenter, bubbleRadius);
   }
 
   void _drawBubble(Canvas canvas, Offset center, double radius, BubbleNode node) {
     if (node.type == BubbleType.stone) {
-      // Stone Obstacle Bubble
       final Paint stonePaint = Paint()
         ..shader = const RadialGradient(
           colors: [Color(0xFF94A3B8), Color(0xFF334155)],
         ).createShader(Rect.fromCircle(center: center, radius: radius));
       canvas.drawCircle(center, radius - 1, stonePaint);
 
-      // Cracks / Lines
       final Paint linePaint = Paint()
         ..color = const Color(0xFF1E293B)
         ..style = PaintingStyle.stroke
@@ -90,7 +91,7 @@ class BubbleShooterPainter extends CustomPainter {
         center: const Alignment(-0.35, -0.4),
         radius: 0.85,
         colors: [
-          Colors.white.withValues(alpha: 0.9),
+          Colors.white.withValues(alpha: 0.95),
           colors.first,
           colors.last,
         ],
@@ -99,8 +100,15 @@ class BubbleShooterPainter extends CustomPainter {
 
     canvas.drawCircle(center, radius - 1, spherePaint);
 
+    // Outer Glow Ring
+    final Paint borderPaint = Paint()
+      ..color = colors.first.withValues(alpha: 0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawCircle(center, radius - 1, borderPaint);
+
     // Top-Left Shiny Dot Highlight
-    final Paint shinePaint = Paint()..color = Colors.white.withValues(alpha: 0.75);
+    final Paint shinePaint = Paint()..color = Colors.white.withValues(alpha: 0.85);
     canvas.drawCircle(
       Offset(center.dx - radius * 0.3, center.dy - radius * 0.35),
       radius * 0.22,
@@ -114,11 +122,11 @@ class BubbleShooterPainter extends CustomPainter {
         ..style = PaintingStyle.fill;
       canvas.drawCircle(center, radius - 1, icePaint);
 
-      final Paint borderPaint = Paint()
+      final Paint iceBorder = Paint()
         ..color = const Color(0xFF60A5FA)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
-      canvas.drawCircle(center, radius - 1, borderPaint);
+      canvas.drawCircle(center, radius - 1, iceBorder);
     }
   }
 
@@ -133,34 +141,29 @@ class BubbleShooterPainter extends CustomPainter {
     if (!showAimGuide) return;
 
     final Paint linePaint = Paint()
-      ..color = const Color(0xFFFACC15).withValues(alpha: 0.8)
+      ..color = const Color(0xFFFACC15).withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
 
-    // Raycast direction vector
     double dirX = math.sin(angle);
     double dirY = -math.cos(angle);
 
     Offset current = start;
-    double remainingDist = showAimGuide ? 600.0 : 250.0;
+    double remainingDist = showAimGuide ? 650.0 : 250.0;
 
     Path dashPath = Path()..moveTo(current.dx, current.dy);
 
     while (remainingDist > 0 && current.dy > 20) {
-      // Calculate collision with left or right wall
       double stepX = dirX * 15;
       double stepY = dirY * 15;
 
       Offset next = Offset(current.dx + stepX, current.dy + stepY);
 
-      // Bounce off Left Wall
       if (next.dx - radius <= 0) {
-        dirX = -dirX; // Reverse X direction
+        dirX = -dirX;
         next = Offset(radius, next.dy);
-      }
-      // Bounce off Right Wall
-      else if (next.dx + radius >= screenWidth) {
-        dirX = -dirX; // Reverse X direction
+      } else if (next.dx + radius >= screenWidth) {
+        dirX = -dirX;
         next = Offset(screenWidth - radius, next.dy);
       }
 
@@ -169,33 +172,69 @@ class BubbleShooterPainter extends CustomPainter {
       remainingDist -= 15;
     }
 
-    // Draw dashed path
     canvas.drawPath(dashPath, linePaint);
   }
 
   void _drawCannonBase(Canvas canvas, Offset center, double angle, double radius) {
-    // Cannon Base Circle
+    // Cannon Base Ring
     final Paint basePaint = Paint()
       ..shader = const LinearGradient(
         colors: [Color(0xFF334155), Color(0xFF0F172A)],
       ).createShader(Rect.fromCircle(center: center, radius: 45));
 
-    canvas.drawCircle(center, 40, basePaint);
+    canvas.drawCircle(center, 38, basePaint);
 
     final Paint borderPaint = Paint()
-      ..color = const Color(0xFFFACC15)
+      ..color = const Color(0xFF0EA5E9)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
 
-    canvas.drawCircle(center, 40, borderPaint);
+    canvas.drawCircle(center, 38, borderPaint);
 
     // Current Shot Bubble inside Cannon
     _drawBubble(
       canvas,
       center,
-      radius * 1.1,
+      radius * 1.05,
       BubbleNode(colorId: state.currentShotColor, row: 0, col: 0),
     );
+  }
+
+  void _drawUpcomingBubblesQueue(Canvas canvas, Offset cannonCenter, double radius) {
+    // Glassmorphic Holder Box on Left of Cannon
+    final Offset holderPos = Offset(cannonCenter.dx - 110, cannonCenter.dy);
+
+    final Paint glassBg = Paint()
+      ..color = const Color(0xFF1E293B).withValues(alpha: 0.85)
+      ..style = PaintingStyle.fill;
+
+    final RRect rect = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: holderPos, width: 110, height: 42),
+      const Radius.circular(20),
+    );
+
+    canvas.drawRRect(rect, glassBg);
+
+    final Paint borderPaint = Paint()
+      ..color = const Color(0xFF38BDF8).withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    canvas.drawRRect(rect, borderPaint);
+
+    // Render 3 upcoming bubbles
+    for (int i = 0; i < state.upcomingShotColors.length && i < 3; i++) {
+      final double bX = holderPos.dx - 32 + (i * 32);
+      final double bY = holderPos.dy;
+      final int colorId = state.upcomingShotColors[i];
+
+      _drawBubble(
+        canvas,
+        Offset(bX, bY),
+        radius * 0.72,
+        BubbleNode(colorId: colorId, row: 0, col: 0),
+      );
+    }
   }
 
   @override

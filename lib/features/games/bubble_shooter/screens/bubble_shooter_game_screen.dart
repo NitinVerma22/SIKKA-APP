@@ -8,7 +8,6 @@ import '../models/bubble_shooter_models.dart';
 import '../services/bubble_shooter_service.dart';
 import '../services/bubble_shooter_audio_service.dart';
 import '../widgets/bubble_shooter_painter.dart';
-import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
 
 class BubbleShooterGameScreen extends StatefulWidget {
@@ -43,7 +42,7 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
   // Power-up Usage Allocations
   int _freeAimGuidesRemaining = 1;
   int _freeUndosRemaining = 1;
-  int _bombBubblesUsed = 0; // 0 FREE by default! Only via Rewarded Ads!
+  int _bombBubblesUsed = 0;
   bool _isBombActive = false;
 
   @override
@@ -98,16 +97,33 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
     final Offset cannonCenter = Offset(canvasSize.width * 0.5, canvasSize.height - 70);
     final Offset touchPos = details.localPosition;
 
+    // Check if user tapped on the Upcoming Bubbles Queue (holder pos left of cannon)
+    final Offset holderPos = Offset(cannonCenter.dx - 110, cannonCenter.dy);
+    if ((touchPos - holderPos).distance <= 50) {
+      _swapUpcomingBubble(0);
+      return;
+    }
+
     final double dx = touchPos.dx - cannonCenter.dx;
     final double dy = touchPos.dy - cannonCenter.dy;
 
-    // Calculate angle relative to vertical top
     double angle = math.atan2(dx, -dy);
-    angle = angle.clamp(-1.2, 1.2); // Limit angle degrees
+    angle = angle.clamp(-1.2, 1.2);
 
     setState(() {
       _gameState.cannonAngle = angle;
     });
+  }
+
+  void _swapUpcomingBubble(int index) {
+    if (_isShooting || _isLevelWon || _isGameOver) return;
+    if (index >= 0 && index < _gameState.upcomingShotColors.length) {
+      setState(() {
+        final selectedColor = _gameState.upcomingShotColors[index];
+        _gameState.upcomingShotColors[index] = _gameState.currentShotColor;
+        _gameState.currentShotColor = selectedColor;
+      });
+    }
   }
 
   Future<void> _fireShot(Size canvasSize) async {
@@ -133,10 +149,10 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
     final int shootingColor = _gameState.currentShotColor;
     final bool isBombShot = _isBombActive;
 
-    // Animate shot trajectory flying with side-wall ricochets!
+    // Animate shot trajectory flying with sub-step circle distance collision physics!
     while (curY > 10) {
-      curX += dirX * 22;
-      curY += dirY * 22;
+      curX += dirX * 18;
+      curY += dirY * 18;
 
       // Bounce off Left Wall
       if (curX - bubbleRadius <= 0) {
@@ -154,20 +170,71 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
         _shotColor = shootingColor;
       });
 
-      // Calculate hex row & col snap target
-      final int gridR = ((curY - 10) / rowHeight).floor().clamp(0, _gameState.maxRows - 1);
-      final bool isOdd = (gridR % 2 == 1);
-      final double rowOffsetX = isOdd ? bubbleRadius : 0.0;
-      final int gridC = ((curX - rowOffsetX - 4) / bubbleDiameter).floor().clamp(0, isOdd ? BubbleShooterEngine.cols - 2 : BubbleShooterEngine.cols - 1);
+      // True Circle-to-Circle collision check against all active grid bubbles!
+      bool collided = false;
+      for (int r = 0; r < _gameState.maxRows; r++) {
+        final int maxC = (r % 2 == 1) ? _gameState.maxCols - 1 : _gameState.maxCols;
+        final double rowY = r * rowHeight + bubbleRadius + 10;
+        final bool isOdd = (r % 2 == 1);
+        final double rowOffsetX = isOdd ? bubbleRadius : 0.0;
 
-      // Check collision with existing grid bubble or ceiling
-      if (gridR == 0 || _gameState.grid[gridR][gridC] != null || _hasNeighborBubble(gridR, gridC)) {
-        // Snap into hex grid!
-        _snapAndProcessPop(gridR, gridC, shootingColor, isBombShot);
+        for (int c = 0; c < maxC; c++) {
+          if (_gameState.grid[r][c] != null) {
+            final double bx = c * bubbleDiameter + bubbleRadius + rowOffsetX + 4;
+            final double by = rowY;
+            final double dist = math.sqrt((curX - bx) * (curX - bx) + (curY - by) * (curY - by));
+
+            // Collision threshold: 2 * R * 0.88 (allows sliding through narrow gaps!)
+            if (dist <= bubbleDiameter * 0.88) {
+              collided = true;
+              break;
+            }
+          }
+        }
+        if (collided) break;
+      }
+
+      // Check collision with existing grid bubble or top ceiling
+      if (collided || curY <= bubbleRadius + 10) {
+        // Find nearest empty hex grid cell (targetR, targetC) to (curX, curY)
+        int targetR = ((curY - 10) / rowHeight).round().clamp(0, _gameState.maxRows - 1);
+        final bool targetIsOdd = (targetR % 2 == 1);
+        final double targetRowOffsetX = targetIsOdd ? bubbleRadius : 0.0;
+        int targetC = ((curX - targetRowOffsetX - 4) / bubbleDiameter).round().clamp(0, targetIsOdd ? BubbleShooterEngine.cols - 2 : BubbleShooterEngine.cols - 1);
+
+        // If target cell is occupied, find adjacent empty neighbor
+        if (_gameState.grid[targetR][targetC] != null) {
+          final neighbors = BubbleShooterEngine.getNeighbors(targetR, targetC, _gameState.maxRows, _gameState.maxCols);
+          double minDistance = 999999.0;
+          Point<int>? bestCell;
+
+          for (final n in neighbors) {
+            if (_gameState.grid[n.x][n.y] == null) {
+              final double nRowY = n.x * rowHeight + bubbleRadius + 10;
+              final bool nIsOdd = (n.x % 2 == 1);
+              final double nRowOffsetX = nIsOdd ? bubbleRadius : 0.0;
+              final double nx = n.y * bubbleDiameter + bubbleRadius + nRowOffsetX + 4;
+
+              final double d = math.sqrt((curX - nx) * (curX - nx) + (curY - nRowY) * (curY - nRowY));
+              if (d < minDistance) {
+                minDistance = d;
+                bestCell = n;
+              }
+            }
+          }
+
+          if (bestCell != null) {
+            targetR = bestCell.x;
+            targetC = bestCell.y;
+          }
+        }
+
+        // Snap into target hex grid cell!
+        _snapAndProcessPop(targetR, targetC, shootingColor, isBombShot);
         break;
       }
 
-      await Future.delayed(const Duration(milliseconds: 16)); // ~60 FPS trajectory
+      await Future.delayed(const Duration(milliseconds: 14)); // ~70 FPS smooth flight
     }
 
     if (!mounted) return;
@@ -180,10 +247,10 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
       _gameState.shotsRemaining--;
       _gameState.movesCount++;
 
-      // Swap next shot color
-      _gameState.currentShotColor = _gameState.nextShotColor;
+      // Advance upcoming shot colors queue
+      _gameState.currentShotColor = _gameState.upcomingShotColors.removeAt(0);
       final rng = math.Random();
-      _gameState.nextShotColor = rng.nextInt(7);
+      _gameState.upcomingShotColors.add(rng.nextInt(7));
 
       // Check win/loss condition
       if (BubbleShooterEngine.isLevelWon(_gameState)) {
@@ -194,17 +261,8 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
     });
   }
 
-  bool _hasNeighborBubble(int r, int c) {
-    final neighbors = BubbleShooterEngine.getNeighbors(r, c, _gameState.maxRows, _gameState.maxCols);
-    for (final n in neighbors) {
-      if (_gameState.grid[n.x][n.y] != null) return true;
-    }
-    return false;
-  }
-
   void _snapAndProcessPop(int r, int c, int colorId, bool isBomb) {
     if (isBomb) {
-      // BOMB EXPLOSION (Clear 3x3 area)
       BubbleShooterAudioService.instance.playExplosionSfx();
       for (int i = r - 1; i <= r + 1; i++) {
         for (int j = c - 1; j <= c + 1; j++) {
@@ -214,10 +272,8 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
         }
       }
     } else {
-      // Place Bubble in Grid
       _gameState.grid[r][c] = BubbleNode(colorId: colorId, row: r, col: c);
 
-      // Check Match-3 Cluster
       final cluster = BubbleShooterEngine.findCluster(_gameState, r, c);
       if (cluster.length >= 3) {
         BubbleShooterAudioService.instance.playPopSfx();
@@ -226,7 +282,6 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
           _gameState.score += 10;
         }
 
-        // Drop Floating Island Orphans!
         final orphans = BubbleShooterEngine.findOrphanBubbles(_gameState);
         if (orphans.isNotEmpty) {
           BubbleShooterAudioService.instance.playExplosionSfx();
@@ -276,7 +331,6 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
   void _handleAddBombBubble() {
     if (_isShooting || _isLevelWon || _isGameOver) return;
 
-    // BOMB BUBBLE REQUIRES REWARDED AD (0 FREE BY DEFAULT)
     _showRewardedAdHelper(() {
       setState(() {
         _isBombActive = true;
@@ -339,132 +393,134 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
       child: Scaffold(
         backgroundColor: const Color(0xFF0F172A),
         body: SafeArea(
-          child: Column(
+          child: Stack(
             children: [
-              // Top Bar Header
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                color: const Color(0xFF1E293B),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: _handleExit,
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Level ${widget.levelNumber}',
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          BubbleShooterAudioService.instance.toggleMute();
-                        });
-                      },
-                      icon: Icon(
-                        BubbleShooterAudioService.instance.isMuted
-                            ? Icons.volume_off_rounded
-                            : Icons.volume_up_rounded,
-                        color: Colors.white70,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    // Shots Counter
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0284C7).withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF38BDF8)),
-                      ),
-                      child: Text(
-                        'Shots: ${_gameState.shotsRemaining}',
-                        style: GoogleFonts.outfit(
-                          color: const Color(0xFF38BDF8),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
+              // FULL SCREEN GAME CANVAS (NO BOTTOM NAVBAR, NO BOTTOM ADS!)
+              Column(
+                children: [
+                  // Top Glass Floating Header
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    color: const Color(0xFF1E293B),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: _handleExit,
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Game Canvas Board
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
-
-                    return GestureDetector(
-                      onPanUpdate: (d) => _onPanUpdate(d, canvasSize),
-                      onPanEnd: (_) => _fireShot(canvasSize),
-                      onTapUp: (details) {
-                        _onPanUpdate(DragUpdateDetails(globalPosition: details.globalPosition, localPosition: details.localPosition), canvasSize);
-                        _fireShot(canvasSize);
-                      },
-                      child: CustomPaint(
-                        size: canvasSize,
-                        painter: BubbleShooterPainter(
-                          state: _gameState,
-                          cannonAngle: _gameState.cannonAngle,
-                          showAimGuide: _freeAimGuidesRemaining > 0,
-                          shotBubblePos: _shotPos,
-                          shotBubbleColor: _shotColor,
+                        const SizedBox(width: 4),
+                        Text(
+                          'Level ${widget.levelNumber}',
+                          style: GoogleFonts.outfit(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              BubbleShooterAudioService.instance.toggleMute();
+                            });
+                          },
+                          icon: Icon(
+                            BubbleShooterAudioService.instance.isMuted
+                                ? Icons.volume_off_rounded
+                                : Icons.volume_up_rounded,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        // Shots Left Counter
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFF38BDF8)),
+                          ),
+                          child: Text(
+                            'Shots: ${_gameState.shotsRemaining}',
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF38BDF8),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-              // Game Banner Ad
-              const GameBannerAd(),
+                  // Full Canvas Board
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
 
-              // Power-ups Bar
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1E293B),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildPowerUpBtn(
-                      icon: Icons.alt_route_rounded,
-                      label: 'Aim Guide',
-                      badge: _freeAimGuidesRemaining > 0 ? 'Free' : 'Ad',
-                      onTap: _handleAimGuide,
+                        return GestureDetector(
+                          onPanUpdate: (d) => _onPanUpdate(d, canvasSize),
+                          onPanEnd: (_) => _fireShot(canvasSize),
+                          onTapUp: (details) {
+                            _onPanUpdate(DragUpdateDetails(globalPosition: details.globalPosition, localPosition: details.localPosition), canvasSize);
+                            _fireShot(canvasSize);
+                          },
+                          child: CustomPaint(
+                            size: canvasSize,
+                            painter: BubbleShooterPainter(
+                              state: _gameState,
+                              cannonAngle: _gameState.cannonAngle,
+                              showAimGuide: _freeAimGuidesRemaining > 0,
+                              shotBubblePos: _shotPos,
+                              shotBubbleColor: _shotColor,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    _buildPowerUpBtn(
-                      icon: Icons.undo_rounded,
-                      label: 'Undo',
-                      badge: _freeUndosRemaining > 0 ? 'Free' : 'Ad',
-                      onTap: _handleUndo,
+                  ),
+
+                  // Power-ups Glass Bar (Above Bottom Edge)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF1E293B),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                     ),
-                    _buildPowerUpBtn(
-                      icon: Icons.local_fire_department_rounded,
-                      label: 'Bomb 💣',
-                      badge: 'Ad 📺',
-                      isAdRequired: true,
-                      onTap: _handleAddBombBubble,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildPowerUpBtn(
+                          icon: Icons.alt_route_rounded,
+                          label: 'Aim Guide',
+                          badge: _freeAimGuidesRemaining > 0 ? 'Free' : 'Ad',
+                          onTap: _handleAimGuide,
+                        ),
+                        _buildPowerUpBtn(
+                          icon: Icons.undo_rounded,
+                          label: 'Undo',
+                          badge: _freeUndosRemaining > 0 ? 'Free' : 'Ad',
+                          onTap: _handleUndo,
+                        ),
+                        _buildPowerUpBtn(
+                          icon: Icons.local_fire_department_rounded,
+                          label: 'Bomb 💣',
+                          badge: 'Ad 📺',
+                          isAdRequired: true,
+                          onTap: _handleAddBombBubble,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
 
-        // Victory / Game Over Dialog Overlay
+        // Victory / Game Over Overlay Modal
         bottomSheet: (_isLevelWon || _isGameOver)
             ? Container(
                 height: 320,
@@ -575,7 +631,7 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isAdRequired
               ? const Color(0xFF0284C7).withValues(alpha: 0.2)
@@ -590,14 +646,14 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isAdRequired ? const Color(0xFF38BDF8) : Colors.white, size: 22),
-            const SizedBox(height: 4),
+            Icon(icon, color: isAdRequired ? const Color(0xFF38BDF8) : Colors.white, size: 20),
+            const SizedBox(height: 2),
             Text(
               label,
               style: GoogleFonts.outfit(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
-                fontSize: 12,
+                fontSize: 11,
               ),
             ),
             const SizedBox(height: 2),
@@ -614,7 +670,7 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
                 style: GoogleFonts.outfit(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 10,
+                  fontSize: 9,
                 ),
               ),
             ),

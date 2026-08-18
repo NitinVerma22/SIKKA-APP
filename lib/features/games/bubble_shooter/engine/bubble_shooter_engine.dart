@@ -15,28 +15,28 @@ class BubbleShooterEngine {
 
     if (levelNumber <= 5) {
       colorCount = 3;
-      filledRows = 5;
-      shotsLimit = 25;
+      filledRows = 4; // Very clean & satisfying intro levels!
+      shotsLimit = 30;
     } else if (levelNumber <= 10) {
-      colorCount = 4;
-      filledRows = 8;
-      shotsLimit = 22;
+      colorCount = 3;
+      filledRows = 6;
+      shotsLimit = 25;
     } else if (levelNumber <= 25) {
       colorCount = 4;
       filledRows = 12; // 3-4 Minutes play
-      shotsLimit = 20;
+      shotsLimit = 22;
     } else if (levelNumber <= 50) {
       colorCount = 5;
       filledRows = 15; // 4-5 Minutes play
-      shotsLimit = 18;
+      shotsLimit = 20;
     } else if (levelNumber <= 100) {
       colorCount = 6;
       filledRows = 18; // 5+ Minutes play
-      shotsLimit = 16;
+      shotsLimit = 18;
     } else {
       colorCount = 7;
       filledRows = 22; // 5-8 Minutes play
-      shotsLimit = 15;
+      shotsLimit = 16;
     }
 
     const int maxRows = 26;
@@ -45,10 +45,9 @@ class BubbleShooterEngine {
       (r) => List.generate(cols, (c) => null),
     );
 
-    // 2. Populate top rows with staggered colors & obstacles
+    // 2. Populate top rows with clean color clusters
     for (int r = 0; r < filledRows; r++) {
       for (int c = 0; c < (r % 2 == 1 ? cols - 1 : cols); c++) {
-        // Obstacle injection for level 25+
         BubbleType bType = BubbleType.normal;
         bool isFrozen = false;
 
@@ -59,7 +58,8 @@ class BubbleShooterEngine {
           isFrozen = true;
         }
 
-        final colorId = rng.nextInt(colorCount);
+        // Create color clusters so shots can easily match
+        final colorId = (r ~/ 2 + c ~/ 2) % colorCount;
         grid[r][c] = BubbleNode(
           colorId: colorId,
           row: r,
@@ -71,7 +71,7 @@ class BubbleShooterEngine {
     }
 
     final currentShotColor = rng.nextInt(colorCount);
-    final nextShotColor = rng.nextInt(colorCount);
+    final upcomingShots = List.generate(3, (_) => rng.nextInt(colorCount));
 
     return BubbleShooterGameState(
       levelNumber: levelNumber,
@@ -79,7 +79,7 @@ class BubbleShooterEngine {
       maxRows: maxRows,
       maxCols: cols,
       currentShotColor: currentShotColor,
-      nextShotColor: nextShotColor,
+      upcomingShotColors: upcomingShots,
       shotsRemaining: shotsLimit,
     );
   }
@@ -89,7 +89,6 @@ class BubbleShooterEngine {
     List<Point<int>> neighbors = [];
     final bool isOdd = (r % 2 == 1);
 
-    // Direct Left & Right
     final offsets = isOdd
         ? [
             const Point(-1, 0), const Point(-1, 1),

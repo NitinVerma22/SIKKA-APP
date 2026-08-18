@@ -34,7 +34,7 @@ class BubbleShooterGameState {
   final int maxRows;
   final int maxCols;
   int currentShotColor;
-  int nextShotColor;
+  List<int> upcomingShotColors; // 3 upcoming shot colors for user preview & swap!
   double cannonAngle; // radians (-1.2 to 1.2)
   int shotsRemaining;
   int score;
@@ -46,7 +46,7 @@ class BubbleShooterGameState {
     required this.maxRows,
     required this.maxCols,
     required this.currentShotColor,
-    required this.nextShotColor,
+    required this.upcomingShotColors,
     this.cannonAngle = 0.0,
     required this.shotsRemaining,
     this.score = 0,
@@ -68,7 +68,7 @@ class BubbleShooterGameState {
       maxRows: maxRows,
       maxCols: maxCols,
       currentShotColor: currentShotColor,
-      nextShotColor: nextShotColor,
+      upcomingShotColors: List<int>.from(upcomingShotColors),
       cannonAngle: cannonAngle,
       shotsRemaining: shotsRemaining,
       score: score,

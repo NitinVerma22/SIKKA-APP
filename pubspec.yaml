@@ -64,4 +64,5 @@ flutter:
     - assets/audio/ringing.wav
     - assets/images/
     - assets/images/games_hub/
+    - assets/images/bubble_shooter/
     - assets/images/profile/
