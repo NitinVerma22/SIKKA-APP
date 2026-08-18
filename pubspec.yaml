@@ -41,6 +41,10 @@ dependencies:
   socket_io_client: ^3.1.6
   cached_network_image: ^3.4.1
   firebase_analytics: ^12.4.4
+  flame: ^1.38.0
+  flutter_animate: ^4.5.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
   
 
 dev_dependencies:
@@ -66,3 +70,8 @@ flutter:
     - assets/images/games_hub/
     - assets/images/bubble_shooter/
     - assets/images/profile/
+
+  fonts:
+    - family: BebasNeue
+      fonts:
+        - asset: assets/fonts/BebasNeue-Regular.ttf
