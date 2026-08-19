@@ -812,6 +812,39 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
                 ),
               ),
             ),
+            // EXIT GAME BUTTON (Bottom Right)
+            Positioned(
+              right: 45,
+              bottom: 15,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _handleExit,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE50914).withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFE50914), width: 1.5),
+                      ),
+                      child: const Icon(Icons.exit_to_app_rounded, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'EXIT',
+                      style: TextStyle(
+                        color: Color(0xFFE50914),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),

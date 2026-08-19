@@ -72,7 +72,7 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
 
       if (arrow.isEscaping) {
         needsStateUpdate = true;
-        arrow.escapeProgress += 0.015;
+        arrow.escapeProgress += 0.0055;
         if (arrow.escapeProgress >= 1.0) {
           // Arrow exited screen!
           _arrows.removeAt(i);
@@ -320,23 +320,34 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E222B),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: widget.onBack ?? () => Navigator.pop(context),
+                icon: const Icon(Icons.exit_to_app_rounded, color: Color(0xFFFF1744), size: 18),
+                label: Text('EXIT', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E222B),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => _loadLevel(_currentLevelNum),
-                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF00E5FF)),
-                label: Text('RESTART', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF00E5FF), size: 18),
+                label: Text('RESTART', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF76ED12),
                   foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _onHintPressed,
-                icon: const Icon(Icons.lightbulb_rounded, color: Colors.black),
-                label: Text('HINT', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.lightbulb_rounded, color: Colors.black, size: 18),
+                label: Text('HINT', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ],
           ),

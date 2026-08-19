@@ -50,38 +50,45 @@ class ArrowEscapeEngine {
     return null;
   }
 
-  /// Generate a challenging level starting right from Level 1 (like Level 50) and scaling harder
+  /// Generate level starting at Level 16 difficulty baseline on Level 1, scaling to EXTREME at Level 200
   static ArrowLevelModel generateLevel(int levelNumber) {
-    final random = Random(levelNumber * 1000 + 7777);
+    final random = Random(levelNumber * 1000 + 8888);
 
-    // Harder Grid Scaling right from Level 1
-    int gridSize = 7;
-    int arrowCount = 10 + (levelNumber ~/ 4);
-    int minLen = 3;
-    int maxLen = 5;
+    // Grid Size & Length scaling starting at Level 16 baseline
+    int gridSize = 8;
+    int minLen = 4;
+    int maxLen = 6;
 
-    if (levelNumber > 15) {
-      gridSize = 8;
-      minLen = 3;
-      maxLen = 5;
-    }
-    if (levelNumber > 35) {
+    // Gradual difficulty increase per level
+    if (levelNumber > 10) {
       gridSize = 9;
       minLen = 4;
       maxLen = 6;
     }
-    if (levelNumber > 70) {
+    if (levelNumber > 25) {
       gridSize = 10;
-      minLen = 4;
+      minLen = 5;
       maxLen = 7;
     }
-    if (levelNumber > 120) {
+    if (levelNumber > 50) {
       gridSize = 11;
       minLen = 5;
       maxLen = 8;
     }
+    if (levelNumber > 90) {
+      gridSize = 12;
+      minLen = 6;
+      maxLen = 9;
+    }
+    if (levelNumber > 140) {
+      gridSize = 13;
+      minLen = 6;
+      maxLen = 10;
+    }
 
-    final maxAllowedArrows = (gridSize * gridSize * 0.45).toInt();
+    // Arrow count increases every single level
+    int arrowCount = 14 + (levelNumber ~/ 3);
+    final maxAllowedArrows = (gridSize * gridSize * 0.50).toInt();
     if (arrowCount > maxAllowedArrows) {
       arrowCount = maxAllowedArrows;
     }
@@ -97,7 +104,7 @@ class ArrowEscapeEngine {
     final occupied = <Point2D>{};
     int attempts = 0;
 
-    while (arrows.length < arrowCount && attempts < 700) {
+    while (arrows.length < arrowCount && attempts < 900) {
       attempts++;
 
       final head = Point2D(random.nextInt(gridSize), random.nextInt(gridSize));
