@@ -72,7 +72,7 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
 
       if (arrow.isEscaping) {
         needsStateUpdate = true;
-        arrow.escapeProgress += 0.08;
+        arrow.escapeProgress += 0.018;
         if (arrow.escapeProgress >= 1.0) {
           // Arrow exited screen!
           _arrows.removeAt(i);

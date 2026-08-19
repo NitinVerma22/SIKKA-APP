@@ -50,38 +50,40 @@ class ArrowEscapeEngine {
     return null;
   }
 
-  /// Generate a guaranteed solvable level with difficulty scaling matching levelNumber
+  /// Generate a challenging level starting right from Level 1 (like Level 50) and scaling harder
   static ArrowLevelModel generateLevel(int levelNumber) {
-    final random = Random(levelNumber * 1000 + 1337);
+    final random = Random(levelNumber * 1000 + 7777);
 
-    // Difficulty Grid Size Scaling
-    int gridSize = 5;
-    int arrowCount = 5 + (levelNumber ~/ 8);
-    int maxLen = 3;
+    // Harder Grid Scaling right from Level 1
+    int gridSize = 7;
+    int arrowCount = 10 + (levelNumber ~/ 4);
+    int minLen = 3;
+    int maxLen = 5;
 
-    if (levelNumber > 10) {
-      gridSize = 6;
-      maxLen = 3;
-    }
-    if (levelNumber > 25) {
-      gridSize = 7;
-      maxLen = 4;
-    }
-    if (levelNumber > 50) {
+    if (levelNumber > 15) {
       gridSize = 8;
-      maxLen = 4;
+      minLen = 3;
+      maxLen = 5;
     }
-    if (levelNumber > 90) {
+    if (levelNumber > 35) {
       gridSize = 9;
-      maxLen = 5;
+      minLen = 4;
+      maxLen = 6;
     }
-    if (levelNumber > 140) {
+    if (levelNumber > 70) {
       gridSize = 10;
-      maxLen = 5;
+      minLen = 4;
+      maxLen = 7;
+    }
+    if (levelNumber > 120) {
+      gridSize = 11;
+      minLen = 5;
+      maxLen = 8;
     }
 
-    if (arrowCount > (gridSize * gridSize * 0.45).toInt()) {
-      arrowCount = (gridSize * gridSize * 0.45).toInt();
+    final maxAllowedArrows = (gridSize * gridSize * 0.45).toInt();
+    if (arrowCount > maxAllowedArrows) {
+      arrowCount = maxAllowedArrows;
     }
 
     final mask = <Point2D>{};
@@ -95,7 +97,7 @@ class ArrowEscapeEngine {
     final occupied = <Point2D>{};
     int attempts = 0;
 
-    while (arrows.length < arrowCount && attempts < 500) {
+    while (arrows.length < arrowCount && attempts < 700) {
       attempts++;
 
       final head = Point2D(random.nextInt(gridSize), random.nextInt(gridSize));
@@ -144,7 +146,7 @@ class ArrowEscapeEngine {
         pathPoints.add(neck);
         occupied.add(neck);
 
-        int targetLen = 2 + random.nextInt(maxLen - 1);
+        int targetLen = minLen + random.nextInt(maxLen - minLen + 1);
         Point2D curr = neck;
 
         for (int i = 2; i < targetLen; i++) {
