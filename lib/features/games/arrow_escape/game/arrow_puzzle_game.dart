@@ -29,20 +29,28 @@ class ArrowPuzzleGame extends FlameGame {
   @override
   Color backgroundColor() => Colors.transparent;
 
+  double get _safeMinDim {
+    double minDim = size.x < size.y ? size.x : size.y;
+    if (minDim <= 0) minDim = 360.0;
+    return minDim;
+  }
+
   @override
   Future<void> onLoad() async {
     final levelType = AppConstants.levelTypeFor(level.levelNumber);
     final scale = AppConstants.canvasScaleForType(levelType);
 
-    final minDim = size.x < size.y ? size.x : size.y;
+    final minDim = _safeMinDim;
     final gridSize = minDim * scale;
-    final gridX = (size.x - gridSize) / 2;
-    
-    final gridY = (size.y - gridSize) / 2;
+    final effSx = size.x <= 0 ? 360.0 : size.x;
+    final effSy = size.y <= 0 ? 600.0 : size.y;
+
+    final gridX = (effSx - gridSize) / 2;
+    final gridY = (effSy - gridSize) / 2;
 
     gridComponent = GridComponent(
       gameState: gameState,
-      gridPixelSize: gridSize,
+      gridPixelSize: gridSize <= 0 ? 300.0 : gridSize,
       position: Vector2(gridX + gridSize / 2, gridY + gridSize / 2),
     )..anchor = Anchor.center;
 
@@ -55,14 +63,18 @@ class ArrowPuzzleGame extends FlameGame {
 
     final levelType = AppConstants.levelTypeFor(level.levelNumber);
     final scale = AppConstants.canvasScaleForType(levelType);
-    final minDim = size.x < size.y ? size.x : size.y;
+
+    final minDim = _safeMinDim;
     final gridSize = minDim * scale;
-    final gridX = (size.x - gridSize) / 2;
-    final gridY = (size.y - gridSize) / 2;
+    final effSx = size.x <= 0 ? 360.0 : size.x;
+    final effSy = size.y <= 0 ? 600.0 : size.y;
+
+    final gridX = (effSx - gridSize) / 2;
+    final gridY = (effSy - gridSize) / 2;
 
     if (gridComponent != null) {
       gridComponent!.position = Vector2(gridX + gridSize / 2, gridY + gridSize / 2);
-      gridComponent!.resize(gridSize);
+      gridComponent!.resize(gridSize <= 0 ? 300.0 : gridSize);
     }
   }
 

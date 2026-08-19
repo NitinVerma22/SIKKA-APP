@@ -610,7 +610,13 @@ class _GameScreenState extends ConsumerState<GameScreen>
                                 child: SizedBox(
                                   width: boardSize,
                                   height: boardSize,
-                                  child: GameWidget(game: _game),
+                                  child: GameWidget(
+                                    key: ValueKey('arrow_game_${_level.levelNumber}'),
+                                    game: _game,
+                                    loadingBuilder: (context) => const Center(
+                                      child: CircularProgressIndicator(color: AppColors.primary),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),

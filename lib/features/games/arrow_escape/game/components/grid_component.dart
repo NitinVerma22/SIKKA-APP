@@ -37,11 +37,16 @@ class GridComponent extends PositionComponent {
     required Vector2 position,
   }) : super(position: position);
 
-  double get cellSize => gridPixelSize / gameState.level.gridSize;
+  double get cellSize {
+    final ps = gridPixelSize <= 0 ? 300.0 : gridPixelSize;
+    final gs = gameState.level.gridSize <= 0 ? 5 : gameState.level.gridSize;
+    return ps / gs;
+  }
 
   @override
   Future<void> onLoad() async {
-    size = Vector2.all(gridPixelSize);
+    final ps = gridPixelSize <= 0 ? 300.0 : gridPixelSize;
+    size = Vector2.all(ps);
     scale = Vector2.all(0.0);
     _refreshMask();
     _buildArrows();
