@@ -1,141 +1,232 @@
-import 'dart:math' as math;
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/arrow_escape_models.dart';
 
+class ParticleModel {
+  Offset position;
+  Offset velocity;
+  Color color;
+  double alpha;
+  double radius;
+
+  ParticleModel({
+    required this.position,
+    required this.velocity,
+    required this.color,
+    this.alpha = 1.0,
+    required this.radius,
+  });
+}
+
 class ArrowEscapePainter extends CustomPainter {
-  final ArrowEscapeGameState state;
-  final String? hintArrowId;
+  final ArrowLevelModel level;
+  final List<ArrowSnakeModel> arrows;
+  final String? highlightedArrowId;
+  final List<ParticleModel> particles;
 
   ArrowEscapePainter({
-    required this.state,
-    this.hintArrowId,
+    required this.level,
+    required this.arrows,
+    this.highlightedArrowId,
+    required this.particles,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double cellSize = math.min(size.width, size.height) / state.gridSize;
-    final double paddingX = (size.width - (cellSize * state.gridSize)) / 2.0;
-    final double paddingY = (size.height - (cellSize * state.gridSize)) / 2.0;
+    final gridSize = level.gridSize;
+    final cellSize = size.width / gridSize;
 
-    // 1. Draw Dot Grid Background
-    final Paint dotPaint = Paint()
-      ..color = const Color(0xFF475569).withValues(alpha: 0.4)
-      ..style = PaintingStyle.fill;
+    // 1. Draw Subtle Grid Pattern & Border
+    _drawGridBackground(canvas, size, gridSize, cellSize);
 
-    for (int r = 0; r <= state.gridSize; r++) {
-      for (int c = 0; c <= state.gridSize; c++) {
-        final double x = paddingX + c * cellSize;
-        final double y = paddingY + r * cellSize;
-        canvas.drawCircle(Offset(x, y), 2.2, dotPaint);
+    // 2. Draw Arrows
+    for (final arrow in arrows) {
+      if (arrow.pathPoints.isEmpty) continue;
+
+      canvas.save();
+
+      // Apply shake offset if blocked
+      if (arrow.isBlockedShaking) {
+        final shakeDx = sin(arrow.shakeProgress * pi * 4) * (cellSize * 0.12);
+        canvas.translate(shakeDx, 0);
       }
+
+      final isHinted = arrow.id == highlightedArrowId;
+      _drawSingleArrow(canvas, arrow, cellSize, gridSize, size, isHinted);
+
+      canvas.restore();
     }
 
-    // 2. Draw Multi-Segment Winding Snake Arrows
-    for (final arrow in state.arrows) {
-      if (arrow.isEscaping && arrow.animProgress >= 1.0) continue;
+    // 3. Draw Particles
+    _drawParticles(canvas);
+  }
 
-      final isHinted = (arrow.id == hintArrowId);
-      _drawSnakeArrow(canvas, paddingX, paddingY, cellSize, arrow, isHinted, size);
+  void _drawGridBackground(Canvas canvas, Size size, int gridSize, double cellSize) {
+    final bgPaint = Paint()..color = const Color(0xFF14161B);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(16)),
+      bgPaint,
+    );
+
+    final borderPaint = Paint()
+      ..color = const Color(0xFF2A2D34)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(16)),
+      borderPaint,
+    );
+
+    // Subtle grid dots
+    final dotPaint = Paint()..color = const Color(0xFF2B2E38);
+    for (int r = 0; r <= gridSize; r++) {
+      for (int c = 0; c <= gridSize; c++) {
+        canvas.drawCircle(Offset(c * cellSize, r * cellSize), 1.5, dotPaint);
+      }
     }
   }
 
-  void _drawSnakeArrow(
+  void _drawSingleArrow(
     Canvas canvas,
-    double padX,
-    double padY,
+    ArrowSnakeModel arrow,
     double cellSize,
-    ArrowModel arrow,
+    int gridSize,
+    Size size,
     bool isHinted,
-    Size canvasSize,
   ) {
-    if (arrow.path.isEmpty) return;
+    final pathPts = arrow.pathPoints;
+    if (pathPts.isEmpty) return;
 
-    // Calculate pixel coordinates for path segments
-    final List<Offset> points = arrow.path.map((pt) {
-      final double cx = padX + pt[1] * cellSize + cellSize / 2.0;
-      final double cy = padY + pt[0] * cellSize + cellSize / 2.0;
-      return Offset(cx, cy);
+    // Map grid points to pixel centers
+    List<Offset> pxPoints = pathPts.map((pt) {
+      return Offset((pt.x + 0.5) * cellSize, (pt.y + 0.5) * cellSize);
     }).toList();
 
-    // Apply animation displacement along direction
-    Offset animOffset = Offset.zero;
+    // If escaping, translate points along escape direction
     if (arrow.isEscaping) {
-      final double escapeDist = math.max(canvasSize.width, canvasSize.height) * 1.2;
-      final vec = arrow.direction.delta;
-      animOffset = Offset(vec.dy * escapeDist * arrow.animProgress, vec.dx * escapeDist * arrow.animProgress);
-    } else if (arrow.isColliding) {
-      final vec = arrow.direction.delta;
-      final double bump = math.sin(arrow.animProgress * math.pi) * 20.0;
-      animOffset = Offset(vec.dy * bump, vec.dx * bump);
+      final dir = arrow.escapeDirection;
+      double offsetDist = arrow.escapeProgress * (size.width * 1.5);
+      Offset slideVector = Offset.zero;
+
+      switch (dir) {
+        case ArrowDirection.up:
+          slideVector = Offset(0, -offsetDist);
+          break;
+        case ArrowDirection.down:
+          slideVector = Offset(0, offsetDist);
+          break;
+        case ArrowDirection.left:
+          slideVector = Offset(-offsetDist, 0);
+          break;
+        case ArrowDirection.right:
+          slideVector = Offset(offsetDist, 0);
+          break;
+      }
+
+      pxPoints = pxPoints.map((pt) => pt + slideVector).toList();
     }
 
-    final List<Offset> animPoints = points.map((p) => p + animOffset).toList();
+    final mainColor = isHinted ? const Color(0xFFFFEA00) : arrow.color;
+    final strokeW = cellSize * 0.42;
 
-    // Hint Glow
+    // Draw Hint Glow
     if (isHinted) {
-      final Paint glowPaint = Paint()
-        ..color = const Color(0xFFFACC15).withValues(alpha: 0.6)
+      final glowPaint = Paint()
+        ..color = const Color(0xFFFFEA00).withValues(alpha: 0.6)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 14.0
+        ..strokeWidth = strokeW + 10
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 8);
 
-      final Path glowPath = Path();
-      glowPath.moveTo(animPoints.first.dx, animPoints.first.dy);
-      for (int i = 1; i < animPoints.length; i++) {
-        glowPath.lineTo(animPoints[i].dx, animPoints[i].dy);
+      final glowPath = Path()..moveTo(pxPoints.first.dx, pxPoints.first.dy);
+      for (int i = 1; i < pxPoints.length; i++) {
+        glowPath.lineTo(pxPoints[i].dx, pxPoints[i].dy);
       }
       canvas.drawPath(glowPath, glowPaint);
     }
 
-    // Polyline Shaft Body
-    final Paint linePaint = Paint()
-      ..color = arrow.color
+    // Draw Arrow Body Polyline
+    final bodyPaint = Paint()
+      ..color = mainColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6.5
+      ..strokeWidth = strokeW
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    final Path bodyPath = Path();
-    bodyPath.moveTo(animPoints.first.dx, animPoints.first.dy);
-    for (int i = 1; i < animPoints.length; i++) {
-      bodyPath.lineTo(animPoints[i].dx, animPoints[i].dy);
+    final bodyPath = Path()..moveTo(pxPoints.first.dx, pxPoints.first.dy);
+    for (int i = 1; i < pxPoints.length; i++) {
+      bodyPath.lineTo(pxPoints[i].dx, pxPoints[i].dy);
     }
-    canvas.drawPath(bodyPath, linePaint);
+    canvas.drawPath(bodyPath, bodyPaint);
 
-    // Arrow Caret Head at path.first (Head)
-    final Offset headPoint = animPoints.first;
-    _drawCaretHead(canvas, headPoint, cellSize * 0.35, arrow.direction, arrow.color);
-  }
-
-  void _drawCaretHead(
-    Canvas canvas,
-    Offset center,
-    double size,
-    ArrowDirection dir,
-    Color color,
-  ) {
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(dir.rotationRadians);
-
-    final Paint headPaint = Paint()
-      ..color = color
+    // Inner highlight core
+    final corePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6.5
+      ..strokeWidth = strokeW * 0.25
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(bodyPath, corePaint);
 
-    final Path path = Path();
-    path.moveTo(-size * 0.6, -size * 0.7);
-    path.lineTo(size * 0.6, 0);
-    path.lineTo(-size * 0.6, size * 0.7);
+    // Draw Sharp Caret Arrow Head at index 0 (Head)
+    final head = pxPoints.first;
+    final dir = arrow.escapeDirection;
 
-    canvas.drawPath(path, headPaint);
+    double angle = 0.0;
+    switch (dir) {
+      case ArrowDirection.up:
+        angle = -pi / 2;
+        break;
+      case ArrowDirection.down:
+        angle = pi / 2;
+        break;
+      case ArrowDirection.left:
+        angle = pi;
+        break;
+      case ArrowDirection.right:
+        angle = 0;
+        break;
+    }
+
+    canvas.save();
+    canvas.translate(head.dx, head.dy);
+    canvas.rotate(angle);
+
+    final headSize = cellSize * 0.48;
+    final headPath = Path()
+      ..moveTo(headSize * 0.6, 0)
+      ..lineTo(-headSize * 0.4, -headSize * 0.5)
+      ..lineTo(-headSize * 0.1, 0)
+      ..lineTo(-headSize * 0.4, headSize * 0.5)
+      ..close();
+
+    final headPaint = Paint()..color = mainColor;
+    canvas.drawPath(headPath, headPaint);
+
+    final headCorePaint = Paint()..color = Colors.white.withValues(alpha: 0.7);
+    canvas.drawPath(
+      Path()
+        ..moveTo(headSize * 0.4, 0)
+        ..lineTo(-headSize * 0.2, -headSize * 0.25)
+        ..lineTo(0, 0)
+        ..lineTo(-headSize * 0.2, headSize * 0.25)
+        ..close(),
+      headCorePaint,
+    );
+
     canvas.restore();
   }
 
+  void _drawParticles(Canvas canvas) {
+    for (final p in particles) {
+      final pPaint = Paint()
+        ..color = p.color.withValues(alpha: p.alpha.clamp(0.0, 1.0))
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(p.position, p.radius, pPaint);
+    }
+  }
+
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant ArrowEscapePainter oldDelegate) => true;
 }

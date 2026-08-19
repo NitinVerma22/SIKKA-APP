@@ -1,101 +1,87 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-enum ArrowDirection {
-  up,
-  down,
-  left,
-  right;
+enum ArrowDirection { up, right, down, left }
 
-  Offset get delta {
-    switch (this) {
-      case ArrowDirection.up:
-        return const Offset(-1, 0);
-      case ArrowDirection.down:
-        return const Offset(1, 0);
-      case ArrowDirection.left:
-        return const Offset(0, -1);
-      case ArrowDirection.right:
-        return const Offset(0, 1);
-    }
-  }
+class Point2D {
+  final int x;
+  final int y;
 
-  double get rotationRadians {
-    switch (this) {
-      case ArrowDirection.right:
-        return 0.0;
-      case ArrowDirection.down:
-        return math.pi / 2;
-      case ArrowDirection.left:
-        return math.pi;
-      case ArrowDirection.up:
-        return -math.pi / 2;
-    }
-  }
+  const Point2D(this.x, this.y);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Point2D && runtimeType == other.runtimeType && x == other.x && y == other.y;
+
+  @override
+  int get hashCode => x.hashCode ^ y.hashCode;
+
+  Point2D copyWith({int? x, int? y}) => Point2D(x ?? this.x, y ?? this.y);
 }
 
-class ArrowModel {
+class ArrowSnakeModel {
   final String id;
-  final List<List<int>> path; // Winding polyline path: [[r0, c0], [r1, c1], ...]
-  final ArrowDirection direction;
+  final List<Point2D> pathPoints; // Index 0 is head, last is tail
   final Color color;
   bool isEscaping;
-  bool isColliding;
-  double animProgress; // 0.0 to 1.0 along the path
+  double escapeProgress; // 0.0 to 1.0
+  bool isBlockedShaking;
+  double shakeProgress; // -1.0 to 1.0
 
-  ArrowModel({
+  ArrowSnakeModel({
     required this.id,
-    required this.path,
-    required this.direction,
-    this.color = Colors.white,
+    required this.pathPoints,
+    required this.color,
     this.isEscaping = false,
-    this.isColliding = false,
-    this.animProgress = 0.0,
+    this.escapeProgress = 0.0,
+    this.isBlockedShaking = false,
+    this.shakeProgress = 0.0,
   });
 
-  List<int> get head => path.first;
+  Point2D get head => pathPoints.first;
+  Point2D get neck => pathPoints.length > 1 ? pathPoints[1] : head;
 
-  ArrowModel clone() {
-    return ArrowModel(
-      id: id,
-      path: path.map((pt) => List<int>.from(pt)).toList(),
-      direction: direction,
-      color: color,
-      isEscaping: isEscaping,
-      isColliding: isColliding,
-      animProgress: animProgress,
+  ArrowDirection get escapeDirection {
+    if (pathPoints.length < 2) return ArrowDirection.up;
+    final h = head;
+    final n = neck;
+    if (h.x > n.x) return ArrowDirection.right;
+    if (h.x < n.x) return ArrowDirection.left;
+    if (h.y > n.y) return ArrowDirection.down;
+    return ArrowDirection.up;
+  }
+
+  ArrowSnakeModel copyWith({
+    String? id,
+    List<Point2D>? pathPoints,
+    Color? color,
+    bool? isEscaping,
+    double? escapeProgress,
+    bool? isBlockedShaking,
+    double? shakeProgress,
+  }) {
+    return ArrowSnakeModel(
+      id: id ?? this.id,
+      pathPoints: pathPoints ?? List.from(this.pathPoints),
+      color: color ?? this.color,
+      isEscaping: isEscaping ?? this.isEscaping,
+      escapeProgress: escapeProgress ?? this.escapeProgress,
+      isBlockedShaking: isBlockedShaking ?? this.isBlockedShaking,
+      shakeProgress: shakeProgress ?? this.shakeProgress,
     );
   }
 }
 
-class ArrowEscapeGameState {
+class ArrowLevelModel {
   final int levelNumber;
-  final int gridSize;
-  final List<ArrowModel> arrows;
-  int livesCount;
-  int score;
-  int totalTimeSeconds;
-  int remainingTimeSeconds;
+  final int gridSize; // e.g. 6x6, 7x7, 8x8
+  final List<ArrowSnakeModel> arrows;
+  final int maxTimeSeconds;
 
-  ArrowEscapeGameState({
+  const ArrowLevelModel({
     required this.levelNumber,
     required this.gridSize,
     required this.arrows,
-    this.livesCount = 3,
-    this.score = 0,
-    this.totalTimeSeconds = 60,
-    this.remainingTimeSeconds = 60,
+    this.maxTimeSeconds = 0,
   });
-
-  ArrowEscapeGameState clone() {
-    return ArrowEscapeGameState(
-      levelNumber: levelNumber,
-      gridSize: gridSize,
-      arrows: arrows.map((a) => a.clone()).toList(),
-      livesCount: livesCount,
-      score: score,
-      totalTimeSeconds: totalTimeSeconds,
-      remainingTimeSeconds: remainingTimeSeconds,
-    );
-  }
 }
