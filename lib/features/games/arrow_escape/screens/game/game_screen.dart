@@ -78,35 +78,12 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
   Future<void> _loadLevelAsync(int levelNum) async {
     final levelRepo = ref.read(levelRepositoryProvider);
-
-    if (levelRepo.isCached(levelNum)) {
-      _level = levelRepo.getLevel(levelNum);
-      _initGame();
-
-      if (!widget.isRandom) {
-        levelRepo.preGenerateRangeAsync(levelNum + 1, 5);
-      }
-      return;
-    }
-
-    if (mounted) setState(() => _isLoadingLevel = true);
-
-    try {
-      final level = await levelRepo.getLevelAsync(levelNum, preGenerateNext: !widget.isRandom);
-      if (!mounted) return;
-      _level = level;
-      _initGame();
+    _level = levelRepo.getLevel(levelNum);
+    _initGame();
+    if (mounted) {
       setState(() => _isLoadingLevel = false);
-
-      if (!widget.isRandom) {
-        levelRepo.preGenerateRangeAsync(levelNum + 1, 5);
-      }
-    } catch (_) {
-      if (!mounted) return;
-      _level = levelRepo.getLevel(levelNum);
-      _initGame();
-      if (mounted) setState(() => _isLoadingLevel = false);
     }
+    levelRepo.preGenerateRangeAsync(levelNum + 1, 3);
   }
 
   double _shakeOffset = 0.0;

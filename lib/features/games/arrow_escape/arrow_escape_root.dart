@@ -4,7 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'data/repositories/progress_repository.dart';
 import 'data/repositories/level_repository.dart';
-import 'screens/home/home_screen.dart';
+import 'screens/level_select/level_select_screen.dart';
 import 'main.dart';
 
 class ArrowEscapeRootWidget extends StatefulWidget {
@@ -115,7 +115,7 @@ class _ArrowEscapeRootWidgetState extends State<ArrowEscapeRootWidget> {
         progressRepositoryProvider.overrideWith((ref) => _progressRepo!),
         levelRepositoryProvider.overrideWithValue(_levelRepo!),
       ],
-      child: const HomeScreen(),
+      child: const LevelSelectScreen(),
     );
   }
 }
