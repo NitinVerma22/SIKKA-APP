@@ -258,14 +258,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/games/water_sort',
+            parentNavigatorKey: rootNavigatorKey,
             builder: (context, state) => const WaterSortLevelSelectScreen(),
           ),
           GoRoute(
             path: '/games/bubble_shooter',
+            parentNavigatorKey: rootNavigatorKey,
             builder: (context, state) => const BubbleShooterLevelSelectScreen(),
           ),
           GoRoute(
             path: '/games/arrow_escape',
+            parentNavigatorKey: rootNavigatorKey,
             builder: (context, state) => const ArrowEscapeRootWidget(),
           ),
           GoRoute(

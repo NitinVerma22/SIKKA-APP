@@ -97,17 +97,18 @@ class ArrowEscapePainter extends CustomPainter {
     final pathPts = arrow.pathPoints;
     if (pathPts.isEmpty) return;
 
-    List<Offset> pxPoints = pathPts.map((pt) {
-      return Offset((pt.x + 0.5) * cellSize, (pt.y + 0.5) * cellSize);
-    }).toList();
+    List<Offset> pxPoints;
 
-    // If escaping, slide along exit vector
     if (arrow.isEscaping) {
-      final dir = arrow.escapeDirection;
-      final slideDist = arrow.escapeProgress * (size.width * 1.6);
-      final slideOffset = Offset(dir.dx * slideDist, dir.dy * slideDist);
-      pxPoints = pxPoints.map((pt) => pt + slideOffset).toList();
+      // Build continuous polyline track slicing along exact path & exit extension
+      pxPoints = _buildSlidingPolylineTrack(arrow, cellSize, gridSize);
+    } else {
+      pxPoints = pathPts.map((pt) {
+        return Offset((pt.x + 0.5) * cellSize, (pt.y + 0.5) * cellSize);
+      }).toList();
     }
+
+    if (pxPoints.isEmpty) return;
 
     final mainColor = isHinted ? const Color(0xFFFFEA00) : arrow.color;
     final sw = cellSize * 0.14;
@@ -141,7 +142,7 @@ class ArrowEscapePainter extends CustomPainter {
     // 2. Motion Trail when escaping
     if (arrow.isEscaping) {
       final trailPaint = Paint()
-        ..color = mainColor.withValues(alpha: 0.2)
+        ..color = mainColor.withValues(alpha: 0.25)
         ..style = PaintingStyle.stroke
         ..strokeWidth = sw * 2.0
         ..strokeCap = StrokeCap.round
@@ -160,6 +161,90 @@ class ArrowEscapePainter extends CustomPainter {
 
     // 4. Caret Arrow Head at Head Point (pxPoints.first)
     _drawCaretHead(canvas, pxPoints, arrow.escapeDirection, mainColor, cellSize, sw);
+  }
+
+  /// Construct continuous segment-by-segment polyline track slicing along exact path turns
+  List<Offset> _buildSlidingPolylineTrack(ArrowSnakeModel arrow, double cellSize, int gridSize) {
+    final dir = arrow.escapeDirection;
+
+    // Convert pathPoints (head at 0, tail at end) to pixel coordinates
+    final basePts = arrow.pathPoints.map((pt) {
+      return Offset((pt.x + 0.5) * cellSize, (pt.y + 0.5) * cellSize);
+    }).toList();
+
+    // Create exit extension points extending straight from head (basePts[0]) out past board boundary
+    final extCount = gridSize + 5;
+    final headPx = basePts.first;
+
+    final track = <Offset>[];
+    for (int i = extCount; i >= 1; i--) {
+      track.add(headPx + Offset(dir.dx * i * cellSize, dir.dy * i * cellSize));
+    }
+    track.addAll(basePts); // track: [Ext_M, ..., Ext_1, Head(P0), P1, P2, ..., Tail(Pk)]
+
+    // Compute cumulative arc-length distances along track from Tail (track.last) to Ext_M (track.first)
+    final dist = <double>[0.0];
+    final revTrack = track.reversed.toList(); // revTrack[0] is Tail, revTrack.last is Ext_M
+    for (int i = 1; i < revTrack.length; i++) {
+      dist.add(dist[i - 1] + (revTrack[i] - revTrack[i - 1]).distance);
+    }
+
+    // Body length is distance from Tail (revTrack[0]) to Head (revTrack[basePts.length - 1])
+    final bodyLen = dist[basePts.length - 1];
+    final totalTrackDist = dist.last;
+
+    // As escapeProgress t goes 0 -> 1:
+    // head moves from bodyLen to totalTrackDist
+    // tail moves from 0 to (totalTrackDist - bodyLen)
+    final progress = arrow.escapeProgress.clamp(0.0, 1.0);
+    final maxTravel = totalTrackDist - bodyLen;
+    final currentTailDist = progress * maxTravel;
+    final currentHeadDist = currentTailDist + bodyLen;
+
+    // Sample polyline between currentTailDist and currentHeadDist
+    return _sliceTrackByDistance(revTrack, dist, currentTailDist, currentHeadDist);
+  }
+
+  /// Slice polyline track between distanceStart (tail) and distanceEnd (head)
+  List<Offset> _sliceTrackByDistance(
+    List<Offset> track,
+    List<double> dist,
+    double startDist,
+    double endDist,
+  ) {
+    if (track.isEmpty || startDist >= endDist) return [];
+
+    // Find tail position (startDist)
+    final tailPt = _getPointAtDistance(track, dist, startDist);
+    // Find head position (endDist)
+    final headPt = _getPointAtDistance(track, dist, endDist);
+
+    final sliced = <Offset>[headPt];
+
+    // Add all intermediate track vertices between startDist and endDist (in reverse order from head to tail)
+    for (int i = track.length - 1; i >= 0; i--) {
+      if (dist[i] > startDist && dist[i] < endDist) {
+        sliced.add(track[i]);
+      }
+    }
+
+    sliced.add(tailPt);
+    return sliced;
+  }
+
+  Offset _getPointAtDistance(List<Offset> track, List<double> dist, double targetDist) {
+    if (targetDist <= 0) return track.first;
+    if (targetDist >= dist.last) return track.last;
+
+    for (int i = 0; i < dist.length - 1; i++) {
+      if (targetDist >= dist[i] && targetDist <= dist[i + 1]) {
+        final segLen = dist[i + 1] - dist[i];
+        if (segLen <= 0.001) return track[i];
+        final t = (targetDist - dist[i]) / segLen;
+        return Offset.lerp(track[i], track[i + 1], t)!;
+      }
+    }
+    return track.last;
   }
 
   void _drawCaretHead(
