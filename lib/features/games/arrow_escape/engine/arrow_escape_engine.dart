@@ -2,135 +2,181 @@ import 'dart:math' as math;
 import '../models/arrow_escape_models.dart';
 
 class ArrowEscapeEngine {
-  /// Generates progressive 200 guaranteed solvable arrow puzzle levels
+  /// Generates progressive guaranteed solvable winding snake arrow levels
   static ArrowEscapeGameState generateLevel(int levelNumber) {
-    final rng = math.Random(levelNumber * 10007 + 7919);
+    final rng = math.Random(levelNumber * 7919 + 313);
 
-    int rows = 4;
-    int cols = 4;
-
+    int gridSize = 5;
     if (levelNumber <= 10) {
-      rows = 4;
-      cols = 4;
+      gridSize = 5;
     } else if (levelNumber <= 40) {
-      rows = 5;
-      cols = 4;
+      gridSize = 6;
     } else if (levelNumber <= 100) {
-      rows = 5;
-      cols = 5;
+      gridSize = 7;
     } else {
-      rows = 6;
-      cols = 5;
+      gridSize = 8;
     }
 
-    final grid = List.generate(
-      rows,
-      (r) => List<ArrowNode?>.filled(cols, null),
-    );
+    final List<ArrowModel> arrows = [];
+    final board = List.generate(gridSize, (_) => List<int>.filled(gridSize, 0));
 
-    final List<ArrowDir> dirs = [
-      ArrowDir.up,
-      ArrowDir.down,
-      ArrowDir.left,
-      ArrowDir.right,
+    final List<ArrowDirection> dirs = [
+      ArrowDirection.up,
+      ArrowDirection.down,
+      ArrowDirection.left,
+      ArrowDirection.right,
     ];
 
-    // Guaranteed Solvable Reverse-Placement Simulation
-    final int targetCount = (rows * cols * 0.75).round();
-    int placed = 0;
+    int arrowCounter = 0;
+    int targetArrows = (gridSize * gridSize * 0.45).round();
     int attempts = 0;
 
-    while (placed < targetCount && attempts < 250) {
+    while (arrows.length < targetArrows && attempts < 350) {
       attempts++;
-      final r = rng.nextInt(rows);
-      final c = rng.nextInt(cols);
+      final hr = rng.nextInt(gridSize);
+      final hc = rng.nextInt(gridSize);
 
-      if (grid[r][c] != null) continue;
+      if (board[hr][hc] != 0) continue;
 
-      final shuffledDirs = List<ArrowDir>.from(dirs)..shuffle(rng);
-      ArrowDir? validDir;
+      final shuffledDirs = List<ArrowDirection>.from(dirs)..shuffle(rng);
+      ArrowDirection? chosenDir;
+      List<List<int>>? chosenPath;
 
       for (final dir in shuffledDirs) {
-        if (_canEscapeInCurrentGrid(grid, rows, cols, r, c, dir)) {
-          validDir = dir;
+        final path = _generateWindingPath(board, gridSize, hr, hc, dir, rng);
+        if (path != null && path.length >= 2) {
+          chosenDir = dir;
+          chosenPath = path;
           break;
         }
       }
 
-      if (validDir != null) {
-        final color = ArrowEscapeColors.getColor((r * cols + c) % ArrowEscapeColors.arrowColors.length);
-        grid[r][c] = ArrowNode(
-          id: 'node_${r}_${c}_$placed',
-          row: r,
-          col: c,
-          dir: validDir,
-          color: color,
-        );
-        placed++;
+      if (chosenDir != null && chosenPath != null) {
+        arrowCounter++;
+        for (final pt in chosenPath) {
+          board[pt[0]][pt[1]] = arrowCounter;
+        }
+
+        arrows.add(ArrowModel(
+          id: 'arrow_$arrowCounter',
+          path: chosenPath,
+          direction: chosenDir,
+        ));
       }
     }
 
     return ArrowEscapeGameState(
       levelNumber: levelNumber,
-      grid: grid,
-      rows: rows,
-      cols: cols,
+      gridSize: gridSize,
+      arrows: arrows,
       livesCount: 3,
+      totalTimeSeconds: 60 + (levelNumber ~/ 5) * 5,
+      remainingTimeSeconds: 60 + (levelNumber ~/ 5) * 5,
     );
   }
 
-  static bool _canEscapeInCurrentGrid(
-    List<List<ArrowNode?>> grid,
-    int maxRows,
-    int maxCols,
-    int r,
-    int c,
-    ArrowDir dir,
+  /// Generates a winding path starting from head (hr, hc) turning 90 degrees
+  static List<List<int>>? _generateWindingPath(
+    List<List<int>> board,
+    int size,
+    int hr,
+    int hc,
+    ArrowDirection dir,
+    math.Random rng,
   ) {
-    final vec = dir.vector;
-    int currR = r + vec.dy.toInt();
-    int currC = c + vec.dx.toInt();
-
-    while (currR >= 0 && currR < maxRows && currC >= 0 && currC < maxCols) {
-      if (grid[currR][currC] != null) {
-        return false;
-      }
-      currR += vec.dy.toInt();
-      currC += vec.dx.toInt();
+    // Escape check from head (hr, hc) pointing in dir
+    if (!_canHeadEscapeToEdge(board, size, hr, hc, dir)) {
+      return null;
     }
 
+    final path = <List<int>>[
+      [hr, hc]
+    ];
+
+    // Grow tail with 90-degree turns
+    int currR = hr;
+    int currC = hc;
+    int tailLen = rng.nextInt(3) + 2; // 2 to 4 segments long
+
+    List<ArrowDirection> growDirs = [
+      dir.opposite,
+      dir.turnLeft,
+      dir.turnRight,
+    ];
+
+    for (int i = 0; i < tailLen - 1; i++) {
+      growDirs.shuffle(rng);
+      bool grown = false;
+
+      for (final gdir in growDirs) {
+        final nr = currR + gdir.delta.dx.toInt();
+        final nc = currC + gdir.delta.dy.toInt();
+
+        if (nr >= 0 && nr < size && nc >= 0 && nc < size && board[nr][nc] == 0) {
+          if (!path.any((pt) => pt[0] == nr && pt[1] == nc)) {
+            currR = nr;
+            currC = nc;
+            path.add([currR, currC]);
+            grown = true;
+            break;
+          }
+        }
+      }
+
+      if (!grown) break;
+    }
+
+    return path;
+  }
+
+  static bool _canHeadEscapeToEdge(
+    List<List<int>> board,
+    int size,
+    int hr,
+    int hc,
+    ArrowDirection dir,
+  ) {
+    int r = hr + dir.delta.dx.toInt();
+    int c = hc + dir.delta.dy.toInt();
+
+    while (r >= 0 && r < size && c >= 0 && c < size) {
+      if (board[r][c] != 0) return false;
+      r += dir.delta.dx.toInt();
+      c += dir.delta.dy.toInt();
+    }
     return true;
   }
 
-  /// Checks if launching the arrow at (row, col) is unblocked and will escape cleanly
-  static bool isPathClear(ArrowEscapeGameState state, int row, int col) {
-    final arrow = state.grid[row][col];
-    if (arrow == null || arrow.isEscaping) return false;
+  /// Checks if launching targetArrow is unblocked by any other active arrow
+  static bool isPathClear(ArrowEscapeGameState state, ArrowModel targetArrow) {
+    if (targetArrow.isEscaping) return false;
 
-    final vec = arrow.dir.vector;
-    int currR = row + vec.dy.toInt();
-    int currC = col + vec.dx.toInt();
+    final head = targetArrow.head;
+    final dir = targetArrow.direction;
 
-    while (currR >= 0 && currR < state.rows && currC >= 0 && currC < state.cols) {
-      final blockingNode = state.grid[currR][currC];
-      if (blockingNode != null && !blockingNode.isEscaping) {
-        return false;
+    int r = head[0] + dir.delta.dx.toInt();
+    int c = head[1] + dir.delta.dy.toInt();
+
+    while (r >= 0 && r < state.gridSize && c >= 0 && c < state.gridSize) {
+      for (final other in state.arrows) {
+        if (other.id != targetArrow.id && !other.isEscaping) {
+          if (other.path.any((pt) => pt[0] == r && pt[1] == c)) {
+            return false; // Path blocked!
+          }
+        }
       }
-      currR += vec.dy.toInt();
-      currC += vec.dx.toInt();
+      r += dir.delta.dx.toInt();
+      c += dir.delta.dy.toInt();
     }
 
-    return true;
+    return true; // Path clear to edge!
   }
 
   /// Finds a valid unblocked arrow that can escape immediately (Hint)
-  static ArrowNode? findHint(ArrowEscapeGameState state) {
-    for (int r = 0; r < state.rows; r++) {
-      for (int c = 0; c < state.cols; c++) {
-        final node = state.grid[r][c];
-        if (node != null && !node.isEscaping && isPathClear(state, r, c)) {
-          return node;
-        }
+  static ArrowModel? findHint(ArrowEscapeGameState state) {
+    for (final arrow in state.arrows) {
+      if (!arrow.isEscaping && isPathClear(state, arrow)) {
+        return arrow;
       }
     }
     return null;
@@ -138,14 +184,47 @@ class ArrowEscapeEngine {
 
   /// Checks if all arrows have escaped
   static bool isLevelWon(ArrowEscapeGameState state) {
-    for (int r = 0; r < state.rows; r++) {
-      for (int c = 0; c < state.cols; c++) {
-        final node = state.grid[r][c];
-        if (node != null && !node.isEscaping) {
-          return false;
-        }
-      }
+    return state.arrows.every((a) => a.isEscaping);
+  }
+}
+
+extension ArrowDirectionHelper on ArrowDirection {
+  ArrowDirection get opposite {
+    switch (this) {
+      case ArrowDirection.up:
+        return ArrowDirection.down;
+      case ArrowDirection.down:
+        return ArrowDirection.up;
+      case ArrowDirection.left:
+        return ArrowDirection.right;
+      case ArrowDirection.right:
+        return ArrowDirection.left;
     }
-    return true;
+  }
+
+  ArrowDirection get turnLeft {
+    switch (this) {
+      case ArrowDirection.up:
+        return ArrowDirection.left;
+      case ArrowDirection.left:
+        return ArrowDirection.down;
+      case ArrowDirection.down:
+        return ArrowDirection.right;
+      case ArrowDirection.right:
+        return ArrowDirection.up;
+    }
+  }
+
+  ArrowDirection get turnRight {
+    switch (this) {
+      case ArrowDirection.up:
+        return ArrowDirection.right;
+      case ArrowDirection.right:
+        return ArrowDirection.down;
+      case ArrowDirection.down:
+        return ArrowDirection.left;
+      case ArrowDirection.left:
+        return ArrowDirection.up;
+    }
   }
 }

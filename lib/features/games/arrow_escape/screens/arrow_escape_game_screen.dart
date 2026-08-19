@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../engine/arrow_escape_engine.dart';
 import '../models/arrow_escape_models.dart';
@@ -36,8 +35,7 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
   int _earnedCoins = 0;
 
   String? _activeHintArrowId;
-  int _freeHintsRemaining = 1;
-  int _freeUndosRemaining = 1;
+  Timer? _timer;
 
   @override
   void initState() {
@@ -45,7 +43,14 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
     _initLevel();
   }
 
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   void _initLevel() {
+    _timer?.cancel();
     setState(() {
       _gameState = ArrowEscapeEngine.generateLevel(widget.levelNumber);
       _history.clear();
@@ -55,31 +60,43 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
       _isAnimating = false;
       _earnedCoins = 0;
       _activeHintArrowId = null;
-      _freeHintsRemaining = 1;
-      _freeUndosRemaining = 1;
+    });
+
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_isLevelWon || _isGameOver) {
+        t.cancel();
+        return;
+      }
+      if (_gameState.remainingTimeSeconds > 0) {
+        setState(() {
+          _gameState.remainingTimeSeconds--;
+        });
+      } else {
+        t.cancel();
+        setState(() {
+          _isGameOver = true;
+        });
+      }
     });
   }
 
-  void _showRewardedAdHelper(VoidCallback onEarned) {
-    if (!AdService.instance.isRewardedAdLoaded()) {
-      AdService.instance.loadRewardedAd();
-    }
-
-    AdService.instance.showRewardedAd(
-      context: context,
-      userId: 'arrow_escape_user',
-      onAdDismissed: () {},
-      onUserEarnedReward: (reward) {
-        onEarned();
-      },
-    );
-  }
-
-  Future<void> _onCellTap(int row, int col, Size canvasSize) async {
+  Future<void> _onCellTap(int row, int col) async {
     if (_isAnimating || _isLevelWon || _isGameOver) return;
 
-    final targetNode = _gameState.grid[row][col];
-    if (targetNode == null || targetNode.isEscaping) return;
+    // Find arrow whose path contains (row, col)
+    ArrowModel? targetArrow;
+    for (final arrow in _gameState.arrows) {
+      if (!arrow.isEscaping && arrow.path.any((pt) => pt[0] == row && pt[1] == col)) {
+        targetArrow = arrow;
+        break;
+      }
+    }
+
+    if (targetArrow == null) return;
 
     setState(() {
       _isAnimating = true;
@@ -89,17 +106,14 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
 
     ArrowEscapeAudioService.instance.playTapSfx();
 
-    final bool canEscape = ArrowEscapeEngine.isPathClear(_gameState, row, col);
-    final vec = targetNode.dir.vector;
+    final bool canEscape = ArrowEscapeEngine.isPathClear(_gameState, targetArrow);
 
     if (canEscape) {
-      // ESCAPE ANIMATION (Flight off-screen)
-      final double flightDist = math.max(canvasSize.width, canvasSize.height) * 1.2;
-
-      for (double t = 0.0; t <= 1.0; t += 0.08) {
+      // ESCAPE ANIMATION (Slide along winding path)
+      for (double progress = 0.0; progress <= 1.0; progress += 0.1) {
         if (!mounted) return;
         setState(() {
-          targetNode.flightOffset = Offset(vec.dx * flightDist * t, vec.dy * flightDist * t);
+          targetArrow!.animProgress = progress;
         });
         await Future.delayed(const Duration(milliseconds: 16));
       }
@@ -108,10 +122,8 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
 
       if (!mounted) return;
       setState(() {
-        targetNode.isEscaping = true;
-        targetNode.flightOffset = Offset.zero;
-        _gameState.movesCount++;
-        _gameState.score += 20;
+        targetArrow!.isEscaping = true;
+        targetArrow.animProgress = 0.0;
         _isAnimating = false;
 
         if (ArrowEscapeEngine.isLevelWon(_gameState)) {
@@ -119,30 +131,23 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
         }
       });
     } else {
-      // COLLISION ANIMATION (Bounce back & lose 1 heart life)
-      final double bounceDist = 35.0;
+      // COLLISION ANIMATION (Bump along path and bounce back)
+      targetArrow.isColliding = true;
 
-      for (double t = 0.0; t <= 1.0; t += 0.15) {
+      for (double progress = 0.0; progress <= 1.0; progress += 0.2) {
         if (!mounted) return;
         setState(() {
-          targetNode.flightOffset = Offset(vec.dx * bounceDist * t, vec.dy * bounceDist * t);
+          targetArrow!.animProgress = progress;
         });
         await Future.delayed(const Duration(milliseconds: 16));
       }
 
       ArrowEscapeAudioService.instance.playCollisionSfx();
 
-      for (double t = 1.0; t >= 0.0; t -= 0.15) {
-        if (!mounted) return;
-        setState(() {
-          targetNode.flightOffset = Offset(vec.dx * bounceDist * t, vec.dy * bounceDist * t);
-        });
-        await Future.delayed(const Duration(milliseconds: 16));
-      }
-
       if (!mounted) return;
       setState(() {
-        targetNode.flightOffset = Offset.zero;
+        targetArrow!.isColliding = false;
+        targetArrow.animProgress = 0.0;
         _gameState.livesCount--;
         _isAnimating = false;
 
@@ -153,62 +158,8 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
     }
   }
 
-  void _handleUndo() {
-    if (_history.isEmpty || _isAnimating || _isLevelWon || _isGameOver) return;
-
-    if (_freeUndosRemaining > 0) {
-      setState(() {
-        _freeUndosRemaining--;
-        _gameState = _history.removeLast();
-        _activeHintArrowId = null;
-      });
-    } else {
-      _showRewardedAdHelper(() {
-        setState(() {
-          _freeUndosRemaining++;
-          _gameState = _history.removeLast();
-          _activeHintArrowId = null;
-        });
-      });
-    }
-  }
-
-  void _handleHint() {
-    if (_isAnimating || _isLevelWon || _isGameOver) return;
-
-    if (_freeHintsRemaining > 0) {
-      final hintNode = ArrowEscapeEngine.findHint(_gameState);
-      if (hintNode != null) {
-        setState(() {
-          _freeHintsRemaining--;
-          _activeHintArrowId = hintNode.id;
-        });
-      }
-    } else {
-      _showRewardedAdHelper(() {
-        final hintNode = ArrowEscapeEngine.findHint(_gameState);
-        if (hintNode != null) {
-          setState(() {
-            _freeHintsRemaining++;
-            _activeHintArrowId = hintNode.id;
-          });
-        }
-      });
-    }
-  }
-
-  void _handleAddLife() {
-    if (_isAnimating || _isLevelWon) return;
-
-    _showRewardedAdHelper(() {
-      setState(() {
-        _gameState.livesCount += 2;
-        _isGameOver = false;
-      });
-    });
-  }
-
   Future<void> _onLevelComplete() async {
+    _timer?.cancel();
     setState(() {
       _isLevelWon = true;
       _isClaiming = true;
@@ -260,60 +211,38 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
         _handleExit();
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: const Color(0xFF111318),
         body: SafeArea(
           child: Column(
             children: [
-              // Top Bar Header
-              Container(
+              // Top Bar Header matching screenshot
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                color: const Color(0xFF1E293B),
                 child: Row(
                   children: [
                     IconButton(
                       onPressed: _handleExit,
                       icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Level ${widget.levelNumber}',
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          'CLASSIC - LVL ${widget.levelNumber}',
+                          style: const TextStyle(
+                            fontFamily: 'BebasNeue',
+                            color: Colors.white,
+                            fontSize: 24,
+                            letterSpacing: 2.0,
+                          ),
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                    // Hearts/Lives Counter
-                    Row(
-                      children: List.generate(3, (i) {
-                        return Icon(
-                          i < _gameState.livesCount ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                          color: i < _gameState.livesCount ? const Color(0xFFF43F5E) : const Color(0xFF475569),
-                          size: 20,
-                        );
-                      }),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          ArrowEscapeAudioService.instance.toggleMute();
-                        });
-                      },
-                      icon: Icon(
-                        ArrowEscapeAudioService.instance.isMuted
-                            ? Icons.volume_off_rounded
-                            : Icons.volume_up_rounded,
-                        color: Colors.white70,
-                        size: 20,
-                      ),
-                    ),
+                    const SizedBox(width: 40), // Balance left icon
                   ],
                 ),
               ),
 
-              // Game Canvas Board
+              // Main Game Canvas
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -323,18 +252,16 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
 
                       return GestureDetector(
                         onTapUp: (details) {
-                          final double cellW = canvasSize.width / _gameState.cols;
-                          final double cellH = canvasSize.height / _gameState.rows;
-                          final double cellSize = math.min(cellW, cellH);
-                          final double padX = (canvasSize.width - (cellSize * _gameState.cols)) / 2.0;
-                          final double padY = (canvasSize.height - (cellSize * _gameState.rows)) / 2.0;
+                          final double cellSize = math.min(canvasSize.width, canvasSize.height) / _gameState.gridSize;
+                          final double padX = (canvasSize.width - (cellSize * _gameState.gridSize)) / 2.0;
+                          final double padY = (canvasSize.height - (cellSize * _gameState.gridSize)) / 2.0;
 
                           final Offset pos = details.localPosition;
                           final int col = ((pos.dx - padX) / cellSize).floor();
                           final int row = ((pos.dy - padY) / cellSize).floor();
 
-                          if (row >= 0 && row < _gameState.rows && col >= 0 && col < _gameState.cols) {
-                            _onCellTap(row, col, canvasSize);
+                          if (row >= 0 && row < _gameState.gridSize && col >= 0 && col < _gameState.gridSize) {
+                            _onCellTap(row, col);
                           }
                         },
                         child: CustomPaint(
@@ -350,34 +277,46 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
                 ),
               ),
 
-              // Power-ups Bar
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1E293B),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                ),
+              // Bottom Control Bar matching screenshot
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildPowerUpBtn(
-                      icon: Icons.lightbulb_rounded,
-                      label: 'Hint',
-                      badge: _freeHintsRemaining > 0 ? 'Free' : 'Ad',
-                      onTap: _handleHint,
+                    // Green Timer Progress Bar on bottom-left
+                    Expanded(
+                      child: Container(
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF334155),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: (_gameState.remainingTimeSeconds / _gameState.totalTimeSeconds).clamp(0.0, 1.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF22C55E),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    _buildPowerUpBtn(
-                      icon: Icons.undo_rounded,
-                      label: 'Undo',
-                      badge: _freeUndosRemaining > 0 ? 'Free' : 'Ad',
-                      onTap: _handleUndo,
-                    ),
-                    _buildPowerUpBtn(
-                      icon: Icons.favorite_rounded,
-                      label: '+Lives ❤️',
-                      badge: 'Ad 📺',
-                      isAdRequired: true,
-                      onTap: _handleAddLife,
+
+                    const SizedBox(width: 32),
+
+                    // 3 White Heart Lives on bottom-right matching screenshot
+                    Row(
+                      children: List.generate(3, (i) {
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: Icon(
+                            i < _gameState.livesCount ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            color: i < _gameState.livesCount ? Colors.white : const Color(0xFF475569),
+                            size: 24,
+                          ),
+                        );
+                      }),
                     ),
                   ],
                 ),
@@ -386,7 +325,7 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
           ),
         ),
 
-        // Victory / Game Over Overlay Modal
+        // Victory / Game Over Dialog Modal
         bottomSheet: (_isLevelWon || _isGameOver)
             ? Container(
                 height: 320,
@@ -405,12 +344,12 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
                     Text(_isLevelWon ? '🎉' : '💔', style: const TextStyle(fontSize: 48)),
                     const SizedBox(height: 8),
                     Text(
-                      _isLevelWon ? 'LEVEL CLEARED!' : 'OUT OF LIVES!',
-                      style: GoogleFonts.outfit(
-                        color: _isLevelWon ? const Color(0xFFFACC15) : const Color(0xFFF87171),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 24,
-                        letterSpacing: 1.2,
+                      _isLevelWon ? 'LEVEL CLEARED!' : 'GAME OVER',
+                      style: const TextStyle(
+                        fontFamily: 'BebasNeue',
+                        color: Colors.white,
+                        fontSize: 32,
+                        letterSpacing: 2,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -432,8 +371,8 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
                               const SizedBox(width: 8),
                               Text(
                                 '+$_earnedCoins Sikka Coins',
-                                style: GoogleFonts.outfit(
-                                  color: const Color(0xFF34D399),
+                                style: const TextStyle(
+                                  color: Color(0xFF34D399),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
@@ -471,10 +410,11 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
                       },
                       child: Text(
                         _isLevelWon ? 'NEXT LEVEL' : 'RETRY LEVEL',
-                        style: GoogleFonts.outfit(
+                        style: const TextStyle(
+                          fontFamily: 'BebasNeue',
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 20,
+                          letterSpacing: 1.5,
                         ),
                       ),
                     ),
@@ -482,66 +422,6 @@ class _ArrowEscapeGameScreenState extends State<ArrowEscapeGameScreen> {
                 ),
               )
             : null,
-      ),
-    );
-  }
-
-  Widget _buildPowerUpBtn({
-    required IconData icon,
-    required String label,
-    required String badge,
-    bool isAdRequired = false,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isAdRequired
-              ? const Color(0xFF0D9488).withValues(alpha: 0.2)
-              : const Color(0xFF334155),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isAdRequired
-                ? const Color(0xFF2DD4BF).withValues(alpha: 0.5)
-                : const Color(0xFF475569),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: isAdRequired ? const Color(0xFF2DD4BF) : Colors.white, size: 20),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                color: isAdRequired
-                    ? const Color(0xFF0D9488)
-                    : (badge == 'Free' ? const Color(0xFF059669) : const Color(0xFFD97706)),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                badge,
-                style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 9,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

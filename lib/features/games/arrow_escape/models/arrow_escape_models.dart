@@ -1,119 +1,101 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-enum ArrowDir { up, down, left, right }
+enum ArrowDirection {
+  up,
+  down,
+  left,
+  right;
 
-extension ArrowDirExtension on ArrowDir {
-  Offset get vector {
+  Offset get delta {
     switch (this) {
-      case ArrowDir.up:
-        return const Offset(0, -1);
-      case ArrowDir.down:
-        return const Offset(0, 1);
-      case ArrowDir.left:
+      case ArrowDirection.up:
         return const Offset(-1, 0);
-      case ArrowDir.right:
+      case ArrowDirection.down:
         return const Offset(1, 0);
+      case ArrowDirection.left:
+        return const Offset(0, -1);
+      case ArrowDirection.right:
+        return const Offset(0, 1);
     }
   }
 
-  double get angleRadians {
+  double get rotationRadians {
     switch (this) {
-      case ArrowDir.up:
-        return -math.pi / 2;
-      case ArrowDir.down:
-        return math.pi / 2;
-      case ArrowDir.left:
-        return math.pi;
-      case ArrowDir.right:
+      case ArrowDirection.right:
         return 0.0;
+      case ArrowDirection.down:
+        return math.pi / 2;
+      case ArrowDirection.left:
+        return math.pi;
+      case ArrowDirection.up:
+        return -math.pi / 2;
     }
   }
 }
 
-class ArrowNode {
+class ArrowModel {
   final String id;
-  final int row;
-  final int col;
-  final ArrowDir dir;
+  final List<List<int>> path; // Winding polyline path: [[r0, c0], [r1, c1], ...]
+  final ArrowDirection direction;
   final Color color;
   bool isEscaping;
-  Offset flightOffset;
+  bool isColliding;
+  double animProgress; // 0.0 to 1.0 along the path
 
-  ArrowNode({
+  ArrowModel({
     required this.id,
-    required this.row,
-    required this.col,
-    required this.dir,
-    required this.color,
+    required this.path,
+    required this.direction,
+    this.color = Colors.white,
     this.isEscaping = false,
-    this.flightOffset = Offset.zero,
+    this.isColliding = false,
+    this.animProgress = 0.0,
   });
 
-  ArrowNode clone() {
-    return ArrowNode(
+  List<int> get head => path.first;
+
+  ArrowModel clone() {
+    return ArrowModel(
       id: id,
-      row: row,
-      col: col,
-      dir: dir,
+      path: path.map((pt) => List<int>.from(pt)).toList(),
+      direction: direction,
       color: color,
       isEscaping: isEscaping,
-      flightOffset: flightOffset,
+      isColliding: isColliding,
+      animProgress: animProgress,
     );
   }
 }
 
 class ArrowEscapeGameState {
   final int levelNumber;
-  final List<List<ArrowNode?>> grid;
-  final int rows;
-  final int cols;
-  int movesCount;
+  final int gridSize;
+  final List<ArrowModel> arrows;
   int livesCount;
   int score;
+  int totalTimeSeconds;
+  int remainingTimeSeconds;
 
   ArrowEscapeGameState({
     required this.levelNumber,
-    required this.grid,
-    required this.rows,
-    required this.cols,
-    this.movesCount = 0,
+    required this.gridSize,
+    required this.arrows,
     this.livesCount = 3,
     this.score = 0,
+    this.totalTimeSeconds = 60,
+    this.remainingTimeSeconds = 60,
   });
 
   ArrowEscapeGameState clone() {
-    final newGrid = List.generate(
-      rows,
-      (r) => List.generate(
-        cols,
-        (c) => grid[r][c]?.clone(),
-      ),
-    );
-
     return ArrowEscapeGameState(
       levelNumber: levelNumber,
-      grid: newGrid,
-      rows: rows,
-      cols: cols,
-      movesCount: movesCount,
+      gridSize: gridSize,
+      arrows: arrows.map((a) => a.clone()).toList(),
       livesCount: livesCount,
       score: score,
+      totalTimeSeconds: totalTimeSeconds,
+      remainingTimeSeconds: remainingTimeSeconds,
     );
-  }
-}
-
-class ArrowEscapeColors {
-  static const List<Color> arrowColors = [
-    Color(0xFF38BDF8), // Cyan Blue
-    Color(0xFFF43F5E), // Rose Pink
-    Color(0xFF10B981), // Emerald Green
-    Color(0xFFF59E0B), // Amber Gold
-    Color(0xFF8B5CF6), // Purple
-    Color(0xFFEC4899), // Hot Pink
-  ];
-
-  static Color getColor(int index) {
-    return arrowColors[index % arrowColors.length];
   }
 }

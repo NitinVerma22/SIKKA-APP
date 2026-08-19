@@ -90,7 +90,7 @@ class _ArrowEscapeLevelSelectScreenState extends State<ArrowEscapeLevelSelectScr
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Unblock Arrows & Escape!',
+                          'Unblock Winding Arrows & Escape!',
                           style: GoogleFonts.outfit(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -98,7 +98,7 @@ class _ArrowEscapeLevelSelectScreenState extends State<ArrowEscapeLevelSelectScr
                           ),
                         ),
                         Text(
-                          'Tap arrows in sequence to clear the grid & win coins!',
+                          'Tap arrows to slide along their maze path & win coins!',
                           style: GoogleFonts.outfit(
                             color: const Color(0xFFCCFBF1),
                             fontSize: 12,

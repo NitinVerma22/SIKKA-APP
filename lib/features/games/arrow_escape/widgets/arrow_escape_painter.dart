@@ -13,108 +13,126 @@ class ArrowEscapePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double width = size.width;
-    final double height = size.height;
+    final double cellSize = math.min(size.width, size.height) / state.gridSize;
+    final double paddingX = (size.width - (cellSize * state.gridSize)) / 2.0;
+    final double paddingY = (size.height - (cellSize * state.gridSize)) / 2.0;
 
-    final double cellWidth = width / state.cols;
-    final double cellHeight = height / state.rows;
-    final double cellSize = math.min(cellWidth, cellHeight);
-    final double paddingX = (width - (cellSize * state.cols)) / 2.0;
-    final double paddingY = (height - (cellSize * state.rows)) / 2.0;
+    // 1. Draw Dot Grid Background
+    final Paint dotPaint = Paint()
+      ..color = const Color(0xFF475569).withValues(alpha: 0.4)
+      ..style = PaintingStyle.fill;
 
-    // 1. Draw Grid Cells Background Tiles
-    for (int r = 0; r < state.rows; r++) {
-      for (int c = 0; c < state.cols; c++) {
-        final double left = paddingX + c * cellSize;
-        final double top = paddingY + r * cellSize;
-        final Rect cellRect = Rect.fromLTWH(left + 3, top + 3, cellSize - 6, cellSize - 6);
-
-        final Paint tilePaint = Paint()
-          ..color = const Color(0xFF1E293B).withValues(alpha: 0.9)
-          ..style = PaintingStyle.fill;
-
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(cellRect, const Radius.circular(16)),
-          tilePaint,
-        );
-
-        final Paint borderPaint = Paint()
-          ..color = const Color(0xFF334155).withValues(alpha: 0.5)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2;
-
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(cellRect, const Radius.circular(16)),
-          borderPaint,
-        );
+    for (int r = 0; r <= state.gridSize; r++) {
+      for (int c = 0; c <= state.gridSize; c++) {
+        final double x = paddingX + c * cellSize;
+        final double y = paddingY + r * cellSize;
+        canvas.drawCircle(Offset(x, y), 2.2, dotPaint);
       }
     }
 
-    // 2. Draw Arrow Nodes & Flight Animation
-    for (int r = 0; r < state.rows; r++) {
-      for (int c = 0; c < state.cols; c++) {
-        final node = state.grid[r][c];
-        if (node != null) {
-          final double baseCx = paddingX + c * cellSize + cellSize / 2.0;
-          final double baseCy = paddingY + r * cellSize + cellSize / 2.0;
+    // 2. Draw Multi-Segment Winding Snake Arrows
+    for (final arrow in state.arrows) {
+      if (arrow.isEscaping && arrow.animProgress >= 1.0) continue;
 
-          final double cx = baseCx + node.flightOffset.dx;
-          final double cy = baseCy + node.flightOffset.dy;
-
-          final isHinted = (node.id == hintArrowId);
-          _drawArrow(canvas, Offset(cx, cy), cellSize * 0.38, node, isHinted);
-        }
-      }
+      final isHinted = (arrow.id == hintArrowId);
+      _drawSnakeArrow(canvas, paddingX, paddingY, cellSize, arrow, isHinted, size);
     }
   }
 
-  void _drawArrow(Canvas canvas, Offset center, double radius, ArrowNode node, bool isHinted) {
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(node.dir.angleRadians);
+  void _drawSnakeArrow(
+    Canvas canvas,
+    double padX,
+    double padY,
+    double cellSize,
+    ArrowModel arrow,
+    bool isHinted,
+    Size canvasSize,
+  ) {
+    if (arrow.path.isEmpty) return;
 
-    // Hint Glow Ring
-    if (isHinted) {
-      final Paint glowPaint = Paint()
-        ..color = const Color(0xFFFACC15).withValues(alpha: 0.7)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-      canvas.drawCircle(Offset.zero, radius * 1.35, glowPaint);
+    // Calculate pixel coordinates for path segments
+    final List<Offset> points = arrow.path.map((pt) {
+      final double cx = padX + pt[1] * cellSize + cellSize / 2.0;
+      final double cy = padY + pt[0] * cellSize + cellSize / 2.0;
+      return Offset(cx, cy);
+    }).toList();
+
+    // Apply animation displacement along direction
+    Offset animOffset = Offset.zero;
+    if (arrow.isEscaping) {
+      final double escapeDist = math.max(canvasSize.width, canvasSize.height) * 1.2;
+      final vec = arrow.direction.delta;
+      animOffset = Offset(vec.dy * escapeDist * arrow.animProgress, vec.dx * escapeDist * arrow.animProgress);
+    } else if (arrow.isColliding) {
+      final vec = arrow.direction.delta;
+      final double bump = math.sin(arrow.animProgress * math.pi) * 20.0;
+      animOffset = Offset(vec.dy * bump, vec.dx * bump);
     }
 
-    // 3D Arrow Head & Shaft Gradient
-    final Paint arrowPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.white,
-          node.color,
-          Color.lerp(node.color, Colors.black, 0.4)!,
-        ],
-        stops: const [0.0, 0.5, 1.0],
-      ).createShader(Rect.fromCircle(center: Offset.zero, radius: radius));
+    final List<Offset> animPoints = points.map((p) => p + animOffset).toList();
+
+    // Hint Glow
+    if (isHinted) {
+      final Paint glowPaint = Paint()
+        ..color = const Color(0xFFFACC15).withValues(alpha: 0.6)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 14.0
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+
+      final Path glowPath = Path();
+      glowPath.moveTo(animPoints.first.dx, animPoints.first.dy);
+      for (int i = 1; i < animPoints.length; i++) {
+        glowPath.lineTo(animPoints[i].dx, animPoints[i].dy);
+      }
+      canvas.drawPath(glowPath, glowPaint);
+    }
+
+    // Polyline Shaft Body
+    final Paint linePaint = Paint()
+      ..color = arrow.color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final Path bodyPath = Path();
+    bodyPath.moveTo(animPoints.first.dx, animPoints.first.dy);
+    for (int i = 1; i < animPoints.length; i++) {
+      bodyPath.lineTo(animPoints[i].dx, animPoints[i].dy);
+    }
+    canvas.drawPath(bodyPath, linePaint);
+
+    // Arrow Caret Head at path.first (Head)
+    final Offset headPoint = animPoints.first;
+    _drawCaretHead(canvas, headPoint, cellSize * 0.35, arrow.direction, arrow.color);
+  }
+
+  void _drawCaretHead(
+    Canvas canvas,
+    Offset center,
+    double size,
+    ArrowDirection dir,
+    Color color,
+  ) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(dir.rotationRadians);
+
+    final Paint headPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     final Path path = Path();
-    final double headLen = radius * 0.75;
-    final double headWidth = radius * 0.7;
-    final double shaftWidth = radius * 0.32;
-    final double shaftLen = radius * 0.75;
+    path.moveTo(-size * 0.6, -size * 0.7);
+    path.lineTo(size * 0.6, 0);
+    path.lineTo(-size * 0.6, size * 0.7);
 
-    path.moveTo(headLen, 0);
-    path.lineTo(0, -headWidth);
-    path.lineTo(0, -shaftWidth);
-    path.lineTo(-shaftLen, -shaftWidth);
-    path.lineTo(-shaftLen, shaftWidth);
-    path.lineTo(0, shaftWidth);
-    path.lineTo(0, headWidth);
-    path.close();
-
-    canvas.drawPath(path, arrowPaint);
-
-    final Paint outline = Paint()
-      ..color = Colors.white.withValues(alpha: 0.85)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6;
-    canvas.drawPath(path, outline);
-
+    canvas.drawPath(path, headPaint);
     canvas.restore();
   }
 
