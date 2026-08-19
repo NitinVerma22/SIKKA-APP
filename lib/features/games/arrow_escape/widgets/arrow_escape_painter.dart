@@ -36,10 +36,10 @@ class ArrowEscapePainter extends CustomPainter {
     final gridSize = level.gridSize;
     final cellSize = size.width / gridSize;
 
-    // 1. Draw Subtle Grid Pattern & Border
+    // 1. Draw Dot Matrix Grid & Border
     _drawGridBackground(canvas, size, gridSize, cellSize);
 
-    // 2. Draw Arrows
+    // 2. Draw Winding Arrows
     for (final arrow in arrows) {
       if (arrow.pathPoints.isEmpty) continue;
 
@@ -47,7 +47,7 @@ class ArrowEscapePainter extends CustomPainter {
 
       // Apply shake offset if blocked
       if (arrow.isBlockedShaking) {
-        final shakeDx = sin(arrow.shakeProgress * pi * 4) * (cellSize * 0.12);
+        final shakeDx = sin(arrow.shakeProgress * pi * 4) * (cellSize * 0.15);
         canvas.translate(shakeDx, 0);
       }
 
@@ -57,31 +57,31 @@ class ArrowEscapePainter extends CustomPainter {
       canvas.restore();
     }
 
-    // 3. Draw Particles
+    // 3. Draw Particle Burst Effects
     _drawParticles(canvas);
   }
 
   void _drawGridBackground(Canvas canvas, Size size, int gridSize, double cellSize) {
-    final bgPaint = Paint()..color = const Color(0xFF14161B);
+    final bgPaint = Paint()..color = const Color(0xFF14161C);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(16)),
+      RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(20)),
       bgPaint,
     );
 
     final borderPaint = Paint()
-      ..color = const Color(0xFF2A2D34)
+      ..color = const Color(0xFF2E323D)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5;
+      ..strokeWidth = 3.0;
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(16)),
+      RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, size.width, size.height), const Radius.circular(20)),
       borderPaint,
     );
 
-    // Subtle grid dots
-    final dotPaint = Paint()..color = const Color(0xFF2B2E38);
+    // Dot matrix grid
+    final dotPaint = Paint()..color = const Color(0xFF282C38);
     for (int r = 0; r <= gridSize; r++) {
       for (int c = 0; c <= gridSize; c++) {
-        canvas.drawCircle(Offset(c * cellSize, r * cellSize), 1.5, dotPaint);
+        canvas.drawCircle(Offset(c * cellSize, r * cellSize), 1.8, dotPaint);
       }
     }
   }
@@ -97,125 +97,108 @@ class ArrowEscapePainter extends CustomPainter {
     final pathPts = arrow.pathPoints;
     if (pathPts.isEmpty) return;
 
-    // Map grid points to pixel centers
     List<Offset> pxPoints = pathPts.map((pt) {
       return Offset((pt.x + 0.5) * cellSize, (pt.y + 0.5) * cellSize);
     }).toList();
 
-    // If escaping, translate points along escape direction
+    // If escaping, slide along exit vector
     if (arrow.isEscaping) {
       final dir = arrow.escapeDirection;
-      double offsetDist = arrow.escapeProgress * (size.width * 1.5);
-      Offset slideVector = Offset.zero;
-
-      switch (dir) {
-        case ArrowDirection.up:
-          slideVector = Offset(0, -offsetDist);
-          break;
-        case ArrowDirection.down:
-          slideVector = Offset(0, offsetDist);
-          break;
-        case ArrowDirection.left:
-          slideVector = Offset(-offsetDist, 0);
-          break;
-        case ArrowDirection.right:
-          slideVector = Offset(offsetDist, 0);
-          break;
-      }
-
-      pxPoints = pxPoints.map((pt) => pt + slideVector).toList();
+      final slideDist = arrow.escapeProgress * (size.width * 1.6);
+      final slideOffset = Offset(dir.dx * slideDist, dir.dy * slideDist);
+      pxPoints = pxPoints.map((pt) => pt + slideOffset).toList();
     }
 
     final mainColor = isHinted ? const Color(0xFFFFEA00) : arrow.color;
-    final strokeW = cellSize * 0.42;
-
-    // Draw Hint Glow
-    if (isHinted) {
-      final glowPaint = Paint()
-        ..color = const Color(0xFFFFEA00).withValues(alpha: 0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeW + 10
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 8);
-
-      final glowPath = Path()..moveTo(pxPoints.first.dx, pxPoints.first.dy);
-      for (int i = 1; i < pxPoints.length; i++) {
-        glowPath.lineTo(pxPoints[i].dx, pxPoints[i].dy);
-      }
-      canvas.drawPath(glowPath, glowPaint);
-    }
-
-    // Draw Arrow Body Polyline
-    final bodyPaint = Paint()
-      ..color = mainColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeW
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+    final sw = cellSize * 0.14;
 
     final bodyPath = Path()..moveTo(pxPoints.first.dx, pxPoints.first.dy);
     for (int i = 1; i < pxPoints.length; i++) {
       bodyPath.lineTo(pxPoints[i].dx, pxPoints[i].dy);
     }
-    canvas.drawPath(bodyPath, bodyPaint);
 
-    // Inner highlight core
-    final corePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.35)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeW * 0.25
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(bodyPath, corePaint);
-
-    // Draw Sharp Caret Arrow Head at index 0 (Head)
-    final head = pxPoints.first;
-    final dir = arrow.escapeDirection;
-
-    double angle = 0.0;
-    switch (dir) {
-      case ArrowDirection.up:
-        angle = -pi / 2;
-        break;
-      case ArrowDirection.down:
-        angle = pi / 2;
-        break;
-      case ArrowDirection.left:
-        angle = pi;
-        break;
-      case ArrowDirection.right:
-        angle = 0;
-        break;
+    // 1. Radial Glow
+    if (isHinted) {
+      final glowPaint = Paint()
+        ..color = const Color(0xFFFFEA00).withValues(alpha: 0.6)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = sw * 2.8
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6.0);
+      canvas.drawPath(bodyPath, glowPaint);
+    } else {
+      final glowPaint = Paint()
+        ..color = mainColor.withValues(alpha: 0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = sw * 2.2
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
+      canvas.drawPath(bodyPath, glowPaint);
     }
 
-    canvas.save();
-    canvas.translate(head.dx, head.dy);
-    canvas.rotate(angle);
+    // 2. Motion Trail when escaping
+    if (arrow.isEscaping) {
+      final trailPaint = Paint()
+        ..color = mainColor.withValues(alpha: 0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = sw * 2.0
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+      canvas.drawPath(bodyPath, trailPaint);
+    }
 
-    final headSize = cellSize * 0.48;
-    final headPath = Path()
-      ..moveTo(headSize * 0.6, 0)
-      ..lineTo(-headSize * 0.4, -headSize * 0.5)
-      ..lineTo(-headSize * 0.1, 0)
-      ..lineTo(-headSize * 0.4, headSize * 0.5)
-      ..close();
+    // 3. Arrow Body Polyline
+    final bodyPaint = Paint()
+      ..color = mainColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = sw
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(bodyPath, bodyPaint);
 
-    final headPaint = Paint()..color = mainColor;
-    canvas.drawPath(headPath, headPaint);
+    // 4. Caret Arrow Head at Head Point (pxPoints.first)
+    _drawCaretHead(canvas, pxPoints, arrow.escapeDirection, mainColor, cellSize, sw);
+  }
 
-    final headCorePaint = Paint()..color = Colors.white.withValues(alpha: 0.7);
-    canvas.drawPath(
-      Path()
-        ..moveTo(headSize * 0.4, 0)
-        ..lineTo(-headSize * 0.2, -headSize * 0.25)
-        ..lineTo(0, 0)
-        ..lineTo(-headSize * 0.2, headSize * 0.25)
-        ..close(),
-      headCorePaint,
-    );
+  void _drawCaretHead(
+    Canvas canvas,
+    List<Offset> pxPoints,
+    ArrowDirection dir,
+    Color mainColor,
+    double cellSize,
+    double sw,
+  ) {
+    final head = pxPoints.first;
+    final prev = pxPoints.length > 1 ? pxPoints[1] : head;
+    final dv = head - prev;
+    final len = dv.distance;
 
-    canvas.restore();
+    final dx = len > 0.01 ? dv.dx / len : dir.dx.toDouble();
+    final dy = len > 0.01 ? dv.dy / len : dir.dy.toDouble();
+
+    final tip = head + Offset(dx * cellSize * 0.3, dy * cellSize * 0.3);
+    final hd = cellSize * 0.26;
+    final hw = cellSize * 0.18;
+
+    final base = tip - Offset(dx * hd, dy * hd);
+    final px = -dy;
+    final py = dx;
+
+    final caretPath = Path()
+      ..moveTo(base.dx + px * hw, base.dy + py * hw)
+      ..lineTo(tip.dx, tip.dy)
+      ..lineTo(base.dx - px * hw, base.dy - py * hw);
+
+    final caretPaint = Paint()
+      ..color = mainColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = sw
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(caretPath, caretPaint);
   }
 
   void _drawParticles(Canvas canvas) {
