@@ -27,6 +27,7 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
   late List<ArrowSnakeModel> _arrows;
 
   int _lives = 3;
+  int _maxAllowedLives = 3;
   int _totalOriginalArrows = 0;
   String? _highlightedArrowId;
   
@@ -55,7 +56,20 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
     _levelModel = ArrowEscapeEngine.generateLevel(levelNum);
     _arrows = List.from(_levelModel.arrows.map((a) => a.copyWith()));
     _totalOriginalArrows = _arrows.length;
-    _lives = 3;
+
+    // Lives Scaling Rules:
+    // Level 1-99: 3 Hearts
+    // Level 100-149: 2 Hearts
+    // Level 150+: 1 Heart
+    if (levelNum >= 150) {
+      _maxAllowedLives = 1;
+    } else if (levelNum >= 100) {
+      _maxAllowedLives = 2;
+    } else {
+      _maxAllowedLives = 3;
+    }
+    _lives = _maxAllowedLives;
+
     _highlightedArrowId = null;
     _isLevelComplete = false;
     _isGameOver = false;
@@ -72,10 +86,24 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
 
       if (arrow.isEscaping) {
         needsStateUpdate = true;
-        arrow.escapeProgress += 0.0055;
+        // 3.5 Seconds Total Escape Speed at 60 FPS (1.0 / 210 frames = 0.00476)
+        arrow.escapeProgress += 0.00476;
         if (arrow.escapeProgress >= 1.0) {
           // Arrow exited screen!
+          final exitedKeyId = arrow.targetLockedId;
+          final wasKey = arrow.isKey;
           _arrows.removeAt(i);
+
+          // If Key Arrow escaped, unlock its matching Locked Arrow!
+          if (wasKey && exitedKeyId != null) {
+            for (final a in _arrows) {
+              if (a.id == exitedKeyId) {
+                a.isLocked = false; // Unlocked!
+                break;
+              }
+            }
+          }
+
           _checkWinCondition();
         }
       } else if (arrow.isBlockedShaking) {
@@ -94,8 +122,8 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
       for (int i = _particles.length - 1; i >= 0; i--) {
         final p = _particles[i];
         p.position += p.velocity * 0.016;
-        p.alpha -= 0.04;
-        p.radius *= 0.95;
+        p.alpha -= 0.03;
+        p.radius *= 0.96;
         if (p.alpha <= 0.0) {
           _particles.removeAt(i);
         }
@@ -115,7 +143,6 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
     final tapY = (details.localPosition.dy / cellSize).floor();
     final tappedPt = Point2D(tapX, tapY);
 
-    // Find arrow occupying tappedPt
     ArrowSnakeModel? tappedArrow;
     for (final arrow in _arrows) {
       if (arrow.isEscaping) continue;
@@ -127,8 +154,23 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
 
     if (tappedArrow == null) return;
 
-    // Check if tappedArrow can escape
-    final canEscape = ArrowEscapeEngine.canArrowEscape(tappedArrow, _arrows, _levelModel.gridSize);
+    // Check if tappedArrow is locked or path is blocked
+    if (tappedArrow.isLocked) {
+      // Locked Arrow cannot move!
+      tappedArrow.isBlockedShaking = true;
+      tappedArrow.shakeProgress = -1.0;
+      _lives--;
+      if (_lives <= 0) _isGameOver = true;
+      setState(() {});
+      return;
+    }
+
+    final canEscape = ArrowEscapeEngine.canArrowEscape(
+      tappedArrow,
+      _arrows,
+      _levelModel.deflectors,
+      _levelModel.gridSize,
+    );
 
     if (canEscape) {
       // Trigger Escape Animation
@@ -153,14 +195,14 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
   }
 
   void _spawnParticleBurst(double x, double y, Color color) {
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 18; i++) {
       final angle = _random.nextDouble() * 2 * pi;
-      final speed = 120.0 + _random.nextDouble() * 180.0;
+      final speed = 100.0 + _random.nextDouble() * 160.0;
       _particles.add(ParticleModel(
         position: Offset(x, y),
         velocity: Offset(cos(angle) * speed, sin(angle) * speed),
         color: color,
-        radius: 4.0 + _random.nextDouble() * 4.0,
+        radius: 3.5 + _random.nextDouble() * 3.5,
       ));
     }
   }
@@ -173,7 +215,11 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
   }
 
   void _onHintPressed() {
-    final hintArrow = ArrowEscapeEngine.findSolvableArrow(_arrows, _levelModel.gridSize);
+    final hintArrow = ArrowEscapeEngine.findSolvableArrow(
+      _arrows,
+      _levelModel.deflectors,
+      _levelModel.gridSize,
+    );
     if (hintArrow != null) {
       setState(() {
         _highlightedArrowId = hintArrow.id;
@@ -232,7 +278,7 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
 
                 const Spacer(),
 
-                // Bottom Controls & Status Bar
+                // Bottom Controls Bar
                 _buildBottomControls(progress),
               ],
             ),
@@ -267,7 +313,7 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
             ),
           ),
           Row(
-            children: List.generate(3, (index) {
+            children: List.generate(_maxAllowedLives, (index) {
               return Padding(
                 padding: const EdgeInsets.only(left: 4.0),
                 child: Icon(
@@ -288,7 +334,6 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          // Progress Bar
           Row(
             children: [
               const Icon(Icons.flag_rounded, color: Color(0xFF76ED12), size: 20),
@@ -312,7 +357,6 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
             ],
           ),
           const SizedBox(height: 16),
-          // Buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -432,7 +476,7 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
               ),
               const SizedBox(height: 12),
               Text(
-                'All 3 hearts lost on Level $_currentLevelNum',
+                'Failed Level $_currentLevelNum',
                 style: GoogleFonts.outfit(color: Colors.white70, fontSize: 15),
               ),
               const SizedBox(height: 24),

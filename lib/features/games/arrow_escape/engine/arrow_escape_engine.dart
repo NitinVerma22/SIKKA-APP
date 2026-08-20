@@ -3,21 +3,20 @@ import 'package:flutter/material.dart';
 import '../models/arrow_escape_models.dart';
 
 class ArrowEscapeEngine {
-  static const List<Color> themePalette = [
-    Color(0xFF76ED12), // Neon Lime
-    Color(0xFF00E5FF), // Electric Cyan
-    Color(0xFFE040FB), // Neon Purple
-    Color(0xFFFF9100), // Bright Orange
-    Color(0xFFFFEA00), // Vibrant Yellow
-    Color(0xFFFF1744), // Crimson Red
-    Color(0xFF00E676), // Spring Green
-    Color(0xFF2979FF), // Royal Blue
-  ];
+  // Single Unified Palette (Neon Cyan) for all arrows!
+  static const Color unifiedArrowColor = Color(0xFF00E5FF);
 
-  /// Check if a target arrow can escape to the grid boundary without colliding with other arrows
-  static bool canArrowEscape(ArrowSnakeModel target, List<ArrowSnakeModel> allArrows, int gridSize) {
+  /// Raycast collision check accounting for deflector dots along the path
+  static bool canArrowEscape(
+    ArrowSnakeModel target,
+    List<ArrowSnakeModel> allArrows,
+    List<DeflectorDotModel> deflectors,
+    int gridSize,
+  ) {
+    if (target.isLocked) return false; // Locked arrows cannot escape until unlocked!
+
     final head = target.head;
-    final dir = target.escapeDirection;
+    ArrowDirection currDir = target.escapeDirection;
 
     // Collect all occupied cells by other active (non-escaping) arrows
     final occupied = <Point2D>{};
@@ -26,71 +25,89 @@ class ArrowEscapeEngine {
       occupied.addAll(arrow.pathPoints);
     }
 
-    int cX = head.x + dir.dx;
-    int cY = head.y + dir.dy;
-
-    while (cX >= 0 && cX < gridSize && cY >= 0 && cY < gridSize) {
-      if (occupied.contains(Point2D(cX, cY))) {
-        return false; // Path blocked!
-      }
-      cX += dir.dx;
-      cY += dir.dy;
+    final deflectorMap = <Point2D, ArrowDirection>{};
+    for (final d in deflectors) {
+      deflectorMap[d.position] = d.deflectDirection;
     }
 
-    return true; // Path is 100% clear to grid boundary!
+    int cX = head.x + currDir.dx;
+    int cY = head.y + currDir.dy;
+    final visited = <Point2D>{};
+
+    while (cX >= 0 && cX < gridSize && cY >= 0 && cY < gridSize) {
+      final currPt = Point2D(cX, cY);
+      if (visited.contains(currPt)) break; // Prevent infinite loop
+      visited.add(currPt);
+
+      if (occupied.contains(currPt)) {
+        return false; // Path blocked by another arrow!
+      }
+
+      // Check if deflector dot alters trajectory
+      if (deflectorMap.containsKey(currPt)) {
+        currDir = deflectorMap[currPt]!;
+      }
+
+      cX += currDir.dx;
+      cY += currDir.dy;
+    }
+
+    return true; // Path clear to boundary!
   }
 
-  /// Find a solvable arrow for Hint
-  static ArrowSnakeModel? findSolvableArrow(List<ArrowSnakeModel> arrows, int gridSize) {
+  /// Find solvable arrow for Hint
+  static ArrowSnakeModel? findSolvableArrow(
+    List<ArrowSnakeModel> arrows,
+    List<DeflectorDotModel> deflectors,
+    int gridSize,
+  ) {
     for (final arrow in arrows) {
-      if (!arrow.isEscaping && canArrowEscape(arrow, arrows, gridSize)) {
+      if (!arrow.isEscaping && !arrow.isLocked && canArrowEscape(arrow, arrows, deflectors, gridSize)) {
         return arrow;
       }
     }
     return null;
   }
 
-  /// Generate level starting at Level 16 difficulty baseline on Level 1, scaling to EXTREME at Level 200
+  /// Generate Level according to user's exact scaling rules
   static ArrowLevelModel generateLevel(int levelNumber) {
-    final random = Random(levelNumber * 1000 + 8888);
+    final random = Random(levelNumber * 1000 + 9999);
 
-    // Grid Size & Length scaling starting at Level 16 baseline
     int gridSize = 8;
     int minLen = 4;
     int maxLen = 6;
 
-    // Gradual difficulty increase per level
     if (levelNumber > 10) {
       gridSize = 9;
-      minLen = 4;
-      maxLen = 6;
+      minLen = 5;
+      maxLen = 7;
     }
     if (levelNumber > 25) {
       gridSize = 10;
       minLen = 5;
-      maxLen = 7;
+      maxLen = 8;
     }
     if (levelNumber > 50) {
       gridSize = 11;
-      minLen = 5;
-      maxLen = 8;
+      minLen = 6;
+      maxLen = 9;
     }
     if (levelNumber > 90) {
       gridSize = 12;
       minLen = 6;
-      maxLen = 9;
+      maxLen = 10;
     }
     if (levelNumber > 140) {
       gridSize = 13;
-      minLen = 6;
-      maxLen = 10;
+      minLen = 7;
+      maxLen = 11;
     }
 
-    // Arrow count increases every single level
-    int arrowCount = 14 + (levelNumber ~/ 3);
-    final maxAllowedArrows = (gridSize * gridSize * 0.50).toInt();
-    if (arrowCount > maxAllowedArrows) {
-      arrowCount = maxAllowedArrows;
+    // Arrow Count (+2 every level with high blockage rate)
+    int arrowCount = 14 + (levelNumber * 2);
+    final maxAllowed = (gridSize * gridSize * 0.55).toInt();
+    if (arrowCount > maxAllowed) {
+      arrowCount = maxAllowed;
     }
 
     final mask = <Point2D>{};
@@ -104,13 +121,12 @@ class ArrowEscapeEngine {
     final occupied = <Point2D>{};
     int attempts = 0;
 
-    while (arrows.length < arrowCount && attempts < 900) {
+    while (arrows.length < arrowCount && attempts < 1000) {
       attempts++;
 
       final head = Point2D(random.nextInt(gridSize), random.nextInt(gridSize));
       if (occupied.contains(head)) continue;
 
-      // Pick escape direction where path to boundary is currently clear
       final directions = [
         ArrowDirection.up,
         ArrowDirection.down,
@@ -141,7 +157,6 @@ class ArrowEscapeEngine {
 
       if (chosenDir == null) continue;
 
-      // Build winding polyline body backwards from head
       final pathPoints = <Point2D>[head];
       occupied.add(head);
 
@@ -185,18 +200,62 @@ class ArrowEscapeEngine {
         continue;
       }
 
-      final color = themePalette[arrows.length % themePalette.length];
       arrows.add(ArrowSnakeModel(
         id: 'arrow_${levelNumber}_${arrows.length}',
         pathPoints: pathPoints,
-        color: color,
+        color: unifiedArrowColor, // Single Unified Color
       ));
+    }
+
+    // Apply Lock & Key Mechanics (Level 20+)
+    if (levelNumber >= 20 && arrows.length >= 4) {
+      int pairs = 1 + (levelNumber ~/ 30);
+      for (int p = 0; p < pairs && (p * 2 + 1) < arrows.length; p++) {
+        final keyIndex = p * 2;
+        final lockIndex = p * 2 + 1;
+
+        arrows[lockIndex].isLocked = true;
+        arrows[keyIndex].isKey = true;
+        arrows[keyIndex].targetLockedId = arrows[lockIndex].id;
+      }
+    }
+
+    // Apply Deflector Dots Mechanics (Level 30+)
+    final deflectors = <DeflectorDotModel>[];
+    if (levelNumber >= 30) {
+      int deflectorCount = 1 + (levelNumber ~/ 25);
+      final emptyCells = <Point2D>[];
+
+      for (int r = 0; r < gridSize; r++) {
+        for (int c = 0; c < gridSize; c++) {
+          final pt = Point2D(c, r);
+          if (!occupied.contains(pt)) {
+            emptyCells.add(pt);
+          }
+        }
+      }
+
+      emptyCells.shuffle(random);
+      for (int d = 0; d < deflectorCount && d < emptyCells.length; d++) {
+        final dir = [
+          ArrowDirection.up,
+          ArrowDirection.down,
+          ArrowDirection.left,
+          ArrowDirection.right,
+        ][random.nextInt(4)];
+
+        deflectors.add(DeflectorDotModel(
+          position: emptyCells[d],
+          deflectDirection: dir,
+        ));
+      }
     }
 
     return ArrowLevelModel(
       levelNumber: levelNumber,
       gridSize: gridSize,
       arrows: arrows,
+      deflectors: deflectors,
       mask: mask,
     );
   }

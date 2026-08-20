@@ -39,7 +39,10 @@ class ArrowEscapePainter extends CustomPainter {
     // 1. Draw Dot Matrix Grid & Border
     _drawGridBackground(canvas, size, gridSize, cellSize);
 
-    // 2. Draw Winding Arrows
+    // 2. Draw Deflector Dots (Level 30+)
+    _drawDeflectorDots(canvas, cellSize);
+
+    // 3. Draw Winding Arrows
     for (final arrow in arrows) {
       if (arrow.pathPoints.isEmpty) continue;
 
@@ -57,7 +60,7 @@ class ArrowEscapePainter extends CustomPainter {
       canvas.restore();
     }
 
-    // 3. Draw Particle Burst Effects
+    // 4. Draw Particle Burst Effects
     _drawParticles(canvas);
   }
 
@@ -77,13 +80,66 @@ class ArrowEscapePainter extends CustomPainter {
       borderPaint,
     );
 
-    // Dot matrix grid
     final dotPaint = Paint()..color = const Color(0xFF282C38);
     for (int r = 0; r <= gridSize; r++) {
       for (int c = 0; c <= gridSize; c++) {
         canvas.drawCircle(Offset(c * cellSize, r * cellSize), 1.8, dotPaint);
       }
     }
+  }
+
+  void _drawDeflectorDots(Canvas canvas, double cellSize) {
+    for (final def in level.deflectors) {
+      final center = Offset((def.position.x + 0.5) * cellSize, (def.position.y + 0.5) * cellSize);
+      final radius = cellSize * 0.38;
+
+      final bgPaint = Paint()
+        ..color = const Color(0xFFFF007F).withValues(alpha: 0.25)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(center, radius, bgPaint);
+
+      final ringPaint = Paint()
+        ..color = const Color(0xFFFF007F)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      canvas.drawCircle(center, radius, ringPaint);
+
+      // Draw directional arrow indicator on deflector dot
+      _drawSmallDirectionArrow(canvas, center, def.deflectDirection, const Color(0xFFFF007F), cellSize * 0.22);
+    }
+  }
+
+  void _drawSmallDirectionArrow(Canvas canvas, Offset center, ArrowDirection dir, Color color, double size) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+
+    double angle = 0.0;
+    switch (dir) {
+      case ArrowDirection.up:
+        angle = -pi / 2;
+        break;
+      case ArrowDirection.down:
+        angle = pi / 2;
+        break;
+      case ArrowDirection.left:
+        angle = pi;
+        break;
+      case ArrowDirection.right:
+        angle = 0;
+        break;
+    }
+    canvas.rotate(angle);
+
+    final path = Path()
+      ..moveTo(size, 0)
+      ..lineTo(-size * 0.6, -size * 0.6)
+      ..lineTo(-size * 0.2, 0)
+      ..lineTo(-size * 0.6, size * 0.6)
+      ..close();
+
+    final paint = Paint()..color = color;
+    canvas.drawPath(path, paint);
+    canvas.restore();
   }
 
   void _drawSingleArrow(
@@ -100,7 +156,6 @@ class ArrowEscapePainter extends CustomPainter {
     List<Offset> pxPoints;
 
     if (arrow.isEscaping) {
-      // Build continuous polyline track slicing along exact path & exit extension
       pxPoints = _buildSlidingPolylineTrack(arrow, cellSize, gridSize);
     } else {
       pxPoints = pathPts.map((pt) {
@@ -110,7 +165,11 @@ class ArrowEscapePainter extends CustomPainter {
 
     if (pxPoints.isEmpty) return;
 
-    final mainColor = isHinted ? const Color(0xFFFFEA00) : arrow.color;
+    // Locked arrows are dimmed/grayed out
+    final mainColor = arrow.isLocked
+        ? const Color(0xFF6E727A)
+        : (isHinted ? const Color(0xFFFFEA00) : arrow.color);
+
     final sw = cellSize * 0.14;
 
     final bodyPath = Path()..moveTo(pxPoints.first.dx, pxPoints.first.dy);
@@ -128,7 +187,7 @@ class ArrowEscapePainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6.0);
       canvas.drawPath(bodyPath, glowPaint);
-    } else {
+    } else if (!arrow.isLocked) {
       final glowPaint = Paint()
         ..color = mainColor.withValues(alpha: 0.3)
         ..style = PaintingStyle.stroke
@@ -159,53 +218,68 @@ class ArrowEscapePainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round;
     canvas.drawPath(bodyPath, bodyPaint);
 
-    // 4. Caret Arrow Head at Head Point (pxPoints.first)
+    // 4. Caret Arrow Head at Head Point
     _drawCaretHead(canvas, pxPoints, arrow.escapeDirection, mainColor, cellSize, sw);
+
+    // 5. Lock 🔒 or Key 🔑 Icon Badge
+    if (arrow.isLocked) {
+      _drawBadgeIcon(canvas, pxPoints.first, Icons.lock_rounded, Colors.white, cellSize);
+    } else if (arrow.isKey) {
+      _drawBadgeIcon(canvas, pxPoints.first, Icons.vpn_key_rounded, const Color(0xFFFFEA00), cellSize);
+    }
   }
 
-  /// Construct continuous segment-by-segment polyline track slicing along exact path turns
+  void _drawBadgeIcon(Canvas canvas, Offset center, IconData icon, Color color, double cellSize) {
+    TextPainter textPainter = TextPainter(textDirection: TextDirection.ltr);
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(icon.codePoint),
+      style: TextStyle(
+        fontSize: cellSize * 0.38,
+        fontFamily: icon.fontFamily,
+        package: icon.fontPackage,
+        color: color,
+      ),
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
+    );
+  }
+
   List<Offset> _buildSlidingPolylineTrack(ArrowSnakeModel arrow, double cellSize, int gridSize) {
     final dir = arrow.escapeDirection;
 
-    // Convert pathPoints (head at 0, tail at end) to pixel coordinates
     final basePts = arrow.pathPoints.map((pt) {
       return Offset((pt.x + 0.5) * cellSize, (pt.y + 0.5) * cellSize);
     }).toList();
 
-    // Create exit extension points extending straight from head (basePts[0]) out past board boundary
-    final extCount = gridSize + 5;
+    final extCount = gridSize + 6;
     final headPx = basePts.first;
 
     final track = <Offset>[];
     for (int i = extCount; i >= 1; i--) {
       track.add(headPx + Offset(dir.dx * i * cellSize, dir.dy * i * cellSize));
     }
-    track.addAll(basePts); // track: [Ext_M, ..., Ext_1, Head(P0), P1, P2, ..., Tail(Pk)]
+    track.addAll(basePts);
 
-    // Compute cumulative arc-length distances along track from Tail (track.last) to Ext_M (track.first)
     final dist = <double>[0.0];
-    final revTrack = track.reversed.toList(); // revTrack[0] is Tail, revTrack.last is Ext_M
+    final revTrack = track.reversed.toList();
     for (int i = 1; i < revTrack.length; i++) {
       dist.add(dist[i - 1] + (revTrack[i] - revTrack[i - 1]).distance);
     }
 
-    // Body length is distance from Tail (revTrack[0]) to Head (revTrack[basePts.length - 1])
     final bodyLen = dist[basePts.length - 1];
     final totalTrackDist = dist.last;
 
-    // As escapeProgress t goes 0 -> 1:
-    // head moves from bodyLen to totalTrackDist
-    // tail moves from 0 to (totalTrackDist - bodyLen)
     final progress = arrow.escapeProgress.clamp(0.0, 1.0);
     final maxTravel = totalTrackDist - bodyLen;
     final currentTailDist = progress * maxTravel;
     final currentHeadDist = currentTailDist + bodyLen;
 
-    // Sample polyline between currentTailDist and currentHeadDist
     return _sliceTrackByDistance(revTrack, dist, currentTailDist, currentHeadDist);
   }
 
-  /// Slice polyline track between distanceStart (tail) and distanceEnd (head)
   List<Offset> _sliceTrackByDistance(
     List<Offset> track,
     List<double> dist,
@@ -214,14 +288,11 @@ class ArrowEscapePainter extends CustomPainter {
   ) {
     if (track.isEmpty || startDist >= endDist) return [];
 
-    // Find tail position (startDist)
     final tailPt = _getPointAtDistance(track, dist, startDist);
-    // Find head position (endDist)
     final headPt = _getPointAtDistance(track, dist, endDist);
 
     final sliced = <Offset>[headPt];
 
-    // Add all intermediate track vertices between startDist and endDist (in reverse order from head to tail)
     for (int i = track.length - 1; i >= 0; i--) {
       if (dist[i] > startDist && dist[i] < endDist) {
         sliced.add(track[i]);

@@ -26,11 +26,25 @@ class Point2D {
   int get hashCode => x.hashCode ^ y.hashCode;
 }
 
+class DeflectorDotModel {
+  final Point2D position;
+  final ArrowDirection deflectDirection;
+
+  const DeflectorDotModel({
+    required this.position,
+    required this.deflectDirection,
+  });
+}
+
 class ArrowSnakeModel {
   final String id;
   final List<Point2D> pathPoints; // Index 0 is head, last is tail
   final Color color;
   
+  bool isLocked;
+  bool isKey;
+  String? targetLockedId;
+
   bool isEscaping;
   double escapeProgress; // 0.0 to 1.0
   
@@ -41,6 +55,9 @@ class ArrowSnakeModel {
     required this.id,
     required this.pathPoints,
     required this.color,
+    this.isLocked = false,
+    this.isKey = false,
+    this.targetLockedId,
     this.isEscaping = false,
     this.escapeProgress = 0.0,
     this.isBlockedShaking = false,
@@ -64,6 +81,9 @@ class ArrowSnakeModel {
     String? id,
     List<Point2D>? pathPoints,
     Color? color,
+    bool? isLocked,
+    bool? isKey,
+    String? targetLockedId,
     bool? isEscaping,
     double? escapeProgress,
     bool? isBlockedShaking,
@@ -73,6 +93,9 @@ class ArrowSnakeModel {
       id: id ?? this.id,
       pathPoints: pathPoints ?? List.from(this.pathPoints),
       color: color ?? this.color,
+      isLocked: isLocked ?? this.isLocked,
+      isKey: isKey ?? this.isKey,
+      targetLockedId: targetLockedId ?? this.targetLockedId,
       isEscaping: isEscaping ?? this.isEscaping,
       escapeProgress: escapeProgress ?? this.escapeProgress,
       isBlockedShaking: isBlockedShaking ?? this.isBlockedShaking,
@@ -85,12 +108,14 @@ class ArrowLevelModel {
   final int levelNumber;
   final int gridSize;
   final List<ArrowSnakeModel> arrows;
+  final List<DeflectorDotModel> deflectors;
   final Set<Point2D> mask;
 
   const ArrowLevelModel({
     required this.levelNumber,
     required this.gridSize,
     required this.arrows,
+    required this.deflectors,
     required this.mask,
   });
 }
