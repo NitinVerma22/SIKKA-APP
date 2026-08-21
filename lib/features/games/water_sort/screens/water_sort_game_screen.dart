@@ -351,6 +351,16 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
                           ),
                         ),
                         const Spacer(),
+                        // RESTART BUTTON (Added next to Sound icon as requested)
+                        IconButton(
+                          onPressed: _initLevel,
+                          icon: const Icon(
+                            Icons.refresh_rounded,
+                            color: Color(0xFF38BDF8),
+                            size: 24,
+                          ),
+                          tooltip: 'Restart Level',
+                        ),
                         IconButton(
                           onPressed: () {
                             setState(() {
@@ -361,7 +371,7 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
                             WaterSortAudioService.instance.isMuted
                                 ? Icons.volume_off_rounded
                                 : Icons.volume_up_rounded,
-                            color: Colors.white70,
+                            color: Colors.white,
                             size: 22,
                           ),
                         ),

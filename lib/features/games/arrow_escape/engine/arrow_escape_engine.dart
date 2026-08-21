@@ -69,59 +69,63 @@ class ArrowEscapeEngine {
     return null;
   }
 
-  /// Validate with 100% mathematical certainty if a candidate level can be completely cleared
-  static bool isLevelSolvable(ArrowLevelModel level) {
-    final activeArrows = List<ArrowSnakeModel>.from(
-      level.arrows.map((a) => a.copyWith()),
-    );
-    final deflectors = level.deflectors;
-    final gridSize = level.gridSize;
+  /// Find the natural clearing sequence of arrows in a candidate level
+  static List<String>? getSolvingSequence(
+    List<ArrowSnakeModel> initialArrows,
+    List<DeflectorDotModel> deflectors,
+    int gridSize,
+  ) {
+    final active = List<ArrowSnakeModel>.from(initialArrows.map((a) => a.copyWith()));
+    final sequence = <String>[];
+    int prevCount = active.length + 1;
 
-    int prevCount = activeArrows.length + 1;
-
-    while (activeArrows.isNotEmpty && activeArrows.length < prevCount) {
-      prevCount = activeArrows.length;
-
-      // Find any arrow that can escape in current grid state
+    while (active.isNotEmpty && active.length < prevCount) {
+      prevCount = active.length;
       ArrowSnakeModel? escapable;
-      for (final a in activeArrows) {
-        if (!a.isLocked && canArrowEscape(a, activeArrows, deflectors, gridSize)) {
+
+      for (final a in active) {
+        if (!a.isLocked && canArrowEscape(a, active, deflectors, gridSize)) {
           escapable = a;
           break;
         }
       }
 
       if (escapable != null) {
-        // Unlock matching target if it was a Key arrow
         if (escapable.isKey && escapable.targetLockedId != null) {
-          for (final target in activeArrows) {
+          for (final target in active) {
             if (target.id == escapable.targetLockedId) {
               target.isLocked = false;
               break;
             }
           }
         }
-        activeArrows.removeWhere((a) => a.id == escapable!.id);
+        sequence.add(escapable.id);
+        active.removeWhere((a) => a.id == escapable!.id);
       }
     }
 
-    return activeArrows.isEmpty; // Returns true ONLY if 100% of arrows escape!
+    return active.isEmpty ? sequence : null;
+  }
+
+  /// Validate with 100% mathematical certainty if a candidate level can be completely cleared
+  static bool isLevelSolvable(ArrowLevelModel level) {
+    return getSolvingSequence(level.arrows, level.deflectors, level.gridSize) != null;
   }
 
   /// Generate a level and GUARANTEE 100% solvability via forward solver validation
   static ArrowLevelModel generateLevel(int levelNumber) {
-    for (int seedOffset = 0; seedOffset < 100; seedOffset++) {
+    for (int seedOffset = 0; seedOffset < 150; seedOffset++) {
       final candidate = _generateCandidate(levelNumber, seedOffset);
-      if (isLevelSolvable(candidate)) {
-        return candidate; // 100% Solvable Level Guaranteed!
+      if (candidate != null && isLevelSolvable(candidate)) {
+        return candidate; // 100% Solvable Level Guaranteed with NO Lock-Key deadlocks!
       }
     }
 
     // Fallback: Solvable candidate with relaxed density so it NEVER fails
-    return _generateCandidate(levelNumber, 999, relaxed: true);
+    return _generateCandidate(levelNumber, 999, relaxed: true)!;
   }
 
-  static ArrowLevelModel _generateCandidate(int levelNumber, int seedOffset, {bool relaxed = false}) {
+  static ArrowLevelModel? _generateCandidate(int levelNumber, int seedOffset, {bool relaxed = false}) {
     final random = Random(levelNumber * 1000 + 7777 + seedOffset);
 
     int gridSize = 8;
@@ -257,19 +261,6 @@ class ArrowEscapeEngine {
       ));
     }
 
-    // Apply Lock & Key Mechanics (Level 20+)
-    if (levelNumber >= 20 && arrows.length >= 4 && !relaxed) {
-      int pairs = 1 + (levelNumber ~/ 35);
-      for (int p = 0; p < pairs && (p * 2 + 1) < arrows.length; p++) {
-        final keyIndex = p * 2;
-        final lockIndex = p * 2 + 1;
-
-        arrows[lockIndex].isLocked = true;
-        arrows[keyIndex].isKey = true;
-        arrows[keyIndex].targetLockedId = arrows[lockIndex].id;
-      }
-    }
-
     // Apply Deflector Dots Mechanics (Level 30+)
     final deflectors = <DeflectorDotModel>[];
     if (levelNumber >= 30 && !relaxed) {
@@ -298,6 +289,37 @@ class ArrowEscapeEngine {
           position: emptyCells[d],
           deflectDirection: dir,
         ));
+      }
+    }
+
+    // Solve base level to get natural clearing sequence BEFORE assigning Lock & Key!
+    final solveSequence = getSolvingSequence(arrows, deflectors, gridSize);
+    if (solveSequence == null || solveSequence.length < 4) {
+      return null; // Reject candidate if base arrows are deadlocked
+    }
+
+    // Apply Lock & Key based ON THE SOLVE SEQUENCE!
+    // Key Arrow is ALWAYS placed EARLIER in the sequence than Locked Arrow,
+    // guaranteeing Locked Arrow NEVER stands in the Key Arrow's escape path!
+    if (levelNumber >= 20 && !relaxed && solveSequence.length >= 4) {
+      int pairs = 1 + (levelNumber ~/ 35);
+      for (int p = 0; p < pairs; p++) {
+        int keySeqIdx = p;
+        int lockSeqIdx = keySeqIdx + 2 + random.nextInt(solveSequence.length - keySeqIdx - 2);
+
+        if (lockSeqIdx < solveSequence.length) {
+          final keyId = solveSequence[keySeqIdx];
+          final lockId = solveSequence[lockSeqIdx];
+
+          final keyArrow = arrows.firstWhere((a) => a.id == keyId);
+          final lockArrow = arrows.firstWhere((a) => a.id == lockId);
+
+          if (!keyArrow.isKey && !keyArrow.isLocked && !lockArrow.isKey && !lockArrow.isLocked) {
+            lockArrow.isLocked = true;
+            keyArrow.isKey = true;
+            keyArrow.targetLockedId = lockArrow.id;
+          }
+        }
       }
     }
 

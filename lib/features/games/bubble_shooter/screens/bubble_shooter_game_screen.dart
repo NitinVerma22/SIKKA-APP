@@ -724,123 +724,182 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
 
   Widget _buildShooterArea(Size size) {
     return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
+      bottom: 12,
+      left: 12,
+      right: 12,
       child: Container(
-        height: 110,
-        color: Colors.transparent, // Clean transparent container (NO TOUCH BLOCK)
-        child: Stack(
-          alignment: Alignment.center,
+        height: 85,
+        decoration: BoxDecoration(
+          color: const Color(0xFF101225).withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFF25294A), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // NEXT BUBBLE (Only tapping this exact bubble swaps colors)
-            Positioned(
-              left: 45,
-              bottom: 15,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  setState(() {
-                    final temp = currentColor;
-                    currentColor = nextColor;
-                    nextColor = temp;
-                  });
-                },
+            // 1. NEXT Swap Box (Left)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  final temp = currentColor;
+                  currentColor = nextColor;
+                  nextColor = temp;
+                });
+              },
+              child: Container(
+                width: 68,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF171A33),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF2B2F57), width: 1.2),
+                ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'NEXT ⇄',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 10,
+                    Text(
+                      'NEXT',
+                      style: GoogleFonts.orbitron(
+                        color: Colors.white54,
+                        fontSize: 9,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
+                        letterSpacing: 1.2,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    BubbleWidget(color: nextColor, radius: 13),
+                    BubbleWidget(color: nextColor, radius: 11),
+                    const SizedBox(height: 3),
+                    const Icon(Icons.swap_horiz_rounded, color: Colors.white70, size: 14),
                   ],
                 ),
               ),
             ),
 
-            // SHOOTER BUBBLE (Only tapping this exact bubble fires upward)
-            Positioned(
-              bottom: 15,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  _shoot(shooterX, size.height - 350);
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'SHOOT',
-                      style: TextStyle(
-                        color: Colors.white38,
-                        fontSize: 10,
-                        letterSpacing: 2,
+            // 2. SHOOT Cannon Indicator (Center)
+            GestureDetector(
+              onTap: () => _shoot(shooterX, size.height - 350),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'SHOOT',
+                    style: GoogleFonts.orbitron(
+                      color: Colors.white54,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  AnimatedBuilder(
+                    animation: _shooterPulse,
+                    builder: (_, child) {
+                      return Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: currentColor.withValues(alpha: 0.6 + 0.4 * _shooterPulse.value),
+                            width: 2.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: currentColor.withValues(
+                                alpha: 0.3 + 0.3 * _shooterPulse.value,
+                              ),
+                              blurRadius: 14 + 6 * _shooterPulse.value,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: BubbleWidget(
+                          color: currentColor,
+                          radius: kBubbleRadius + 2,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // 3. BOMB Power-up Slot (Right Middle)
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFF171A33),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF2B2F57), width: 1.2),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(Icons.local_fire_department_rounded, color: Color(0xFFFF9100), size: 24),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFD700),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '3',
+                        style: GoogleFonts.orbitron(
+                          color: Colors.black,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    AnimatedBuilder(
-                      animation: _shooterPulse,
-                      builder: (_, child) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: currentColor.withValues(
-                                  alpha: 0.3 + 0.3 * _shooterPulse.value,
-                                ),
-                                blurRadius: 16 + 8 * _shooterPulse.value,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: BubbleWidget(
-                            color: currentColor,
-                            radius: kBubbleRadius + 2,
-                          ),
-                        );
-                      },
+                  ),
+                ],
+              ),
+            ),
+
+            // 4. EXIT Red Button (Right)
+            GestureDetector(
+              onTap: _handleExit,
+              child: Container(
+                width: 68,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE50914), Color(0xFFB20710)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE50914).withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-              ),
-            ),
-            // EXIT GAME BUTTON (Bottom Right)
-            Positioned(
-              right: 45,
-              bottom: 15,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _handleExit,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE50914).withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFE50914), width: 1.5),
-                      ),
-                      child: const Icon(Icons.exit_to_app_rounded, color: Colors.white, size: 20),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'EXIT',
-                      style: TextStyle(
-                        color: Color(0xFFE50914),
+                      style: GoogleFonts.orbitron(
+                        color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
+                        letterSpacing: 1.2,
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    const Icon(Icons.exit_to_app_rounded, color: Colors.white, size: 20),
                   ],
                 ),
               ),
