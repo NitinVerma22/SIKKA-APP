@@ -5,14 +5,19 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/arrow_escape_models.dart';
 import '../engine/arrow_escape_engine.dart';
 import '../widgets/arrow_escape_painter.dart';
+import '../services/arrow_escape_service.dart';
+import '../../shared/widgets/game_banner_ad.dart';
+import '../../../../core/ads/ad_service.dart';
 
 class NativeArrowEscapeGameScreen extends StatefulWidget {
   final int initialLevel;
+  final int multiplier;
   final VoidCallback? onBack;
 
   const NativeArrowEscapeGameScreen({
     super.key,
     required this.initialLevel,
+    this.multiplier = 2,
     this.onBack,
   });
 
@@ -22,6 +27,7 @@ class NativeArrowEscapeGameScreen extends StatefulWidget {
 
 class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScreen>
     with SingleTickerProviderStateMixin {
+  final ArrowEscapeService _service = ArrowEscapeService();
   late int _currentLevelNum;
   late ArrowLevelModel _levelModel;
   late List<ArrowSnakeModel> _arrows;
@@ -30,9 +36,11 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
   int _maxAllowedLives = 3;
   int _totalOriginalArrows = 0;
   String? _highlightedArrowId;
-  
+
   bool _isLevelComplete = false;
   bool _isGameOver = false;
+  bool _isClaiming = false;
+  int _earnedCoins = 0;
 
   late AnimationController _animController;
   final List<ParticleModel> _particles = [];
@@ -47,6 +55,10 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
       duration: const Duration(milliseconds: 16),
     )..addListener(_gameLoop);
     _animController.repeat();
+
+    // Preload Rewarded & Interstitial Ads
+    AdService.instance.loadRewardedAd();
+    AdService.instance.loadInterstitialAd();
 
     _loadLevel(_currentLevelNum);
   }
@@ -73,6 +85,8 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
     _highlightedArrowId = null;
     _isLevelComplete = false;
     _isGameOver = false;
+    _isClaiming = false;
+    _earnedCoins = 0;
     _particles.clear();
     setState(() {});
   }
@@ -156,7 +170,6 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
 
     // Check if tappedArrow is locked or path is blocked
     if (tappedArrow.isLocked) {
-      // Locked Arrow cannot move!
       tappedArrow.isBlockedShaking = true;
       tappedArrow.shakeProgress = -1.0;
       _lives--;
@@ -173,15 +186,12 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
     );
 
     if (canEscape) {
-      // Trigger Escape Animation
       tappedArrow.isEscaping = true;
       tappedArrow.escapeProgress = 0.0;
 
-      // Spawn Particle Burst
       _spawnParticleBurst((tappedPt.x + 0.5) * cellSize, (tappedPt.y + 0.5) * cellSize, tappedArrow.color);
       _highlightedArrowId = null;
     } else {
-      // Trigger Blocked Shake
       tappedArrow.isBlockedShaking = true;
       tappedArrow.shakeProgress = -1.0;
 
@@ -208,10 +218,63 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
   }
 
   void _checkWinCondition() {
-    if (_arrows.isEmpty) {
-      _isLevelComplete = true;
-      setState(() {});
+    if (_arrows.isEmpty && !_isLevelComplete) {
+      _onLevelComplete();
     }
+  }
+
+  Future<void> _onLevelComplete() async {
+    setState(() {
+      _isLevelComplete = true;
+      _isClaiming = true;
+    });
+
+    final progress = await _service.loadProgress();
+    final int nextMax = _service.max(progress.maxUnlockedLevel, _currentLevelNum + 1);
+    final Map<int, int> newStars = Map<int, int>.from(progress.starsMap);
+    newStars[_currentLevelNum] = 3;
+    await _service.saveLocalProgress(nextMax, newStars);
+
+    final result = await _service.claimLevelReward(
+      levelNumber: _currentLevelNum,
+      stars: 3,
+      score: 100,
+    );
+
+    // Show Interstitial Ad every 10 levels
+    if (_currentLevelNum % 10 == 0) {
+      if (!AdService.instance.isInterstitialAdLoaded()) {
+        AdService.instance.loadInterstitialAd();
+      }
+      AdService.instance.showInterstitialAd(onAdDismissed: () {});
+    }
+
+    if (mounted) {
+      setState(() {
+        _earnedCoins = result['coinsEarned'] ?? (_currentLevelNum * widget.multiplier);
+        _isClaiming = false;
+      });
+    }
+  }
+
+  void _watchRewardedAdForLives() {
+    if (!AdService.instance.isRewardedAdLoaded()) {
+      AdService.instance.loadRewardedAd();
+    }
+
+    AdService.instance.showRewardedAd(
+      context: context,
+      userId: 'arrow_escape_user',
+      onAdDismissed: () {},
+      onUserEarnedReward: (reward) {
+        if (mounted) {
+          setState(() {
+            _lives = 2; // Grant +2 Hearts
+            _isGameOver = false;
+          });
+        }
+      },
+    );
   }
 
   void _onHintPressed() {
@@ -225,6 +288,20 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
         _highlightedArrowId = hintArrow.id;
       });
     }
+  }
+
+  void _handleExit() {
+    AdService.instance.showInterstitialAd(
+      onAdDismissed: () {
+        if (mounted) {
+          if (widget.onBack != null) {
+            widget.onBack!();
+          } else {
+            Navigator.pop(context);
+          }
+        }
+      },
+    );
   }
 
   @override
@@ -247,7 +324,11 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
           children: [
             Column(
               children: [
-                // Top Header
+                // Top Banner Ad FIRST
+                const GameBannerAd(),
+                const SizedBox(height: 8),
+
+                // Header Bar below Banner Ad
                 _buildHeader(context),
 
                 const Spacer(),
@@ -283,10 +364,10 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
               ],
             ),
 
-            // Level Complete Modal
+            // Level Complete Modal with Sikka Coin Rewards
             if (_isLevelComplete) _buildWinModal(),
 
-            // Game Over Modal
+            // Game Over Modal with Rewarded Ad Option
             if (_isGameOver) _buildGameOverModal(),
           ],
         ),
@@ -296,12 +377,12 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            onPressed: widget.onBack ?? () => Navigator.pop(context),
+            onPressed: _handleExit,
             icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22),
           ),
           Text(
@@ -367,7 +448,7 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                onPressed: widget.onBack ?? () => Navigator.pop(context),
+                onPressed: _handleExit,
                 icon: const Icon(Icons.exit_to_app_rounded, color: Color(0xFFFF1744), size: 18),
                 label: Text('EXIT', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
@@ -406,11 +487,17 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
       child: Center(
         child: Container(
           margin: const EdgeInsets.all(28),
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: const Color(0xFF181B22),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: const Color(0xFF76ED12), width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF76ED12).withValues(alpha: 0.3),
+                blurRadius: 20,
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -419,22 +506,46 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
                 'VICTORY! 🎉',
                 style: GoogleFonts.bebasNeue(fontSize: 40, color: const Color(0xFF76ED12)),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(3, (index) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 4.0),
-                    child: Icon(Icons.star_rounded, color: Color(0xFFFFEA00), size: 40),
+                    child: Icon(Icons.star_rounded, color: Color(0xFFFFEA00), size: 36),
                   );
                 }),
               ),
               const SizedBox(height: 16),
-              Text(
-                'Level $_currentLevelNum Cleared!',
-                style: GoogleFonts.outfit(color: Colors.white70, fontSize: 16),
+
+              // COINS REWARD CONTAINER
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF222733),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFFEA00), width: 1.5),
+                ),
+                child: _isClaiming
+                    ? const CircularProgressIndicator(color: Color(0xFFFFEA00))
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.monetization_on_rounded, color: Color(0xFFFFEA00), size: 28),
+                          const SizedBox(width: 10),
+                          Text(
+                            '+$_earnedCoins COINS',
+                            style: GoogleFonts.orbitron(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFFFEA00),
+                            ),
+                          ),
+                        ],
+                      ),
               ),
-              const SizedBox(height: 24),
+
+              const SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF76ED12),
@@ -461,7 +572,7 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
       child: Center(
         child: Container(
           margin: const EdgeInsets.all(28),
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: const Color(0xFF181B22),
             borderRadius: BorderRadius.circular(24),
@@ -474,23 +585,41 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
                 'OUT OF LIVES! 💔',
                 style: GoogleFonts.bebasNeue(fontSize: 36, color: const Color(0xFFFF1744)),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 'Failed Level $_currentLevelNum',
                 style: GoogleFonts.outfit(color: Colors.white70, fontSize: 15),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // WATCH REWARDED AD BUTTON (+2 HEARTS)
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFEA00),
+                  foregroundColor: Colors.black,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: _watchRewardedAdForLives,
+                icon: const Icon(Icons.ondemand_video_rounded, color: Colors.black),
+                label: Text(
+                  'WATCH AD (+2 HEARTS ❤️)',
+                  style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+
+              const SizedBox(height: 12),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF1744),
+                  backgroundColor: const Color(0xFF1E222B),
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
+                  minimumSize: const Size(double.infinity, 48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () => _loadLevel(_currentLevelNum),
                 child: Text(
-                  'TRY AGAIN 🔄',
-                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+                  'RESTART LEVEL 🔄',
+                  style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
               ),
             ],

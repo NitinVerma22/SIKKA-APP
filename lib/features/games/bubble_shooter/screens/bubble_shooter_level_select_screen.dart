@@ -153,21 +153,17 @@ class _BubbleShooterLevelSelectScreenState extends State<BubbleShooterLevelSelec
   }) {
     return InkWell(
       onTap: isUnlocked
-          ? () {
-              AdService.instance.showInterstitialAd(
-                onAdDismissed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BubbleShooterGameScreen(
-                        levelNumber: levelNum,
-                        multiplier: _multiplier,
-                      ),
-                    ),
-                  );
-                  _fetchProgress();
-                },
+          ? () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BubbleShooterGameScreen(
+                    levelNumber: levelNum,
+                    multiplier: _multiplier,
+                  ),
+                ),
               );
+              _fetchProgress();
             }
           : null,
       borderRadius: BorderRadius.circular(16),

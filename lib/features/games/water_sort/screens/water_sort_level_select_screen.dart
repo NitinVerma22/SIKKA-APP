@@ -194,21 +194,17 @@ class _WaterSortLevelSelectScreenState extends State<WaterSortLevelSelectScreen>
   }) {
     return InkWell(
       onTap: isUnlocked
-          ? () {
-              AdService.instance.showInterstitialAd(
-                onAdDismissed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => WaterSortGameScreen(
-                        levelNumber: levelNum,
-                        multiplier: _multiplier,
-                      ),
-                    ),
-                  );
-                  _fetchProgress(); // Refresh progress when returning
-                },
+          ? () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WaterSortGameScreen(
+                    levelNumber: levelNum,
+                    multiplier: _multiplier,
+                  ),
+                ),
               );
+              _fetchProgress(); // Refresh progress when returning
             }
           : null,
       borderRadius: BorderRadius.circular(16),

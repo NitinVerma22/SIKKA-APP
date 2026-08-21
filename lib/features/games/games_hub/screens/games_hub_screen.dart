@@ -307,8 +307,8 @@ class GamesHubScreen extends ConsumerWidget {
                     description: selectedLanguage == 'Hindi' ? 'रंगों को छांटें और सिक्के जीतें' : 'Sort colorful liquids & win coins',
                     icon: Icons.science_rounded,
                     colors: [const Color(0xFF8B5CF6), const Color(0xFFC084FC)],
-                    leftImagePath: '',
-                    rightImagePath: '',
+                    leftImagePath: 'assets/images/games_hub/water_left.png',
+                    rightImagePath: 'assets/images/games_hub/water_right.png',
                     onTap: () {
                       context.push('/games/water_sort');
                     },
@@ -327,8 +327,8 @@ class GamesHubScreen extends ConsumerWidget {
                     description: selectedLanguage == 'Hindi' ? 'बबल्स फोड़ें और सिक्के कमाएं' : 'Match & pop colorful bubbles for coins',
                     icon: Icons.bubble_chart_rounded,
                     colors: [const Color(0xFF0284C7), const Color(0xFF38BDF8)],
-                    leftImagePath: '',
-                    rightImagePath: '',
+                    leftImagePath: 'assets/images/games_hub/buble_left.png',
+                    rightImagePath: 'assets/images/games_hub/buble_right.png',
                     onTap: () {
                       context.push('/games/bubble_shooter');
                     },
@@ -347,8 +347,8 @@ class GamesHubScreen extends ConsumerWidget {
                     description: selectedLanguage == 'Hindi' ? 'तीरों को रास्ता देकर निकालें' : 'Unblock & clear arrows to escape',
                     icon: Icons.navigation_rounded,
                     colors: [const Color(0xFF0D9488), const Color(0xFF2DD4BF)],
-                    leftImagePath: '',
-                    rightImagePath: '',
+                    leftImagePath: 'assets/images/games_hub/arrow left.png',
+                    rightImagePath: 'assets/images/games_hub/arrow_right.png',
                     onTap: () {
                       context.push('/games/arrow_escape');
                     },

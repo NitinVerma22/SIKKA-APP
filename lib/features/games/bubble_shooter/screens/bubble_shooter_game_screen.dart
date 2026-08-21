@@ -568,7 +568,12 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
                   right: 0,
                   child: Column(
                     children: [
-                      const GameBannerAd(),
+                      const KeyedSubtree(
+                        key: ValueKey('bubble_shooter_top_banner'),
+                        child: RepaintBoundary(
+                          child: GameBannerAd(),
+                        ),
+                      ),
                       const SizedBox(height: 12), // Clear margin between ad and header
                       _buildTopBar(),
                     ],
