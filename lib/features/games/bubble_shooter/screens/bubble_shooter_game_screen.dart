@@ -9,7 +9,9 @@ import '../widgets/stars_painter.dart';
 import '../services/bubble_shooter_service.dart';
 import '../services/bubble_shooter_audio_service.dart';
 import '../../shared/widgets/game_banner_ad.dart';
-import '../../../../core/ads/ad_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../features/profile/controllers/user_controller.dart';
+import '../../shared/utils/game_notifications.dart';
 
 const List<Color> kBubbleColors = [
   Color(0xFFFF4E91),
@@ -52,7 +54,7 @@ class ShooterBubble {
   });
 }
 
-class BubbleShooterGameScreen extends StatefulWidget {
+class BubbleShooterGameScreen extends ConsumerStatefulWidget {
   final int levelNumber;
   final int multiplier;
 
@@ -63,10 +65,10 @@ class BubbleShooterGameScreen extends StatefulWidget {
   });
 
   @override
-  State<BubbleShooterGameScreen> createState() => _BubbleShooterGameScreenState();
+  ConsumerState<BubbleShooterGameScreen> createState() => _BubbleShooterGameScreenState();
 }
 
-class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with TickerProviderStateMixin {
+class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScreen> with TickerProviderStateMixin {
   static const int kCols = 10;
   static const int kRows = 16;
   static const double kBubbleRadius = 14; // MUCH SMALLER BUBBLE SIZE
@@ -435,11 +437,15 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
       AdService.instance.showInterstitialAd(onAdDismissed: () {});
     }
 
+    final coins = result['coinsEarned'] ?? (widget.levelNumber * widget.multiplier);
+
     if (mounted) {
       setState(() {
-        _earnedCoins = result['coinsEarned'] ?? (widget.levelNumber * widget.multiplier);
+        _earnedCoins = coins;
         _isClaiming = false;
       });
+      ref.read(userProvider.notifier).addDirectCoins(_earnedCoins);
+      GameNotifications.showCoinUpdate(context, '+$_earnedCoins Sikka');
     }
   }
 

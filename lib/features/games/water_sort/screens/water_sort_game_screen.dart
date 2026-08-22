@@ -8,9 +8,11 @@ import '../services/water_sort_audio_service.dart';
 import '../widgets/water_sort_tube_widget.dart';
 import '../widgets/water_sort_pour_overlay.dart';
 import '../../shared/widgets/game_banner_ad.dart';
-import '../../../../core/ads/ad_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../features/profile/controllers/user_controller.dart';
+import '../../shared/utils/game_notifications.dart';
 
-class WaterSortGameScreen extends StatefulWidget {
+class WaterSortGameScreen extends ConsumerStatefulWidget {
   final int levelNumber;
   final int multiplier;
 
@@ -21,10 +23,10 @@ class WaterSortGameScreen extends StatefulWidget {
   });
 
   @override
-  State<WaterSortGameScreen> createState() => _WaterSortGameScreenState();
+  ConsumerState<WaterSortGameScreen> createState() => _WaterSortGameScreenState();
 }
 
-class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerProviderStateMixin {
+class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with TickerProviderStateMixin {
   final WaterSortService _service = WaterSortService();
   late WaterSortGameState _gameState;
   final List<WaterSortGameState> _history = [];
@@ -300,11 +302,15 @@ class _WaterSortGameScreenState extends State<WaterSortGameScreen> with TickerPr
       AdService.instance.showInterstitialAd(onAdDismissed: () {});
     }
 
+    final coins = result['coinsEarned'] ?? (widget.levelNumber * widget.multiplier);
+
     if (mounted) {
       setState(() {
-        _earnedCoins = result['coinsEarned'] ?? (widget.levelNumber * widget.multiplier);
+        _earnedCoins = coins;
         _isClaiming = false;
       });
+      ref.read(userProvider.notifier).addDirectCoins(_earnedCoins);
+      GameNotifications.showCoinUpdate(context, '+$_earnedCoins Sikka');
     }
   }
 

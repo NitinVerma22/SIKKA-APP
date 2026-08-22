@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/arrow_escape_models.dart';
 import '../engine/arrow_escape_engine.dart';
@@ -8,8 +9,10 @@ import '../widgets/arrow_escape_painter.dart';
 import '../services/arrow_escape_service.dart';
 import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
+import '../../../../features/profile/controllers/user_controller.dart';
+import '../../shared/utils/game_notifications.dart';
 
-class NativeArrowEscapeGameScreen extends StatefulWidget {
+class NativeArrowEscapeGameScreen extends ConsumerStatefulWidget {
   final int initialLevel;
   final int multiplier;
   final VoidCallback? onBack;
@@ -22,10 +25,10 @@ class NativeArrowEscapeGameScreen extends StatefulWidget {
   });
 
   @override
-  State<NativeArrowEscapeGameScreen> createState() => _NativeArrowEscapeGameScreenState();
+  ConsumerState<NativeArrowEscapeGameScreen> createState() => _NativeArrowEscapeGameScreenState();
 }
 
-class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScreen>
+class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeGameScreen>
     with SingleTickerProviderStateMixin {
   final ArrowEscapeService _service = ArrowEscapeService();
   late int _currentLevelNum;
@@ -261,11 +264,15 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
       AdService.instance.showInterstitialAd(onAdDismissed: () {});
     }
 
+    final coins = result['coinsEarned'] ?? (_currentLevelNum * widget.multiplier);
+
     if (mounted) {
       setState(() {
-        _earnedCoins = result['coinsEarned'] ?? (_currentLevelNum * widget.multiplier);
+        _earnedCoins = coins;
         _isClaiming = false;
       });
+      ref.read(userProvider.notifier).addDirectCoins(_earnedCoins);
+      GameNotifications.showCoinUpdate(context, '+$_earnedCoins Sikka');
     }
   }
 

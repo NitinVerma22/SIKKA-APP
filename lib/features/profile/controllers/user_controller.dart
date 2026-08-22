@@ -186,6 +186,16 @@ class UserNotifier extends StateNotifier<UserState> {
     _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
   }
 
+  void addDirectCoins(int coinsEarned) {
+    if (state.userData != null) {
+      final currentData = Map<String, dynamic>.from(state.userData!);
+      final currentBalance = (currentData['balance'] as int?) ?? 0;
+      currentData['balance'] = currentBalance + coinsEarned;
+      state = state.copyWith(userData: currentData);
+    }
+    _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
+  }
+
   Future<bool> updateUpi(String upiId) async {
     state = state.copyWith(isLoading: true, error: null);
     final success = await _userService.updateUpi(upiId);
