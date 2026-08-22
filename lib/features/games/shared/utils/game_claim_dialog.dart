@@ -45,7 +45,11 @@ class GameClaimDialog {
         return;
       }
 
-      final result = await ref.read(userServiceProvider).endGameSession(sessionId, coinsEarned: coinsEarned + 30);
+      // Anti-fraud session timing buffer to prevent false 'session too short' errors
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      // 35 base coins + 15 reward ad bonus = 50 total coins
+      final result = await ref.read(userServiceProvider).endGameSession(sessionId, coinsEarned: 50);
       if (result != null && result['success'] == true) {
         final int coinsWon = result['coinsEarned'] ?? 0;
         ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
@@ -104,7 +108,11 @@ class GameClaimDialog {
       );
 
       try {
-        final result = await ref.read(userServiceProvider).endGameSession(sessionId, coinsEarned: coinsEarned);
+        // Anti-fraud session timing buffer
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        // 35 base coins - 10 penalty for claiming without ad = 25 total coins
+        final result = await ref.read(userServiceProvider).endGameSession(sessionId, coinsEarned: 25);
         
         if (context.mounted) {
           Navigator.of(context).pop(); // Close loading dialog
@@ -269,7 +277,7 @@ class GameClaimDialog {
                                     icon: Icons.monetization_on,
                                     iconColor: Colors.amber,
                                     iconBgColor: const Color(0xFFFEF3C7),
-                                    title: selectedLanguage == 'Hindi' ? '30 सिक्के कमाएं' : 'Earn 30 Coins',
+                                    title: selectedLanguage == 'Hindi' ? '35 सिक्के कमाएं' : 'Earn 35 Coins',
                                     desc: selectedLanguage == 'Hindi'
                                         ? 'वॉलेट में तुरंत'
                                         : 'Instant wallet reward',
@@ -284,8 +292,8 @@ class GameClaimDialog {
                                     iconBgColor: const Color(0xFFEEF2FF),
                                     title: selectedLanguage == 'Hindi' ? 'एक्स्ट्रा बोनस' : 'Extra Bonus',
                                     desc: selectedLanguage == 'Hindi'
-                                        ? 'देखें और +30 पाएं'
-                                        : 'Watch & get +30',
+                                        ? 'देखें और +15 पाएं'
+                                        : 'Watch & get +15',
                                   ),
                                 ),
                                 Container(height: 35, width: 1, color: const Color(0xFFE9D5FF)),
@@ -456,7 +464,7 @@ class GameClaimDialog {
                                               ),
                                             ),
                                             const SizedBox(width: 6),
-                                            // Yellow Badge: +30
+                                            // Yellow Badge: +15
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                               decoration: BoxDecoration(
@@ -464,7 +472,7 @@ class GameClaimDialog {
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
                                               child: Text(
-                                                '+30 Bonus',
+                                                '+15 Bonus',
                                                 style: GoogleFonts.outfit(
                                                   color: const Color(0xFFD97706),
                                                   fontSize: 9,
@@ -561,7 +569,7 @@ class GameClaimDialog {
                                       const CircularProgressIndicator(color: AppColors.primary),
                                       const SizedBox(height: 16),
                                       Text(
-                                        context.tr('deducting_coins_claiming', selectedLanguage).replaceAll('{coins}', '25'),
+                                        context.tr('deducting_coins_claiming', selectedLanguage).replaceAll('{coins}', '10'),
                                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                       ),
                                     ],
@@ -575,7 +583,7 @@ class GameClaimDialog {
                             final result = await ref.read(userServiceProvider).endGameSession(
                               sessionId,
                               coinsEarned: coinsEarned,
-                              bypassFee: 25,
+                              bypassFee: 10,
                             );
                             
                             if (context.mounted) {

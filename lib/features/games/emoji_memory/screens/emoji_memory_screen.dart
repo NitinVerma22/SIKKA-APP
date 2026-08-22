@@ -371,7 +371,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
       return;
     }
 
-    if (_sessionCoins >= 50) {
+    if (_sessionCoins >= 35) {
       final selectedLanguage = ref.read(languageProvider);
       GameNotifications.showCoinUpdate(context, selectedLanguage == 'Hindi' ? 'गुल्लक भर गई! पहले दावा करें' : 'Gullak Full! Claim first', isPenalty: true);
       return;
@@ -385,7 +385,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
       int reward = 3;
 
       setState(() {
-        _sessionCoins = (_sessionCoins + reward > 50) ? 50 : _sessionCoins + reward;
+        _sessionCoins = (_sessionCoins + reward > 35) ? 35 : _sessionCoins + reward;
         _showSuccessTick = true;
         _isRoundEnding = true;
         _revealedIndices.add(index);
@@ -396,7 +396,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
 
       GameNotifications.showCoinUpdate(context, '+$reward Sikka (Gullak)');
       
-      if (_sessionCoins >= 50) {
+      if (_sessionCoins >= 35) {
         Future.delayed(const Duration(milliseconds: 1000), () {
           if (mounted) {
             _claimGullak();
@@ -649,7 +649,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
   }
 
   void _claimGullak() {
-    if (_sessionCoins >= 50) {
+    if (_sessionCoins >= 35) {
       setState(() {
         _isPaused = true;
       });
@@ -802,7 +802,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
                       // Wallet
                       GameGullakBar(
                         currentCoins: _sessionCoins,
-                        maxCoins: 50,
+                        maxCoins: 35,
                         onClaim: _claimGullak,
                       ),
                     ],

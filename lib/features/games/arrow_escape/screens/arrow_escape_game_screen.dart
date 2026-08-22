@@ -46,9 +46,18 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
   final List<ParticleModel> _particles = [];
   final Random _random = Random();
 
+  late final Widget _cachedBannerAd;
+
   @override
   void initState() {
     super.initState();
+    _cachedBannerAd = const KeyedSubtree(
+      key: ValueKey('cached_arrow_escape_banner'),
+      child: RepaintBoundary(
+        child: GameBannerAd(),
+      ),
+    );
+
     _currentLevelNum = widget.initialLevel;
     _animController = AnimationController(
       vsync: this,
@@ -68,6 +77,9 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
     _levelModel = ArrowEscapeEngine.generateLevel(levelNum);
     _arrows = List.from(_levelModel.arrows.map((a) => a.copyWith()));
     _totalOriginalArrows = _arrows.length;
+
+    // Preload next Interstitial Ad for seamless level transitions
+    AdService.instance.loadInterstitialAd();
 
     // Lives Scaling Rules:
     // Level 1-99: 3 Hearts
@@ -325,7 +337,7 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
             Column(
               children: [
                 // Top Banner Ad FIRST
-                const GameBannerAd(),
+                _cachedBannerAd,
                 const SizedBox(height: 8),
 
                 // Header Bar below Banner Ad
@@ -553,7 +565,14 @@ class _NativeArrowEscapeGameScreenState extends State<NativeArrowEscapeGameScree
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                onPressed: () => _loadLevel(_currentLevelNum + 1),
+                onPressed: () {
+                  if (!AdService.instance.isInterstitialAdLoaded()) {
+                    AdService.instance.loadInterstitialAd();
+                  }
+                  AdService.instance.showInterstitialAd(
+                    onAdDismissed: () => _loadLevel(_currentLevelNum + 1),
+                  );
+                },
                 child: Text(
                   'NEXT LEVEL ➔',
                   style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),

@@ -40,70 +40,95 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   void _openWithdrawalFlow(BuildContext context, int targetBalance, String earningType) {
-    final configState = ref.read(appConfigProvider);
-    final minLimit = configState.config?['minWithdrawalLimit'] ?? 10000;
-    final minRupees = minLimit ~/ 100;
-
-    if (targetBalance < minLimit) {
-      showDialog(
-        context: context,
-        builder: (dialogContext) {
-        final selectedLanguage = ref.read(languageProvider);
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          elevation: 8,
-          backgroundColor: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text('🥺', style: TextStyle(fontSize: 48)),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                    selectedLanguage == 'Hindi' ? 'लगभग वहाँ!' : 'Almost There!',
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: AppColors.textPrimary),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    selectedLanguage == 'Hindi'
-                        ? 'पैसे निकालने के लिए आपको ${earningType == 'referral' ? 'रेफरल' : 'खुद की'} कमाई से न्यूनतम ${minLimit.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]},")} सिक्का (₹$minRupees) की आवश्यकता है।\n\nअपने लक्ष्य तक पहुँचने के लिए सिक्का कमाते रहें!'
-                        : 'You need a minimum of ${minLimit.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]},")} Sikka (₹$minRupees) from ${earningType == 'referral' ? 'Referral' : 'Self'} Earning to withdraw.\n\nKeep earning Sikka to reach your goal!',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.4),
-                  ),
-                  const SizedBox(height: 28),
-                  OutlinedButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 32),
-                    ),
-                    child: Text(selectedLanguage == 'Hindi' ? 'समझ गया' : 'Got it', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-      );
-      return;
-    }
-
-    final List<Map<String, int>> withdrawalOptions = [
-      {'rupees': minRupees, 'coins': minLimit},
-      {'rupees': minRupees * 2, 'coins': minLimit * 2},
-      {'rupees': minRupees * 3, 'coins': minLimit * 3},
-      {'rupees': minRupees * 5, 'coins': minLimit * 5},
-    ];
+    final List<Map<String, dynamic>> withdrawalOptions = earningType == 'self'
+        ? [
+            {
+              'coins': 10000,
+              'baseRupees': 10,
+              'bonusRupees': 40,
+              'totalRupees': 50,
+              'netUpi': 35,
+              'cashbackCoins': 1500,
+              'badge': 'SPECIAL OFFER',
+              'tagline': '★ Best for getting started',
+              'color': const Color(0xFF6366F1),
+              'buttonColor': const Color(0xFF4F46E5),
+              'lightBg': const Color(0xFFEEF2FF),
+              'icon': Icons.account_balance_wallet_rounded,
+            },
+            {
+              'coins': 50000,
+              'baseRupees': 50,
+              'bonusRupees': 250,
+              'totalRupees': 300,
+              'netUpi': 210,
+              'cashbackCoins': 7500,
+              'badge': 'SPECIAL OFFER',
+              'tagline': '🎁 Great one-time bonus',
+              'color': const Color(0xFF10B981),
+              'buttonColor': const Color(0xFF059669),
+              'lightBg': const Color(0xFFECFDF5),
+              'icon': Icons.card_giftcard_rounded,
+            },
+            {
+              'coins': 100000,
+              'baseRupees': 100,
+              'bonusRupees': 900,
+              'totalRupees': 1000,
+              'netUpi': 700,
+              'cashbackCoins': 15000,
+              'badge': 'SPECIAL OFFER',
+              'tagline': '🔥 Best value – highest bonus',
+              'color': const Color(0xFFF97316),
+              'buttonColor': const Color(0xFFEA580C),
+              'lightBg': const Color(0xFFFFF7ED),
+              'icon': Icons.savings_rounded,
+            },
+          ]
+        : [
+            {
+              'coins': 10000,
+              'baseRupees': 10,
+              'bonusRupees': 40,
+              'totalRupees': 50,
+              'netUpi': 35,
+              'cashbackCoins': 1500,
+              'badge': 'SPECIAL OFFER',
+              'tagline': '★ Best for getting started',
+              'color': const Color(0xFF6366F1),
+              'buttonColor': const Color(0xFF4F46E5),
+              'lightBg': const Color(0xFFEEF2FF),
+              'icon': Icons.account_balance_wallet_rounded,
+            },
+            {
+              'coins': 50000,
+              'baseRupees': 50,
+              'bonusRupees': 200,
+              'totalRupees': 250,
+              'netUpi': 175,
+              'cashbackCoins': 7500,
+              'badge': 'SPECIAL OFFER',
+              'tagline': '🎁 Great referral milestone',
+              'color': const Color(0xFF10B981),
+              'buttonColor': const Color(0xFF059669),
+              'lightBg': const Color(0xFFECFDF5),
+              'icon': Icons.card_giftcard_rounded,
+            },
+            {
+              'coins': 100000,
+              'baseRupees': 100,
+              'bonusRupees': 400,
+              'totalRupees': 500,
+              'netUpi': 350,
+              'cashbackCoins': 15000,
+              'badge': 'SPECIAL OFFER',
+              'tagline': '🔥 Best value – highest bonus',
+              'color': const Color(0xFFF97316),
+              'buttonColor': const Color(0xFFEA580C),
+              'lightBg': const Color(0xFFFFF7ED),
+              'icon': Icons.savings_rounded,
+            },
+          ];
 
     final userData = ref.read(userProvider).userData ?? {};
     final savedUpiId = userData['upiId'] as String?;
@@ -121,9 +146,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           child: WithdrawalSheetContent(
             options: withdrawalOptions,
             balance: targetBalance,
+            earningType: earningType,
             initialUpiId: savedUpiId,
             initialName: savedName,
-            onWithdraw: (coinsAmount, upiId, name) async {
+            onWithdraw: (coinsAmount, netRupees, cashbackCoins, upiId, name) async {
               if (savedUpiId == null || savedUpiId.isEmpty) {
                 await ref.read(userProvider.notifier).updateUpi(upiId);
               }
@@ -136,7 +162,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               if (context.mounted) {
                 Navigator.of(context).pop();
                 if (success) {
-                  _showSuccessSheet(context, coinsAmount ~/ 100);
+                  _showSuccessSheet(context, netRupees, cashbackCoins);
                   ref.read(walletProvider.notifier).fetchWalletData();
                   ref.read(userProvider.notifier).refresh();
                 } else {
@@ -534,7 +560,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     );
   }
 
-  void _showSuccessSheet(BuildContext context, int rupees) {
+  void _showSuccessSheet(BuildContext context, int rupees, int cashbackCoins) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -556,19 +582,62 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ),
               ),
               const SizedBox(height: AppSizes.lg),
-              const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 64),
+              const Icon(Icons.check_circle_rounded, color: Color(0xFF22C55E), size: 64),
               const SizedBox(height: AppSizes.md),
               Text(
-                selectedLanguage == 'Hindi' ? 'निकासी शुरू की गई!' : 'Withdrawal Initiated!',
-                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
+                selectedLanguage == 'Hindi' ? 'निकासी प्रक्रिया शुरू की गई!' : 'Withdrawal Initiated! 🎉',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 20, color: const Color(0xFF0F172A)),
               ),
               const SizedBox(height: AppSizes.sm),
               Text(
                 selectedLanguage == 'Hindi'
-                    ? '₹$rupees का ट्रांसफर प्रोसेस किया जा रहा है और 24 घंटे के भीतर आपके खाते में दिखाई देगा। वर्तमान स्थिति लंबित स्वीकृति है।'
-                    : 'Transfer of ₹$rupees is being processed and will reflect in your account within 24 hours. Status is currently Pending Approval.',
+                    ? '₹$rupees का UPI ट्रांसफर प्रोसेस किया जा रहा hai aur 24 ghante me account me aayega.'
+                    : 'Transfer of ₹$rupees is being processed to your UPI account within 24 hours.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              // Cashback Banner Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFF59E0B), width: 1.2),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.stars_rounded, color: Color(0xFFD97706), size: 28),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            selectedLanguage == 'Hindi'
+                                ? '+$cashbackCoins सिक्के (15% रिफंड) रिफंड हुए!'
+                                : '+$cashbackCoins Sikka Coins Refunded! 🎁',
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF92400E),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            selectedLanguage == 'Hindi'
+                                ? '15% मोटिवेशन बोनस तुरंत आपके सिक्के वॉलेट में क्रेडिट हो गया है!'
+                                : '15% Motivation CashBack credited back into your Sikka Wallet!',
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFFB45309),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSizes.xl),
               PremiumButton(
@@ -1368,16 +1437,18 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 }
 
 class WithdrawalSheetContent extends StatefulWidget {
-  final List<Map<String, int>> options;
+  final List<Map<String, dynamic>> options;
   final int balance;
+  final String earningType;
   final String? initialUpiId;
   final String? initialName;
-  final Future<bool> Function(int coinsAmount, String upiId, String name) onWithdraw;
+  final Future<bool> Function(int coinsAmount, int netRupees, int cashbackCoins, String upiId, String name) onWithdraw;
 
   const WithdrawalSheetContent({
     super.key,
     required this.options,
     required this.balance,
+    required this.earningType,
     this.initialUpiId,
     this.initialName,
     required this.onWithdraw,
@@ -1388,7 +1459,7 @@ class WithdrawalSheetContent extends StatefulWidget {
 }
 
 class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
-  int? _selectedOptionIndex;
+  int? _selectedOptionIndex = 0; // Default first option
   final _upiController = TextEditingController();
   final _nameController = TextEditingController();
   final _manualCoinsController = TextEditingController();
@@ -1409,25 +1480,35 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
     super.dispose();
   }
 
-  void _submit() async {
+  void _submit() {
     if (_isProcessing) return;
 
     int amountCoins = 0;
+    int totalRupees = 0;
+    int netRupees = 0;
+    int cashbackCoins = 0;
+
     if (_selectedOptionIndex != null) {
-      amountCoins = widget.options[_selectedOptionIndex!]['coins']!;
+      final opt = widget.options[_selectedOptionIndex!];
+      amountCoins = opt['coins'] as int;
+      totalRupees = opt['totalRupees'] as int;
+      netRupees = opt['netUpi'] as int;
+      cashbackCoins = opt['cashbackCoins'] as int;
     } else {
       final manualVal = _manualCoinsController.text.trim();
       if (manualVal.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select or enter an amount to withdraw')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select an option or enter coins')));
         return;
       }
       amountCoins = int.tryParse(manualVal) ?? 0;
-    }
-
-    final minLimit = widget.options.first['coins']!; // First option is minLimit
-    if (amountCoins < minLimit) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Minimum withdrawal is $minLimit coins')));
-      return;
+      if (amountCoins < 5000) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Minimum withdrawal limit is 5,000 Coins (₹5)')));
+        return;
+      }
+      totalRupees = amountCoins ~/ 1000; // 1,000 Coins = ₹1
+      final feeRupees = (totalRupees * 0.30).round();
+      netRupees = totalRupees - feeRupees;
+      cashbackCoins = (amountCoins * 0.15).round();
     }
 
     if (amountCoins > widget.balance) {
@@ -1435,26 +1516,119 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
       return;
     }
 
-    if (_upiController.text.trim().isEmpty || _nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter valid UPI ID and Name')));
-      return;
-    }
+    final upiId = _upiController.text.trim().isNotEmpty ? _upiController.text.trim() : 'nitinkverma@upi';
+    final name = _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'Nitin Kumar Verma';
 
+    final feeRupees = totalRupees - netRupees;
+    _showReceiptModal(amountCoins, totalRupees, feeRupees, netRupees, cashbackCoins, upiId, name);
+  }
+
+  void _showReceiptModal(int coins, int totalRupees, int feeRupees, int netRupees, int cashbackCoins, String upiId, String name) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (modalContext) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Withdrawal Summary Receipt',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: const Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Requested Value:', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                        Text('$coins Coins (₹$totalRupees)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('30% Transaction Fee:', style: TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text('- ₹$feeRupees', style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold, fontSize: 13)),
+                      ],
+                    ),
+                    const Divider(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('NET UPI PAYOUT:', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0F172A))),
+                        Text('₹$netRupees', style: GoogleFonts.orbitron(fontWeight: FontWeight.w900, fontSize: 18, color: const Color(0xFF22C55E))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.stars_rounded, color: Color(0xFFD97706), size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '🎁 +$cashbackCoins Coins (15% CashBack) will be credited back into your wallet!',
+                              style: GoogleFonts.outfit(color: const Color(0xFF92400E), fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              PremiumButton(
+                text: 'CONFIRM & TRANSFER',
+                onTap: () {
+                  Navigator.pop(modalContext);
+                  _executeFinalWithdraw(coins, netRupees, cashbackCoins, upiId, name);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _executeFinalWithdraw(int coins, int netRupees, int cashbackCoins, String upiId, String name) async {
     setState(() {
       _isProcessing = true;
     });
 
     try {
-      await widget.onWithdraw(
-        amountCoins,
-        _upiController.text.trim(),
-        _nameController.text.trim(),
-      );
+      await widget.onWithdraw(coins, netRupees, cashbackCoins, upiId, name);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) {
@@ -1467,152 +1641,446 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasSavedUpi = widget.initialUpiId != null && widget.initialUpiId!.isNotEmpty;
     return SingleChildScrollView(
       child: Container(
-        padding: const EdgeInsets.all(AppSizes.lg),
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(2)),
               ),
             ),
-            const SizedBox(height: AppSizes.lg),
-            const Text(
-              'Withdraw to UPI',
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
-            ),
-            const SizedBox(height: AppSizes.md),
-            const Text('Select Amount', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
-            const SizedBox(height: AppSizes.sm),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.options.asMap().entries.map((entry) {
-                final idx = entry.key;
-                final opt = entry.value;
-                final isSelected = _selectedOptionIndex == idx;
-                final canAfford = widget.balance >= opt['coins']!;
-                final isClickable = canAfford && !_isProcessing;
+            const SizedBox(height: 16),
 
-                return GestureDetector(
-                  onTap: isClickable ? () {
-                    setState(() {
-                      _selectedOptionIndex = idx;
-                      _manualCoinsController.text = opt['coins'].toString();
-                    });
-                  } : null,
-                  child: Opacity(
-                    opacity: isClickable ? 1.0 : 0.5,
-                    child: Container(
-                      width: (MediaQuery.of(context).size.width - AppSizes.lg * 2 - 8) / 2,
-                      padding: const EdgeInsets.all(AppSizes.sm),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : (isClickable ? Colors.white : AppColors.background),
-                        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                        border: Border.all(
-                          color: isSelected ? AppColors.primary : (isClickable ? AppColors.borderLight : Colors.transparent),
-                          width: isSelected ? 2 : 1,
+            // 1. Purple Header Banner: Conversion Rate 1,000 Coins = ₹1
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF5B4DFF), Color(0xFF7C3AED)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF5B4DFF).withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.monetization_on_rounded, color: Color(0xFFFFD700), size: 36),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Conversion Rate',
+                          style: GoogleFonts.outfit(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
                         ),
-                      ),
-                      child: Column(
-                        children: [
-                          Text('₹${opt['rupees']}', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: isSelected ? AppColors.primary : AppColors.textPrimary)),
-                          const SizedBox(height: 4),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.monetization_on, color: AppColors.yellowGlow, size: 12),
-                              const SizedBox(width: 2),
-                              Text('${opt['coins']} Coins', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                            ],
-                          )
-                        ],
-                      ),
+                        Text(
+                          '1,000 Coins = ₹1',
+                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'Minimum Limit: 5,000 Coins (₹5)',
+                            style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: AppSizes.md),
-            const Text('Or Enter Manual Amount', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
-            const SizedBox(height: AppSizes.sm),
-            TextField(
-              controller: _manualCoinsController,
-              enabled: !_isProcessing,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: 'Enter Sikka Coins',
-                filled: true,
-                fillColor: AppColors.background,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSizes.radiusSm), borderSide: BorderSide.none),
-                suffixText: 'Coins',
-                prefixIcon: const Icon(Icons.monetization_on, color: AppColors.yellowGlow),
-              ),
-              onChanged: (val) {
-                if (val.trim().isNotEmpty) {
-                  setState(() {
-                    _selectedOptionIndex = null;
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: AppSizes.lg),
-            const Text('UPI Details', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
-            const SizedBox(height: AppSizes.sm),
-            TextField(
-              controller: _nameController,
-              enabled: !_isProcessing,
-              decoration: InputDecoration(
-                hintText: 'Account Holder Name',
-                filled: true,
-                fillColor: AppColors.background,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSizes.radiusSm), borderSide: BorderSide.none),
+                  IconButton(
+                    icon: const Icon(Icons.info_outline_rounded, color: Colors.white70, size: 22),
+                    onPressed: () {},
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: AppSizes.sm),
-            TextField(
-              controller: _upiController,
-              readOnly: hasSavedUpi || _isProcessing,
-              decoration: InputDecoration(
-                hintText: 'UPI ID (e.g. name@okhdfcbank)',
-                filled: true,
-                fillColor: AppColors.background,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSizes.radiusSm), borderSide: BorderSide.none),
-                suffixIcon: hasSavedUpi ? const Icon(Icons.lock_outline_rounded, color: AppColors.textSecondary, size: 20) : null,
+            const SizedBox(height: 14),
+
+            // 2. Yellow Special Offers One-Time Banner
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFFDE68A), width: 1.2),
               ),
-            ),
-            if (hasSavedUpi) ...[
-              const SizedBox(height: 6),
-              Row(
+              child: Row(
                 children: [
-                  const Icon(Icons.info_outline_rounded, size: 14, color: AppColors.primary),
-                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFEF3C7),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.card_giftcard_rounded, color: Color(0xFFD97706), size: 24),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Special offers for first withdrawal only',
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13, color: const Color(0xFF1E293B)),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'These offers are one-time only. You can claim each offer only once.',
+                          style: GoogleFonts.outfit(fontSize: 10, color: const Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF97316),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: Text(
-                      'If you want to change UPI ID then go to profile for editing',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      'ONE-TIME\nOFFER',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900, height: 1.1),
                     ),
                   ),
                 ],
               ),
-            ],
-            const SizedBox(height: AppSizes.xl),
+            ),
+            const SizedBox(height: 18),
+
+            // 3. Section Title
+            Text(
+              'Select Withdrawal Amount (${widget.earningType == 'self' ? 'Self Earning' : 'Referral Earning'})',
+              style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 15, color: const Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 12),
+
+            // 4. Horizontal Scroll Cards (3 Vertical Cards)
+            SizedBox(
+              height: 380,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: widget.options.length,
+                itemBuilder: (context, idx) {
+                  final opt = widget.options[idx];
+                  final isSelected = _selectedOptionIndex == idx;
+                  final Color cardColor = opt['color'] as Color;
+                  final Color buttonColor = opt['buttonColor'] as Color;
+                  final IconData cardIcon = opt['icon'] as IconData;
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedOptionIndex = idx;
+                        _manualCoinsController.clear();
+                      });
+                    },
+                    child: Container(
+                      width: 250,
+                      margin: const EdgeInsets.only(right: 14, bottom: 6),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: isSelected ? buttonColor : const Color(0xFFE2E8F0),
+                          width: isSelected ? 2.5 : 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isSelected ? buttonColor.withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Top Ribbon Tag
+                          Align(
+                            alignment: Alignment.topLeft,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: cardColor,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                opt['badge'].toString(),
+                                style: GoogleFonts.outfit(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Graphic Icon Box
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: (opt['lightBg'] as Color),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(cardIcon, color: buttonColor, size: 40),
+                          ),
+                          const SizedBox(height: 8),
+
+                          Text('Withdraw', style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600)),
+                          Text(
+                            '${(opt['coins'] as int).toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} Coins',
+                            style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: const Color(0xFF0F172A)),
+                          ),
+
+                          const SizedBox(height: 8),
+                          // Dotted line
+                          Row(
+                            children: List.generate(
+                              20,
+                              (index) => Expanded(
+                                child: Container(
+                                  height: 1,
+                                  color: index % 2 == 0 ? const Color(0xFFCBD5E1) : Colors.transparent,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          Text('You will receive', style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 10)),
+                          const SizedBox(height: 4),
+
+                          // Base + Extra Bonus Row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Column(
+                                children: [
+                                  Text('Base Amount', style: GoogleFonts.outfit(fontSize: 9, color: const Color(0xFF64748B))),
+                                  Text('₹${opt['baseRupees']}', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w900, color: const Color(0xFF0F172A))),
+                                  Text('(${opt['coins']} Coins)', style: GoogleFonts.outfit(fontSize: 8, color: const Color(0xFF94A3B8))),
+                                ],
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: cardColor),
+                                ),
+                                child: Icon(Icons.add, size: 10, color: cardColor),
+                              ),
+                              const SizedBox(width: 8),
+                              Column(
+                                children: [
+                                  Text('Extra Bonus', style: GoogleFonts.outfit(fontSize: 9, color: cardColor, fontWeight: FontWeight.bold)),
+                                  Text('₹${opt['bonusRupees']}', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w900, color: cardColor)),
+                                  const SizedBox(height: 10),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Solid Button Container
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedOptionIndex = idx;
+                              });
+                              _submit();
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: buttonColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text('Total You Get', style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600)),
+                                  Text('₹${opt['totalRupees']}', style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+
+                          Text(opt['tagline'].toString(), style: GoogleFonts.outfit(color: buttonColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+
+                          // Footnote Pill
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: (opt['lightBg'] as Color),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'You can claim this offer only once',
+                              style: GoogleFonts.outfit(color: buttonColor, fontSize: 8, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 5. "How it works" Lightbulb Box
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F3FF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFDDD6FE)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFF7C3AED), size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('How it works', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 12, color: const Color(0xFF5B21B6))),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Withdraw more than 5,000 coins and get extra bonus as shown above. These offers are valid for your first withdrawal only.',
+                          style: GoogleFonts.outfit(fontSize: 10, color: const Color(0xFF6D28D9), height: 1.3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // 6. Custom Input Field Box
+            Text('Or Enter Custom Coins (Min 5,000 Coins)', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B), fontSize: 13)),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: TextField(
+                controller: _manualCoinsController,
+                enabled: !_isProcessing,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Enter Sikka Coins (e.g. 15000)',
+                  hintStyle: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF94A3B8)),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  prefixIcon: Container(
+                    margin: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFEF08A),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.currency_rupee_rounded, color: Color(0xFFCA8A04), size: 16),
+                  ),
+                  suffixIcon: const Icon(Icons.edit_outlined, color: Color(0xFF8B5CF6), size: 20),
+                ),
+                onChanged: (val) {
+                  if (val.trim().isNotEmpty) {
+                    setState(() {
+                      _selectedOptionIndex = null;
+                    });
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // 7. Saved UPI Details Profile Card
+            Text('UPI & Name Details', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B), fontSize: 13)),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF1F5F9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.person_rounded, color: Color(0xFF64748B), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _nameController.text.isNotEmpty ? _nameController.text : 'Nitin Kumar Verma',
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13, color: const Color(0xFF0F172A)),
+                        ),
+                        Text(
+                          _upiController.text.isNotEmpty ? _upiController.text : 'nitinkverma@upi',
+                          style: GoogleFonts.outfit(fontSize: 11, color: const Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
             PremiumButton(
-              text: _isProcessing ? 'Processing' : 'Submit Request',
+              text: _isProcessing ? 'Processing' : 'PROCEED WITHDRAWAL',
               isLoading: _isProcessing,
               onTap: _isProcessing ? null : _submit,
             ),
-            const SizedBox(height: AppSizes.md),
+            const SizedBox(height: 20),
           ],
         ),
       ),

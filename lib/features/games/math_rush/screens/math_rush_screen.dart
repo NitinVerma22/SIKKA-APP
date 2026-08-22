@@ -41,7 +41,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
   bool _isAnswerEvaluated = false;
 
   Timer? _questionTimer;
-  int _questionTimeLeft = 10;
+  int _questionTimeLeft = 4;
   Timer? _gameTimer;
   int _elapsedSeconds = 0;
 
@@ -49,7 +49,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
   int _questionCount = 0;
   String _difficulty = 'easy';
   String _selectedDifficultyMode = 'default';
-  int _questionTimeMax = 10;
+  int _questionTimeMax = 4;
 
   @override
   void initState() {
@@ -387,7 +387,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
       _questionTimeMax = 10;
     } else if (_selectedDifficultyMode == 'medium') {
       _difficulty = 'medium';
-      _questionTimeMax = 8;
+      _questionTimeMax = 7;
     } else if (_selectedDifficultyMode == 'hard') {
       _difficulty = 'hard';
       _questionTimeMax = 6;
@@ -395,13 +395,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
       if (!isResume) {
         _difficulty = 'easy';
       }
-      if (_difficulty == 'medium') {
-        _questionTimeMax = 8;
-      } else if (_difficulty == 'hard') {
-        _questionTimeMax = 6;
-      } else {
-        _questionTimeMax = 10;
-      }
+      _questionTimeMax = 8;
     }
 
     _timerController.duration = Duration(seconds: _questionTimeMax);
@@ -609,17 +603,26 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
 
   void _handleTimeout() {
     GameAudio.playWrong();
+    int timeoutPenalty = 2;
+    if (_selectedDifficultyMode == 'medium') {
+      timeoutPenalty = 3;
+    } else if (_selectedDifficultyMode == 'hard') {
+      timeoutPenalty = 4;
+    } else {
+      timeoutPenalty = 2;
+    }
+
     setState(() {
-      _sessionCoins = max(0, _sessionCoins - 10);
-      _gullakCoins = max(0, _gullakCoins - 10);
+      _sessionCoins = max(0, _sessionCoins - timeoutPenalty);
+      _gullakCoins = max(0, _gullakCoins - timeoutPenalty);
     });
     _saveProgress();
-    GameNotifications.showCoinUpdate(context, 'Timeout! -10 Sikka', isPenalty: true);
+    GameNotifications.showCoinUpdate(context, 'Timeout! -$timeoutPenalty Sikka', isPenalty: true);
     
     _questionCount++;
-    if (_selectedDifficultyMode == 'default' && _questionCount == 15) {
+    if (_selectedDifficultyMode == 'default' && _questionCount == 12) {
       _showLevelUpDialog('medium');
-    } else if (_selectedDifficultyMode == 'default' && _questionCount == 30) {
+    } else if (_selectedDifficultyMode == 'default' && _questionCount == 25) {
       _showLevelUpDialog('hard');
     } else {
       _generateQuestion();
@@ -640,27 +643,27 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
     if (answer == _correctAnswer) {
       GameAudio.playCorrect();
       
-      int reward = 2;
-      if (_selectedDifficultyMode == 'easy') {
-        reward = 1;
-      } else if (_selectedDifficultyMode == 'medium') {
+      int reward = 1;
+      if (_selectedDifficultyMode == 'medium') {
         reward = 2;
       } else if (_selectedDifficultyMode == 'hard') {
         reward = 3;
+      } else {
+        reward = 1;
       }
 
-      if (_gullakCoins >= 50) {
+      if (_gullakCoins >= 35) {
         final selectedLanguage = ref.read(languageProvider);
         GameNotifications.showCoinUpdate(context, selectedLanguage == 'Hindi' ? 'गुल्लक भर गई! पहले दावा करें' : 'Gullak Full! Claim first', isPenalty: true);
         _claimGullak();
       } else {
         setState(() {
           _sessionCoins += reward;
-          _gullakCoins = min(50, _gullakCoins + reward);
+          _gullakCoins = min(35, _gullakCoins + reward);
         });
         _saveProgress();
         GameNotifications.showCoinUpdate(context, '+$reward Sikka');
-        if (_gullakCoins >= 50) {
+        if (_gullakCoins >= 35) {
           Future.delayed(const Duration(milliseconds: 1000), () {
             if (mounted) {
               _claimGullak();
@@ -670,20 +673,29 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
       }
     } else {
       GameAudio.playWrong();
+      int penalty = 1;
+      if (_selectedDifficultyMode == 'medium') {
+        penalty = 2;
+      } else if (_selectedDifficultyMode == 'hard') {
+        penalty = 3;
+      } else {
+        penalty = 1;
+      }
+
       setState(() {
-        _sessionCoins = max(0, _sessionCoins - 1);
-        _gullakCoins = max(0, _gullakCoins - 1);
+        _sessionCoins = max(0, _sessionCoins - penalty);
+        _gullakCoins = max(0, _gullakCoins - penalty);
       });
       _saveProgress();
-      GameNotifications.showCoinUpdate(context, '-1 Sikka', isPenalty: true);
+      GameNotifications.showCoinUpdate(context, '-$penalty Sikka', isPenalty: true);
     }
     
     _questionCount++;
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
-        if (_selectedDifficultyMode == 'default' && _questionCount == 15) {
+        if (_selectedDifficultyMode == 'default' && _questionCount == 12) {
           _showLevelUpDialog('medium');
-        } else if (_selectedDifficultyMode == 'default' && _questionCount == 30) {
+        } else if (_selectedDifficultyMode == 'default' && _questionCount == 25) {
           _showLevelUpDialog('hard');
         } else {
           _generateQuestion();
@@ -759,7 +771,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
   }
 
   void _claimGullak() {
-    if (_gullakCoins >= 50) {
+    if (_gullakCoins >= 35) {
       setState(() {
         _isPaused = true;
       });
@@ -908,7 +920,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
                       // Wallet
                       GameGullakBar(
                         currentCoins: _gullakCoins,
-                        maxCoins: 50,
+                        maxCoins: 35,
                         onClaim: _claimGullak,
                       ),
                     ],

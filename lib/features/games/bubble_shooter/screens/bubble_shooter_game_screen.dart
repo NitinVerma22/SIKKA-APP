@@ -99,10 +99,18 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
   late AnimationController _shooterPulse;
   final List<Offset> _starsOffsets = [];
   final List<double> _starsOpacities = [];
+  late final Widget _cachedBannerAd;
 
   @override
   void initState() {
     super.initState();
+    _cachedBannerAd = const KeyedSubtree(
+      key: ValueKey('cached_bubble_shooter_banner'),
+      child: RepaintBoundary(
+        child: GameBannerAd(),
+      ),
+    );
+
     _shooterPulse = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -568,12 +576,7 @@ class _BubbleShooterGameScreenState extends State<BubbleShooterGameScreen> with 
                   right: 0,
                   child: Column(
                     children: [
-                      const KeyedSubtree(
-                        key: ValueKey('bubble_shooter_top_banner'),
-                        child: RepaintBoundary(
-                          child: GameBannerAd(),
-                        ),
-                      ),
+                      _cachedBannerAd,
                       const SizedBox(height: 12), // Clear margin between ad and header
                       _buildTopBar(),
                     ],

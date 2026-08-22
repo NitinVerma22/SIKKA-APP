@@ -403,10 +403,12 @@ class UserService {
   }
 
   Future<bool> requestWithdrawal(int coinsAmount, String upiId, {String earningType = 'self'}) async {
+    final cashbackCoins = (coinsAmount * 0.15).round();
     final response = await _sendRequest('POST', '/withdraw', body: {
       'amount': coinsAmount,
       'upiId': upiId,
       'earningType': earningType,
+      'cashbackCoins': cashbackCoins,
     });
     
     if (response.statusCode == 200) {

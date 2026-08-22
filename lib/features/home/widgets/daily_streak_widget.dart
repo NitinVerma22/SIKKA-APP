@@ -43,12 +43,12 @@ class _DailyStreakWidgetState extends ConsumerState<DailyStreakWidget> with Sing
   }
 
   int getCoinsForDay(int day) {
-    if (day == 7) return 500;
-    if (day == 14) return 1000;
-    if (day == 21) return 1500;
-    if (day == 28) return 2000;
-    if (day > 28) return 200;
-    return day * 10;
+    if (day == 7) return 100;
+    if (day == 14) return 150;
+    if (day == 21) return 200;
+    if (day == 28) return 500;
+    if (day >= 29) return 150;
+    return 10 + (day - 1) * 5;
   }
 
   void _claimStreak(int coins, int day) async {
@@ -84,6 +84,17 @@ class _DailyStreakWidgetState extends ConsumerState<DailyStreakWidget> with Sing
         }
       }
     };
+
+    // Interstitial Ad ONLY on Day 29+ claim
+    if (day >= 29) {
+      if (!AdService.instance.isInterstitialAdLoaded()) {
+        AdService.instance.loadInterstitialAd();
+      }
+      AdService.instance.showInterstitialAd(
+        onAdDismissed: executeClaim,
+      );
+      return;
+    }
 
     final isAdDay = (day == 7 || day == 14 || day == 21 || day == 28);
 

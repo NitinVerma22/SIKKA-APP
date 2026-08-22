@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'arrow_escape_game_screen.dart';
 import '../services/arrow_escape_service.dart';
+import '../../../../core/ads/ad_service.dart';
 
 class NativeArrowEscapeLevelSelectScreen extends StatefulWidget {
   const NativeArrowEscapeLevelSelectScreen({super.key});
@@ -79,17 +80,20 @@ class _NativeArrowEscapeLevelSelectScreenState
 
                 return InkWell(
                   onTap: isUnlocked
-                      ? () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NativeArrowEscapeGameScreen(
-                                initialLevel: levelNum,
-                              ),
-                            ),
+                      ? () {
+                          AdService.instance.showInterstitialAd(
+                            onAdDismissed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NativeArrowEscapeGameScreen(
+                                    initialLevel: levelNum,
+                                  ),
+                                ),
+                              );
+                              _loadProgress();
+                            },
                           );
-                          // Reload progress when returning from game
-                          _loadProgress();
                         }
                       : null,
                   borderRadius: BorderRadius.circular(16),

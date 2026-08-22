@@ -306,17 +306,35 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
   void _generateGrid() {
     _grid.clear();
     final random = Random();
-    // 1 to 4 negative blocks
-    final negativeBlocksCount = random.nextInt(4) + 1;
+    // 1 to 3 negative bomb blocks
+    final negativeBlocksCount = random.nextInt(3) + 1;
+    int countMinus3 = 0;
     
     for (int i = 0; i < negativeBlocksCount; i++) {
-      final penaltyValue = random.nextInt(3) + 1; // 1, 2, or 3
-      _grid.add(TileData(type: TileType.bomb, coins: -penaltyValue));
+      int penalty;
+      // At most 2 tiles can have penalty 3 (-3)
+      if (countMinus3 < 2 && random.nextDouble() < 0.25) {
+        penalty = 3;
+        countMinus3++;
+      } else {
+        penalty = random.nextInt(2) + 1; // 1 or 2
+      }
+      _grid.add(TileData(type: TileType.bomb, coins: -penalty));
     }
     
     final positiveBlocksCount = 9 - negativeBlocksCount;
+    bool hasThreeCoinTile = false;
+
     for (int i = 0; i < positiveBlocksCount; i++) {
-      _grid.add(TileData(type: TileType.coin, coins: random.nextInt(4) + 1)); // 1 to 4 coins
+      int coinReward;
+      // Exactly 1 tile in positive tiles gets 3 coins; rest get 1 or 2 coins
+      if (!hasThreeCoinTile && (i == positiveBlocksCount - 1 || random.nextDouble() < 0.30)) {
+        coinReward = 3;
+        hasThreeCoinTile = true;
+      } else {
+        coinReward = random.nextInt(2) + 1; // 1 or 2 coins
+      }
+      _grid.add(TileData(type: TileType.coin, coins: coinReward));
     }
     _grid.shuffle(random);
   }
@@ -326,7 +344,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
       return;
     }
 
-    if (_sessionCoins >= 50) {
+    if (_sessionCoins >= 35) {
       final selectedLanguage = ref.read(languageProvider);
       GameNotifications.showCoinUpdate(context, selectedLanguage == 'Hindi' ? 'गुल्लक भर गई! पहले दावा करें' : 'Gullak Full! Claim first', isPenalty: true);
       return;
@@ -348,8 +366,8 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
         final reward = _grid[index].coins;
         _roundCoins += reward;
         // Clamp to prevent exceeding Gullak limit
-        if (_sessionCoins + _roundCoins > 50) {
-          _roundCoins = 50 - _sessionCoins;
+        if (_sessionCoins + _roundCoins > 35) {
+          _roundCoins = 35 - _sessionCoins;
         }
         GameNotifications.showCoinUpdate(context, '+$reward Sikka (Round)');
       }
@@ -358,13 +376,13 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
     if (_picksLeft <= 0) {
       setState(() {
         if (_isPerfectStreak && _roundCoins > 0) {
-          _roundCoins += 2;
-          if (_sessionCoins + _roundCoins > 50) {
-            _roundCoins = 50 - _sessionCoins;
+          _roundCoins += 1;
+          if (_sessionCoins + _roundCoins > 35) {
+            _roundCoins = 35 - _sessionCoins;
           }
-          GameNotifications.showCoinUpdate(context, 'Perfect Streak! +2 Sikka Bonus! 🔥');
+          GameNotifications.showCoinUpdate(context, 'Perfect Streak! +1 Sikka Bonus! 🔥');
         }
-        _sessionCoins = max(0, min(50, _sessionCoins + _roundCoins));
+        _sessionCoins = max(0, min(35, _sessionCoins + _roundCoins));
         _isRoundEnding = true;
       });
       _saveProgress();
@@ -411,7 +429,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
     await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
 
-    if (_sessionCoins >= 50) {
+    if (_sessionCoins >= 35) {
       _claimGullak();
       return;
     }
@@ -544,7 +562,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
   }
 
   void _claimGullak() {
-    if (_sessionCoins >= 50) {
+    if (_sessionCoins >= 35) {
       setState(() {
         _isPaused = true;
       });
@@ -694,7 +712,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
                       // Wallet
                       GameGullakBar(
                         currentCoins: _sessionCoins,
-                        maxCoins: 50,
+                        maxCoins: 35,
                         onClaim: _claimGullak,
                       ),
                     ],
@@ -816,7 +834,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
                       ),
                       onPressed: () {
                         setState(() {
-                          _sessionCoins = max(0, min(50, _sessionCoins + _roundCoins));
+                          _sessionCoins = max(0, min(35, _sessionCoins + _roundCoins));
                           _isRoundEnding = true;
                         });
                         _saveProgress();
