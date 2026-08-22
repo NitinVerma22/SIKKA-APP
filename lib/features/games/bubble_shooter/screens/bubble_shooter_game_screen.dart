@@ -9,6 +9,7 @@ import '../widgets/stars_painter.dart';
 import '../services/bubble_shooter_service.dart';
 import '../services/bubble_shooter_audio_service.dart';
 import '../../shared/widgets/game_banner_ad.dart';
+import '../../../../core/ads/ad_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
 import '../../shared/utils/game_notifications.dart';
