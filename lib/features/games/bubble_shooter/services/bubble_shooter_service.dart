@@ -92,6 +92,8 @@ class BubbleShooterService {
     } catch (e) {
       debugPrint('Error saving local bubble shooter progress: $e');
     }
+  }
+
   Future<Map<String, dynamic>> claimLevelReward({
     required int levelNumber,
     required int stars,
