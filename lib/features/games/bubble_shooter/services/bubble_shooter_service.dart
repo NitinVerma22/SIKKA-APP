@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/auth/auth_service.dart';
+import '../../../../core/user/user_service.dart';
 
 class BubbleShooterProgress {
   final int maxUnlockedLevel;
@@ -91,13 +92,13 @@ class BubbleShooterService {
     } catch (e) {
       debugPrint('Error saving local bubble shooter progress: $e');
     }
-  }
-
   Future<Map<String, dynamic>> claimLevelReward({
     required int levelNumber,
     required int stars,
     required int score,
+    String? sessionId,
   }) async {
+    final int coinsEarned = levelNumber * 2;
     try {
       final headers = await _getHeaders();
       final res = await http.post(
@@ -108,18 +109,26 @@ class BubbleShooterService {
           'stars': stars,
           'score': score,
         }),
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 4));
 
       if (res.statusCode == 200) {
         return json.decode(res.body) as Map<String, dynamic>;
       }
     } catch (e) {
-      debugPrint('Error claiming bubble shooter reward: $e');
+      debugPrint('Error claiming bubble shooter reward via v1: $e');
+    }
+
+    try {
+      if (sessionId != null && sessionId.isNotEmpty) {
+        await UserService().endGameSession(sessionId, coinsEarned: coinsEarned);
+      }
+    } catch (e) {
+      debugPrint('Error ending game session fallback: $e');
     }
 
     return {
       'success': true,
-      'coinsEarned': levelNumber * 2,
+      'coinsEarned': coinsEarned,
       'newUnlockedLevel': levelNumber + 1,
     };
   }

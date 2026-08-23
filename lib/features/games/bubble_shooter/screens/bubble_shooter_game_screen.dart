@@ -12,6 +12,7 @@ import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
+import '../../../../core/user/user_service.dart';
 import '../../shared/utils/game_notifications.dart';
 
 const List<Color> kBubbleColors = [
@@ -104,9 +105,14 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
   final List<double> _starsOpacities = [];
   late final Widget _cachedBannerAd;
 
+  String? _sessionId;
+
   @override
   void initState() {
     super.initState();
+    UserService().startGameSession('bubble_shooter').then((id) {
+      if (mounted) _sessionId = id;
+    });
     _cachedBannerAd = const KeyedSubtree(
       key: ValueKey('cached_bubble_shooter_banner'),
       child: RepaintBoundary(
@@ -429,6 +435,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
       levelNumber: widget.levelNumber,
       stars: 3,
       score: score,
+      sessionId: _sessionId,
     );
 
     if (widget.levelNumber % 10 == 0) {

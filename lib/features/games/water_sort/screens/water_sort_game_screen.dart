@@ -11,6 +11,7 @@ import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
+import '../../../../core/user/user_service.dart';
 import '../../shared/utils/game_notifications.dart';
 
 class WaterSortGameScreen extends ConsumerStatefulWidget {
@@ -55,10 +56,14 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
 
   WaterSortMove? _activeHintMove;
   late AnimationController _pourController;
+  String? _sessionId;
 
   @override
   void initState() {
     super.initState();
+    UserService().startGameSession('water_sort').then((id) {
+      if (mounted) _sessionId = id;
+    });
     _pourController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -294,6 +299,7 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
       levelNumber: widget.levelNumber,
       stars: stars,
       movesCount: _gameState.movesCount,
+      sessionId: _sessionId,
     );
 
     if (widget.levelNumber % 10 == 0) {

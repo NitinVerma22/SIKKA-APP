@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/auth/auth_service.dart';
+import '../../../../core/user/user_service.dart';
 
 class WaterSortProgress {
   final int maxUnlockedLevel;
@@ -104,7 +105,9 @@ class WaterSortService {
     required int levelNumber,
     required int stars,
     required int movesCount,
+    String? sessionId,
   }) async {
+    final int coinsEarned = levelNumber * 2;
     try {
       final headers = await _getHeaders();
       final res = await http.post(
@@ -115,19 +118,26 @@ class WaterSortService {
           'stars': stars,
           'movesCount': movesCount,
         }),
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 4));
 
       if (res.statusCode == 200) {
         return json.decode(res.body) as Map<String, dynamic>;
       }
     } catch (e) {
-      debugPrint('Error claiming water sort level reward: $e');
+      debugPrint('Error claiming water sort level reward via v1: $e');
     }
 
-    // Offline fallback estimation
+    try {
+      if (sessionId != null && sessionId.isNotEmpty) {
+        await UserService().endGameSession(sessionId, coinsEarned: coinsEarned);
+      }
+    } catch (e) {
+      debugPrint('Error ending game session fallback: $e');
+    }
+
     return {
       'success': true,
-      'coinsEarned': levelNumber * 2,
+      'coinsEarned': coinsEarned,
       'newUnlockedLevel': levelNumber + 1,
     };
   }

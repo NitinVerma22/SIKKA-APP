@@ -10,6 +10,7 @@ import '../services/arrow_escape_service.dart';
 import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
+import '../../../../core/user/user_service.dart';
 import '../../shared/utils/game_notifications.dart';
 
 class NativeArrowEscapeGameScreen extends ConsumerStatefulWidget {
@@ -48,12 +49,16 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
   late AnimationController _animController;
   final List<ParticleModel> _particles = [];
   final Random _random = Random();
+  String? _sessionId;
 
   late final Widget _cachedBannerAd;
 
   @override
   void initState() {
     super.initState();
+    UserService().startGameSession('arrow_escape').then((id) {
+      if (mounted) _sessionId = id;
+    });
     _cachedBannerAd = const KeyedSubtree(
       key: ValueKey('cached_arrow_escape_banner'),
       child: RepaintBoundary(
@@ -254,6 +259,7 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
       levelNumber: _currentLevelNum,
       stars: 3,
       score: 100,
+      sessionId: _sessionId,
     );
 
     // Show Interstitial Ad every 10 levels
