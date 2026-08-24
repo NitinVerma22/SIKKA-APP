@@ -120,8 +120,8 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
 
       if (arrow.isEscaping) {
         needsStateUpdate = true;
-        // 3.5 Seconds Total Escape Speed at 60 FPS (1.0 / 210 frames = 0.00476)
-        arrow.escapeProgress += 0.00476;
+        // 3.0 Seconds Total Escape Speed at 60 FPS (1.0 / 180 frames = 0.00556)
+        arrow.escapeProgress += 0.00556;
         if (arrow.escapeProgress >= 1.0) {
           // Arrow exited screen!
           final exitedKeyId = arrow.targetLockedId;

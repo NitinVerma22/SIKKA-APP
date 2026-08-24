@@ -572,19 +572,20 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
               children: [
                 CustomPaint(size: size, painter: StarsPainter(_starsOffsets, _starsOpacities)),
                 _buildGrid(),
-                if (isAiming && aimY < size.height - 110)
-                  CustomPaint(
-                    size: size,
-                    painter: AimLinePainter(
-                      _getAimLine(aimX, aimY, size),
-                      currentColor,
-                    ),
+                CustomPaint(
+                  size: size,
+                  painter: AimLinePainter(
+                    (isAiming && aimY < size.height - 110)
+                        ? _getAimLine(aimX, aimY, size)
+                        : const [],
+                    currentColor,
                   ),
-                if (shooterBubble != null && shooterBubble!.moving)
-                  _buildMovingBubble(),
+                ),
+                _buildMovingBubble(),
                 
                 // TOP SECTION: Banner Ad FIRST at top with margin, THEN Header Bar below it
                 Positioned(
+                  key: const ValueKey('bubble_shooter_top_section'),
                   top: 40,
                   left: 0,
                   right: 0,
@@ -601,7 +602,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
                 _buildShooterArea(size),
 
                 // Overlay Modals
-                if (gameOver || gameWon || noShotsLeft) _buildOverlay(size),
+                _buildOverlay(size),
               ],
             ),
           ),
@@ -736,8 +737,16 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
   }
 
   Widget _buildMovingBubble() {
-    final b = shooterBubble!;
+    final b = shooterBubble;
+    if (b == null || !b.moving) {
+      return const Positioned(
+        left: 0,
+        top: 0,
+        child: SizedBox.shrink(),
+      );
+    }
     return Positioned(
+      key: const ValueKey('bubble_shooter_moving_bubble'),
       left: b.x - kBubbleRadius,
       top: b.y - kBubbleRadius,
       child: BubbleWidget(color: b.color, radius: kBubbleRadius),
@@ -746,6 +755,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
 
   Widget _buildShooterArea(Size size) {
     return Positioned(
+      key: const ValueKey('bubble_shooter_bottom_section'),
       bottom: 12,
       left: 12,
       right: 12,
@@ -933,6 +943,9 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
   }
 
   Widget _buildOverlay(Size size) {
+    if (!gameOver && !gameWon && !noShotsLeft) {
+      return const SizedBox.shrink();
+    }
     final bool isNoShots = noShotsLeft && !gameWon && !gameOver;
 
     return Container(

@@ -4,6 +4,7 @@ import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/constants/app_sizes.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
+import 'package:sikkaplay/core/user/user_service.dart';
 
 class AppOfferItem {
   final String id;
@@ -36,53 +37,76 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
   final Set<String> _completedOffers = {};
   String? _installingAppId;
 
-  final List<AppOfferItem> _offers = [
-    AppOfferItem(
-      id: 'binance',
-      title: 'Binance Crypto Exchange',
-      description: 'Install and create a verified account to earn coins.',
-      size: '85 MB',
-      rewardAmount: 350,
-      icon: Icons.currency_bitcoin,
-      iconBg: Colors.yellow.shade800,
-    ),
-    AppOfferItem(
-      id: 'phonepe',
-      title: 'PhonePe: UPI payments',
-      description: 'Install and complete your first UPI transaction.',
-      size: '42 MB',
-      rewardAmount: 180,
-      icon: Icons.account_balance,
-      iconBg: Colors.purple.shade700,
-    ),
-    AppOfferItem(
-      id: 'telegram',
-      title: 'Telegram Messenger',
-      description: 'Download Telegram app and join our official chat.',
-      size: '30 MB',
-      rewardAmount: 60,
-      icon: Icons.send_rounded,
-      iconBg: Colors.blue.shade600,
-    ),
-    AppOfferItem(
-      id: 'gpay',
-      title: 'Google Pay payments',
-      description: 'Install and register a new UPI bank account.',
-      size: '51 MB',
-      rewardAmount: 220,
-      icon: Icons.payments,
-      iconBg: Colors.teal.shade700,
-    ),
-    AppOfferItem(
-      id: 'whatsapp_biz',
-      title: 'WhatsApp Business',
-      description: 'Download business messenger and setup profile.',
-      size: '38 MB',
-      rewardAmount: 80,
-      icon: Icons.business_center,
-      iconBg: Colors.green.shade600,
-    ),
-  ];
+  final List<AppOfferItem> _offers = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOffers();
+  }
+
+  Future<void> _loadOffers() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final res = await UserService().getAppInstallOffers();
+    if (res != null && res['success'] == true) {
+      final List<dynamic> rawOffers = res['offers'] ?? [];
+      final List<dynamic> completedIds = res['completedOfferIds'] ?? [];
+
+      _offers.clear();
+      for (final o in rawOffers) {
+        _offers.add(AppOfferItem(
+          id: o['offerId'] as String,
+          title: o['title'] as String,
+          description: o['description'] as String,
+          size: o['size'] as String,
+          rewardAmount: o['rewardAmount'] as int,
+          icon: _getIconData(o['iconName'] as String),
+          iconBg: _getColor(o['iconBg'] as String),
+        ));
+      }
+
+      _completedOffers.clear();
+      for (final id in completedIds) {
+        _completedOffers.add(id as String);
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'currency_bitcoin':
+        return Icons.currency_bitcoin;
+      case 'account_balance':
+        return Icons.account_balance;
+      case 'send_rounded':
+        return Icons.send_rounded;
+      case 'payments':
+        return Icons.payments;
+      case 'business_center':
+        return Icons.business_center;
+      default:
+        return Icons.apps_rounded;
+    }
+  }
+
+  Color _getColor(String hexColor) {
+    try {
+      final hex = hexColor.replaceAll('#', '');
+      return Color(int.parse('FF$hex', radix: 16));
+    } catch (_) {
+      return Colors.blue;
+    }
+  }
 
   void _startDownload(AppOfferItem offer) async {
     if (_completedOffers.contains(offer.id) || _installingAppId != null) return;
@@ -211,10 +235,19 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: ListView.builder(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(AppSizes.md),
-        itemCount: _offers.length,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : _offers.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No offers available at the moment.',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+                  ),
+                )
+              : ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.all(AppSizes.md),
+                  itemCount: _offers.length,
         itemBuilder: (context, index) {
           final offer = _offers[index];
           final isCompleted = _completedOffers.contains(offer.id);

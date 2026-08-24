@@ -170,7 +170,7 @@ class ArrowEscapePainter extends CustomPainter {
         ? const Color(0xFF6E727A)
         : (isHinted ? const Color(0xFFFFEA00) : arrow.color);
 
-    final sw = cellSize * 0.14;
+    final sw = cellSize * 0.08;
 
     final bodyPath = Path()..moveTo(pxPoints.first.dx, pxPoints.first.dy);
     for (int i = 1; i < pxPoints.length; i++) {
@@ -334,9 +334,9 @@ class ArrowEscapePainter extends CustomPainter {
     final dx = len > 0.01 ? dv.dx / len : dir.dx.toDouble();
     final dy = len > 0.01 ? dv.dy / len : dir.dy.toDouble();
 
-    final tip = head + Offset(dx * cellSize * 0.3, dy * cellSize * 0.3);
-    final hd = cellSize * 0.26;
-    final hw = cellSize * 0.18;
+    final tip = head + Offset(dx * cellSize * 0.20, dy * cellSize * 0.20);
+    final hd = cellSize * 0.18;
+    final hw = cellSize * 0.11;
 
     final base = tip - Offset(dx * hd, dy * hd);
     final px = -dy;

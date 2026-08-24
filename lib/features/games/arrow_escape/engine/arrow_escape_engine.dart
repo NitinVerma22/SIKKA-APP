@@ -129,37 +129,40 @@ class ArrowEscapeEngine {
     final random = Random(levelNumber * 1000 + 7777 + seedOffset);
 
     int gridSize = 8;
-    int minLen = 4;
-    int maxLen = 6;
+    int minLen = 3;
+    int maxLen = 5;
 
     if (levelNumber > 10) {
       gridSize = 9;
-      minLen = 4;
-      maxLen = 6;
+      minLen = 3;
+      maxLen = 5;
     }
     if (levelNumber > 25) {
       gridSize = 10;
-      minLen = 5;
-      maxLen = 7;
+      minLen = 4;
+      maxLen = 6;
     }
     if (levelNumber > 50) {
       gridSize = 11;
-      minLen = 5;
-      maxLen = 8;
+      minLen = 4;
+      maxLen = 6;
     }
     if (levelNumber > 90) {
       gridSize = 12;
-      minLen = 6;
-      maxLen = 9;
+      minLen = 5;
+      maxLen = 7;
     }
     if (levelNumber > 140) {
       gridSize = 13;
-      minLen = 6;
-      maxLen = 10;
+      minLen = 5;
+      maxLen = 8;
     }
 
-    int arrowCount = relaxed ? 10 : (14 + (levelNumber ~/ 3));
-    final maxAllowed = (gridSize * gridSize * (relaxed ? 0.35 : 0.48)).toInt();
+    // Every single level increases the density ratio and target arrow count!
+    final double densityRatio = relaxed ? 0.45 : (0.50 + (levelNumber * 0.0015)).clamp(0.50, 0.72);
+    int arrowCount = relaxed ? 12 : (16 + (levelNumber * 0.4).toInt());
+
+    final maxAllowed = (gridSize * gridSize * densityRatio).toInt();
     if (arrowCount > maxAllowed) {
       arrowCount = maxAllowed;
     }
@@ -232,6 +235,30 @@ class ArrowEscapeEngine {
             Point2D(curr.x, curr.y + 1),
             Point2D(curr.x, curr.y - 1),
           ]..shuffle(random);
+
+          // Every single level increases the turn probability (complexity of paths)
+          final double turnProb = relaxed ? 0.3 : (0.35 + (levelNumber * 0.004)).clamp(0.35, 0.88);
+          final shouldTurn = random.nextDouble() < turnProb;
+
+          if (shouldTurn && pathPoints.length >= 2) {
+            final prevPt = pathPoints[pathPoints.length - 2];
+            final currentDx = curr.x - prevPt.x;
+            final currentDy = curr.y - prevPt.y;
+
+            neighbors.sort((a, b) {
+              final aDx = a.x - curr.x;
+              final aDy = a.y - curr.y;
+              final bDx = b.x - curr.x;
+              final bDy = b.y - curr.y;
+              
+              final aIsStraight = (aDx == currentDx && aDy == currentDy);
+              final bIsStraight = (bDx == currentDx && bDy == currentDy);
+              
+              if (aIsStraight && !bIsStraight) return 1; // Put straight lines after turns
+              if (!aIsStraight && bIsStraight) return -1;
+              return 0;
+            });
+          }
 
           Point2D? nextPt;
           for (final n in neighbors) {

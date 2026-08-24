@@ -274,6 +274,32 @@ class UserService {
     }
   }
 
+  Future<Map<String, dynamic>?> getAppInstallOffers() async {
+    try {
+      final response = await _sendRequest('GET', '/earn/app-install/offers');
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching app install offers: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getWithdrawalOptions() async {
+    try {
+      final response = await _sendRequest('GET', '/wallet/withdrawal-options');
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching withdrawal options: $e');
+      return null;
+    }
+  }
+
   Future<bool> claimAppInstall(String offerId) async {
     try {
       final response = await _sendRequest('POST', '/earn/app-install', body: {'offerId': offerId});
@@ -402,13 +428,12 @@ class UserService {
     }
   }
 
-  Future<bool> requestWithdrawal(int coinsAmount, String upiId, {String earningType = 'self'}) async {
-    final cashbackCoins = (coinsAmount * 0.15).round();
+  Future<bool> requestWithdrawal(int coinsAmount, String upiId, {String earningType = 'self', String? optionId}) async {
     final response = await _sendRequest('POST', '/withdraw', body: {
       'amount': coinsAmount,
       'upiId': upiId,
       'earningType': earningType,
-      'cashbackCoins': cashbackCoins,
+      'withdrawalOptionId': optionId,
     });
     
     if (response.statusCode == 200) {
