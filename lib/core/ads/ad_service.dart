@@ -20,11 +20,16 @@ class AdService {
   static const String productionBannerId = 'ca-app-pub-8599317656200402/2387421349';
 
   static const String testRewardedId = 'ca-app-pub-3940256099942544/5224354917';
+  static const String productionRewardedId = 'ca-app-pub-8599317656200402/6078042898';
+
   static const String testInterstitialId = 'ca-app-pub-3940256099942544/1033173712';
   static const String productionInterstitialId = 'ca-app-pub-8599317656200402/6461186277';
 
   /// Returns production Banner Ad Unit ID for Release build, Test ID for Debug build
   static String get bannerAdUnitId => kDebugMode ? testBannerId : productionBannerId;
+
+  /// Returns production Rewarded Ad Unit ID for Release build, Test ID for Debug build
+  static String get rewardedAdUnitId => kDebugMode ? testRewardedId : productionRewardedId;
 
   /// Returns production Interstitial Ad Unit ID for Release build, Test ID for Debug build
   static String get interstitialAdUnitId => kDebugMode ? testInterstitialId : productionInterstitialId;
@@ -101,7 +106,7 @@ class AdService {
     if (_isLoadingRewarded || _rewardedAd != null) return;
     _isLoadingRewarded = true;
 
-    final adUnitId = customAdUnitId ?? testRewardedId;
+    final adUnitId = customAdUnitId ?? rewardedAdUnitId;
     debugPrint('AdService: Loading Rewarded Ad for Unit: $adUnitId');
 
     RewardedAd.load(
