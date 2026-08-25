@@ -15,10 +15,19 @@ class AdService {
   bool _isLoadingRewarded = false;
   bool _isLoadingInterstitial = false;
 
-  // Test Ad Unit IDs provided by Google (Universal Testing IDs)
+  // Test & Production Ad Unit IDs
   static const String testBannerId = 'ca-app-pub-3940256099942544/6300978111';
+  static const String productionBannerId = 'ca-app-pub-8599317656200402/2387421349';
+
   static const String testRewardedId = 'ca-app-pub-3940256099942544/5224354917';
   static const String testInterstitialId = 'ca-app-pub-3940256099942544/1033173712';
+  static const String productionInterstitialId = 'ca-app-pub-8599317656200402/6461186277';
+
+  /// Returns production Banner Ad Unit ID for Release build, Test ID for Debug build
+  static String get bannerAdUnitId => kDebugMode ? testBannerId : productionBannerId;
+
+  /// Returns production Interstitial Ad Unit ID for Release build, Test ID for Debug build
+  static String get interstitialAdUnitId => kDebugMode ? testInterstitialId : productionInterstitialId;
 
   /// Initializes the Google Mobile Ads SDK with UMP Consent Flow
   Future<void> initialize() async {
@@ -236,7 +245,7 @@ class AdService {
     if (_isLoadingInterstitial || _interstitialAd != null) return;
     _isLoadingInterstitial = true;
 
-    final adUnitId = customAdUnitId ?? testInterstitialId;
+    final adUnitId = customAdUnitId ?? interstitialAdUnitId;
     debugPrint('AdService: Loading Interstitial Ad for Unit: $adUnitId');
 
     InterstitialAd.load(

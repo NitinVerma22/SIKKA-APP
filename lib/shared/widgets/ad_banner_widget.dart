@@ -31,7 +31,7 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
   void _loadAd() {
     // We defer checking of adsEnabled until build, but we can pre-load the ad instance
     _bannerAd = BannerAd(
-      adUnitId: AdService.testBannerId,
+      adUnitId: AdService.bannerAdUnitId,
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
