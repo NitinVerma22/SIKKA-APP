@@ -1497,6 +1497,77 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
     super.dispose();
   }
 
+  void _showEditUpiDialog() {
+    final tempUpiController = TextEditingController(text: _upiController.text);
+    final tempNameController = TextEditingController(
+      text: _nameController.text.isNotEmpty
+          ? _nameController.text
+          : ((widget.initialName != null && widget.initialName!.isNotEmpty) ? widget.initialName! : ''),
+    );
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF0F172A),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Enter UPI & Name Details', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: tempNameController,
+                style: GoogleFonts.outfit(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Full Name',
+                  labelStyle: GoogleFonts.outfit(color: const Color(0xFF94A3B8)),
+                  hintText: 'Enter your name',
+                  hintStyle: GoogleFonts.outfit(color: const Color(0xFF64748B)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF8B5CF6))),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: tempUpiController,
+                style: GoogleFonts.outfit(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'UPI ID',
+                  labelStyle: GoogleFonts.outfit(color: const Color(0xFF94A3B8)),
+                  hintText: 'e.g. 9876543210@paytm / user@upi',
+                  hintStyle: GoogleFonts.outfit(color: const Color(0xFF64748B)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF8B5CF6))),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: Text('Cancel', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8))),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8B5CF6),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                setState(() {
+                  _nameController.text = tempNameController.text.trim();
+                  _upiController.text = tempUpiController.text.trim();
+                });
+                Navigator.pop(dialogCtx);
+              },
+              child: Text('Save Details', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _submit() {
     if (_isProcessing) return;
 
@@ -1539,8 +1610,19 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
       return;
     }
 
-    final upiId = _upiController.text.trim().isNotEmpty ? _upiController.text.trim() : 'nitinkverma@upi';
-    final name = _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'Nitin Kumar Verma';
+    final upiId = _upiController.text.trim();
+    if (upiId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Please enter a valid UPI ID before proceeding'),
+        backgroundColor: Colors.redAccent,
+      ));
+      _showEditUpiDialog();
+      return;
+    }
+
+    final name = _nameController.text.trim().isNotEmpty
+        ? _nameController.text.trim()
+        : ((widget.initialName != null && widget.initialName!.isNotEmpty) ? widget.initialName! : 'Sikka User');
 
     final feeRupees = totalRupees - netRupees;
     _showReceiptModal(amountCoins, totalRupees, feeRupees, netRupees, cashbackCoins, upiId, name, selectedOptionId);
@@ -2150,41 +2232,47 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
             // 7. Saved UPI Details Profile Card
             Text('UPI & Name Details', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B), fontSize: 13)),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF1F5F9),
-                      shape: BoxShape.circle,
+            InkWell(
+              onTap: _showEditUpiDialog,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF1F5F9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.person_rounded, color: Color(0xFF64748B), size: 20),
                     ),
-                    child: const Icon(Icons.person_rounded, color: Color(0xFF64748B), size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _nameController.text.isNotEmpty ? _nameController.text : 'Nitin Kumar Verma',
-                          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13, color: const Color(0xFF0F172A)),
-                        ),
-                        Text(
-                          _upiController.text.isNotEmpty ? _upiController.text : 'nitinkverma@upi',
-                          style: GoogleFonts.outfit(fontSize: 11, color: const Color(0xFF64748B)),
-                        ),
-                      ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _nameController.text.isNotEmpty
+                                ? _nameController.text
+                                : ((widget.initialName != null && widget.initialName!.isNotEmpty) ? widget.initialName! : 'Enter Full Name'),
+                            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13, color: const Color(0xFF0F172A)),
+                          ),
+                          Text(
+                            _upiController.text.isNotEmpty ? _upiController.text : 'Tap to enter UPI ID (e.g. 9876543210@paytm)',
+                            style: GoogleFonts.outfit(fontSize: 11, color: _upiController.text.isNotEmpty ? const Color(0xFF64748B) : const Color(0xFF8B5CF6)),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
-                ],
+                    const Icon(Icons.edit_outlined, color: Color(0xFF8B5CF6), size: 20),
+                  ],
+                ),
               ),
             ),
 
