@@ -146,6 +146,38 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
     super.dispose();
   }
 
+  Set<Color> _getActiveGridColors() {
+    final Set<Color> active = {};
+    for (final b in grid) {
+      if (b != null && b.alive) {
+        active.add(b.color);
+      }
+    }
+    return active;
+  }
+
+  Color _getRandomActiveColor() {
+    final active = _getActiveGridColors();
+    if (active.isNotEmpty) {
+      final list = active.toList();
+      return list[rng.nextInt(list.length)];
+    }
+    final int colorCount = min(kBubbleColors.length, 3 + (widget.levelNumber ~/ 5));
+    return kBubbleColors[rng.nextInt(colorCount)];
+  }
+
+  void _validateShooterColors() {
+    final active = _getActiveGridColors();
+    if (active.isEmpty) return;
+
+    if (!active.contains(currentColor)) {
+      currentColor = _getRandomActiveColor();
+    }
+    if (!active.contains(nextColor)) {
+      nextColor = _getRandomActiveColor();
+    }
+  }
+
   void _initGame() {
     final size = MediaQuery.of(context).size;
     shooterX = size.width / 2;
@@ -166,8 +198,8 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
       }
     }
 
-    currentColor = kBubbleColors[rng.nextInt(colorCount)];
-    nextColor = kBubbleColors[rng.nextInt(colorCount)];
+    currentColor = _getRandomActiveColor();
+    nextColor = _getRandomActiveColor();
 
     remainingShots = max(15, 28 - (widget.levelNumber ~/ 4));
     gameOver = false;
@@ -222,9 +254,9 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
 
     BubbleShooterAudioService.instance.playShootSfx();
 
-    final int colorCount = min(kBubbleColors.length, 3 + (widget.levelNumber ~/ 5));
     currentColor = nextColor;
-    nextColor = kBubbleColors[rng.nextInt(colorCount)];
+    nextColor = _getRandomActiveColor();
+    _validateShooterColors();
 
     gameTimer?.cancel();
     gameTimer = Timer.periodic(const Duration(milliseconds: 16), _tick);
@@ -312,6 +344,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
     }
 
     shooterBubble = null;
+    _validateShooterColors();
     _checkGameOver();
     setState(() {});
   }
@@ -784,6 +817,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
                   final temp = currentColor;
                   currentColor = nextColor;
                   nextColor = temp;
+                  _validateShooterColors();
                 });
               },
               child: Container(
