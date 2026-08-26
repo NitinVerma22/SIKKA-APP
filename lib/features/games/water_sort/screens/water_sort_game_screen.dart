@@ -610,8 +610,11 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                       onPressed: () {
-                        AdService.instance.showInterstitialAd(
-                          onAdDismissed: () {
+                        AdService.instance.handleNextLevelTransition(
+                          context: context,
+                          currentLevel: widget.levelNumber,
+                          gameName: 'water_sort',
+                          onProceedToNextLevel: () {
                             if (!mounted) return;
                             Navigator.pushReplacement(
                               context,

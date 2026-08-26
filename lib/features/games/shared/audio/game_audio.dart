@@ -65,9 +65,8 @@ class GameAudio {
 
   static Future<void> playWrong() async {
     try {
-      if (_wrongPlayer.state == PlayerState.playing) await _wrongPlayer.stop();
-      await _wrongPlayer.seek(Duration.zero);
-      await _wrongPlayer.resume();
+      await _wrongPlayer.stop();
+      await _wrongPlayer.play(AssetSource('audio/Arrow sound/Emoji Memory Game mai sab user galat tap kre tab.mp3'));
     } catch (e) {
       // Ignore
     }

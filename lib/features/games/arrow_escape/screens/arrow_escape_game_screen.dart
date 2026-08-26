@@ -592,11 +592,11 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () {
-                  if (!AdService.instance.isInterstitialAdLoaded()) {
-                    AdService.instance.loadInterstitialAd();
-                  }
-                  AdService.instance.showInterstitialAd(
-                    onAdDismissed: () => _loadLevel(_currentLevelNum + 1),
+                  AdService.instance.handleNextLevelTransition(
+                    context: context,
+                    currentLevel: _currentLevelNum,
+                    gameName: 'arrow_escape',
+                    onProceedToNextLevel: () => _loadLevel(_currentLevelNum + 1),
                   );
                 },
                 child: Text(

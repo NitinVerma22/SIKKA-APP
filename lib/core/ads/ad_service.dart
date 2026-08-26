@@ -68,6 +68,40 @@ class AdService {
     return levelNumber > 170;
   }
 
+  /// Unified method to handle Level Complete Transition for any game
+  /// Checks Milestone Lock (60, 80, 100, 120, 140, 150), Post-170 Rewarded Ad (>170),
+  /// or Interstitial Ad frequency rule before navigating to next level!
+  Future<void> handleNextLevelTransition({
+    required BuildContext context,
+    required int currentLevel,
+    required String gameName,
+    required VoidCallback onProceedToNextLevel,
+  }) async {
+    if (isMilestoneLockLevel(currentLevel)) {
+      await showMilestoneLockDialog(
+        context: context,
+        levelCleared: currentLevel,
+        userId: '${gameName}_user',
+        onUnlocked: onProceedToNextLevel,
+      );
+    } else if (isPost170Level(currentLevel)) {
+      await showPost170RewardedDialog(
+        context: context,
+        levelCleared: currentLevel,
+        userId: '${gameName}_user',
+        onEarned: onProceedToNextLevel,
+      );
+    } else if (shouldShowLevelCompleteAd(currentLevel)) {
+      if (!isInterstitialAdLoaded()) {
+        loadInterstitialAd();
+      }
+      showInterstitialAd(onAdDismissed: onProceedToNextLevel);
+    } else {
+      // Frequency rule says NO AD for this level (e.g. Level 1, 2, or Post 170)
+      onProceedToNextLevel();
+    }
+  }
+
   /// Displays Milestone Lock Dialog for Level 60, 80, 100, 120, 140, 150
   Future<void> showMilestoneLockDialog({
     required BuildContext context,

@@ -1112,8 +1112,11 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
                   ),
                   onPressed: () {
                     if (gameWon) {
-                      AdService.instance.showInterstitialAd(
-                        onAdDismissed: () {
+                      AdService.instance.handleNextLevelTransition(
+                        context: context,
+                        currentLevel: widget.levelNumber,
+                        gameName: 'bubble_shooter',
+                        onProceedToNextLevel: () {
                           if (!mounted) return;
                           Navigator.pushReplacement(
                             context,
