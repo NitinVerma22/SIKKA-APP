@@ -207,10 +207,10 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
   });
 
   await localNotifications.show(
-    message.hashCode,
-    title,
-    body,
-    details,
+    id: message.hashCode,
+    title: title,
+    body: body,
+    notificationDetails: details,
     payload: payloadData,
   );
 }
