@@ -18,16 +18,9 @@ class AudioHapticHelper {
     _initialized = true;
     try {
       await _successPlayer.setPlayerMode(PlayerMode.lowLatency);
-      await _successPlayer.setSource(AssetSource('audio/Arrow sound/Arrow Escape game mai jab user arrows ko shi nikale tab.mp3'));
-
       await _collisionPlayer.setPlayerMode(PlayerMode.lowLatency);
-      await _collisionPlayer.setSource(AssetSource('audio/Arrow sound/Arrow Escape mai jab user galat arrow ko exit de ya jab arrow apas mai takraye.mp3'));
-
       await _lifelinePlayer.setPlayerMode(PlayerMode.lowLatency);
-      await _lifelinePlayer.setSource(AssetSource('audio/Arrow sound/Arror Escape game mai lifeline kam hone p.mp3'));
-
       await _levelCompletePlayer.setPlayerMode(PlayerMode.lowLatency);
-      await _levelCompletePlayer.setSource(AssetSource('audio/Arrow sound/Arrow Escape mai jab user level complete kr le tab .mp3'));
     } catch (e) {
       debugPrint('Error initializing Arrow Escape audio: $e');
     }
@@ -43,7 +36,7 @@ class AudioHapticHelper {
     if (soundEnabled) {
       try {
         await _successPlayer.stop();
-        await _successPlayer.play(AssetSource('audio/Arrow sound/Arrow Escape game mai jab user arrows ko shi nikale tab.mp3'));
+        await _successPlayer.play(AssetSource('audio/arrow_escape/arrow_success.mp3'));
       } catch (e) {
         debugPrint('Error playing success audio: $e');
       }
@@ -57,7 +50,7 @@ class AudioHapticHelper {
     if (soundEnabled) {
       try {
         await _collisionPlayer.stop();
-        await _collisionPlayer.play(AssetSource('audio/Arrow sound/Arrow Escape mai jab user galat arrow ko exit de ya jab arrow apas mai takraye.mp3'));
+        await _collisionPlayer.play(AssetSource('audio/arrow_escape/arrow_collision.mp3'));
       } catch (e) {
         debugPrint('Error playing collision audio: $e');
       }
@@ -71,7 +64,7 @@ class AudioHapticHelper {
     if (soundEnabled) {
       try {
         await _lifelinePlayer.stop();
-        await _lifelinePlayer.play(AssetSource('audio/Arrow sound/Arror Escape game mai lifeline kam hone p.mp3'));
+        await _lifelinePlayer.play(AssetSource('audio/arrow_escape/arrow_lifeline.mp3'));
       } catch (e) {
         debugPrint('Error playing failure audio: $e');
       }
@@ -85,7 +78,7 @@ class AudioHapticHelper {
     if (soundEnabled) {
       try {
         await _levelCompletePlayer.stop();
-        await _levelCompletePlayer.play(AssetSource('audio/Arrow sound/Arrow Escape mai jab user level complete kr le tab .mp3'));
+        await _levelCompletePlayer.play(AssetSource('audio/arrow_escape/arrow_level_complete.mp3'));
       } catch (e) {
         debugPrint('Error playing level complete audio: $e');
       }
