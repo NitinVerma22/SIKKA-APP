@@ -173,12 +173,12 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
   String? bigPicturePath;
 
   if (imageUrl != null && imageUrl.trim().isNotEmpty) {
-    final String hash = message.hashCode.toString();
+    final String hash = (message.hashCode.abs() % 100000).toString();
     bigPicturePath = await _downloadAndSaveFile(imageUrl, 'notif_big_picture_$hash.jpg');
   }
 
   final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-    'sikkaplay_high_channel',
+    'sikkaplay_high_channel_v2',
     'SikkaPlay Notifications',
     channelDescription: 'Main notification channel for SikkaPlay',
     importance: Importance.max,
@@ -207,7 +207,7 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
   });
 
   await localNotifications.show(
-    id: message.hashCode,
+    id: (message.hashCode.abs() % 100000),
     title: title,
     body: body,
     notificationDetails: details,
@@ -225,7 +225,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await localNotifications.initialize(settings: initializationSettings);
 
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      'sikkaplay_high_channel',
+      'sikkaplay_high_channel_v2',
       'SikkaPlay Notifications',
       description: 'Main notification channel for SikkaPlay',
       importance: Importance.max,
@@ -267,9 +267,9 @@ Future<void> _initializeServices() async {
       onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
 
-    // Configure Android Notification Channel for Heads-up displays
+    // Configure Android Notification Channel  // Create high importance channel
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      'sikkaplay_high_channel',
+      'sikkaplay_high_channel_v2_v2',
       'SikkaPlay Notifications',
       description: 'Main notification channel for SikkaPlay',
       importance: Importance.max,
