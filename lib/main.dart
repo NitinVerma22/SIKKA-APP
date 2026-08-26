@@ -219,24 +219,40 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
 
-  // Avoid calling runApp() here to prevent the UI and API services from fully booting up
-  // in the background. This fixes the issue where receiving a background message causes 
-  // the user to falsely appear 'online' (because background API calls update their presence status).
+  try {
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
+    const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+    await localNotifications.initialize(settings: initializationSettings);
+
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'sikkaplay_high_channel',
+      'SikkaPlay Notifications',
+      description: 'Main notification channel for SikkaPlay',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+    );
+
+    final androidImplementation = localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await androidImplementation?.createNotificationChannel(channel);
+
+    await _showLocalNotification(message);
+  } catch (e) {
+    debugPrint('Error handling background FCM message: $e');
+  }
 }
 
 Future<void> _initializeServices() async {
   try {
     tz.initializeTimeZones();
 
-    // ── FIX 8: Firebase Crashlytics error handlers ──────────────────────────
     // Pass all Flutter framework errors to Crashlytics
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-    // Catch async errors that escape the Flutter zone (e.g. in Futures/Streams)
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
-    // ────────────────────────────────────────────────────────────────────────
     
     // Initialize Google Mobile Ads SDK asynchronously
     unawaited(AdService.instance.initialize());
@@ -250,16 +266,6 @@ Future<void> _initializeServices() async {
       onDidReceiveNotificationResponse: _handleNotificationAction,
       onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
-
-    // Check if app was launched via local notification
-    final NotificationAppLaunchDetails? launchDetails = await localNotifications.getNotificationAppLaunchDetails();
-    if (launchDetails != null && launchDetails.didNotificationLaunchApp && launchDetails.notificationResponse != null) {
-      final String? payloadStr = launchDetails.notificationResponse!.payload;
-      if (payloadStr != null && payloadStr.isNotEmpty) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('pending_chat_route', payloadStr);
-      }
-    }
 
     // Configure Android Notification Channel for Heads-up displays
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
@@ -286,6 +292,11 @@ Future<void> _initializeServices() async {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       _showLocalNotification(message);
     });
+
+    // Listen for FCM token refresh and sync with backend
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+      AuthService().updateFcmTokenOnServer(newToken);
+    });
   } catch (e) {
     debugPrint('Error initializing background services: $e');
   }
@@ -295,6 +306,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   await Firebase.initializeApp();
+  await _initializeServices();
   
   FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 

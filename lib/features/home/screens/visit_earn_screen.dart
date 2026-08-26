@@ -13,6 +13,7 @@ class LinkOfferItem {
   final String title;
   final String url;
   final String estimatedTime;
+  final int requiredSeconds;
   final int rewardAmount;
   int cooldownRemaining; // in seconds
 
@@ -21,6 +22,7 @@ class LinkOfferItem {
     required this.title,
     required this.url,
     required this.estimatedTime,
+    this.requiredSeconds = 15,
     required this.rewardAmount,
     this.cooldownRemaining = 0,
   });
@@ -79,14 +81,18 @@ class _VisitEarnScreenState extends ConsumerState<VisitEarnScreen> {
       if (rawLinks != null) {
         if (mounted) {
           setState(() {
-            _links = rawLinks.map((l) => LinkOfferItem(
-              id: l['id'] ?? '',
-              title: l['title'] ?? '',
-              url: l['url'] ?? '',
-              estimatedTime: '15 Secs',
-              rewardAmount: l['rewardAmount'] ?? 5,
-              cooldownRemaining: l['cooldownRemaining'] ?? 0,
-            )).toList();
+            _links = rawLinks.map((l) {
+              final reqSec = ((l['timerSeconds'] ?? l['requiredSeconds'] ?? 15) as num).toInt();
+              return LinkOfferItem(
+                id: l['id'] ?? '',
+                title: l['title'] ?? '',
+                url: l['url'] ?? '',
+                estimatedTime: '$reqSec Secs',
+                requiredSeconds: reqSec,
+                rewardAmount: l['rewardAmount'] ?? 5,
+                cooldownRemaining: l['cooldownRemaining'] ?? 0,
+              );
+            }).toList();
             _isLoading = false;
           });
         }
@@ -420,7 +426,10 @@ class WebVisitSimulatorScreen extends StatefulWidget {
 }
 
 class _WebVisitSimulatorScreenState extends State<WebVisitSimulatorScreen> {
-  int _secondsLeft = 15;
+  late int _secondsLeft;
+  late final bool _requiresScroll;
+  bool _hasScrolled = false;
+  bool _isPausedForScroll = false;
   Timer? _timer;
   bool _isClaimable = false;
   late final WebViewController _controller;
@@ -429,8 +438,24 @@ class _WebVisitSimulatorScreenState extends State<WebVisitSimulatorScreen> {
   @override
   void initState() {
     super.initState();
+    _secondsLeft = widget.link.requiredSeconds > 0 ? widget.link.requiredSeconds : 15;
+    _requiresScroll = widget.link.requiredSeconds > 15;
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..addJavaScriptChannel(
+        'ScrollChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          if (message.message == 'scrolled' && !_hasScrolled) {
+            if (mounted) {
+              setState(() {
+                _hasScrolled = true;
+                _isPausedForScroll = false;
+              });
+            }
+          }
+        },
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (String url) {
@@ -438,6 +463,14 @@ class _WebVisitSimulatorScreenState extends State<WebVisitSimulatorScreen> {
               setState(() {
                 _isPageLoaded = true;
               });
+              // Inject scroll detection listener into WebView
+              _controller.runJavaScript('''
+                window.addEventListener('scroll', function() {
+                  if (window.scrollY > 30 || window.pageYOffset > 30) {
+                    ScrollChannel.postMessage('scrolled');
+                  }
+                });
+              ''');
               _startTimer();
             }
           },
@@ -494,6 +527,12 @@ class _WebVisitSimulatorScreenState extends State<WebVisitSimulatorScreen> {
       if (!mounted) return;
       setState(() {
         if (_secondsLeft > 1) {
+          // If task > 15s and reaches 10s left without user scrolling, pause timer
+          if (_requiresScroll && !_hasScrolled && _secondsLeft <= 10) {
+            _isPausedForScroll = true;
+            return; // Pause countdown until user scrolls
+          }
+          _isPausedForScroll = false;
           _secondsLeft--;
         } else {
           _secondsLeft = 0;
@@ -512,6 +551,7 @@ class _WebVisitSimulatorScreenState extends State<WebVisitSimulatorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double initialTotalSeconds = widget.link.requiredSeconds > 0 ? widget.link.requiredSeconds.toDouble() : 15.0;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -593,8 +633,16 @@ class _WebVisitSimulatorScreenState extends State<WebVisitSimulatorScreen> {
                       child: const Text('Claim Reward', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                     )
                   : Text(
-                      _isPageLoaded ? '⏱️ ${_secondsLeft}s left' : 'Loading...',
-                      style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 13),
+                      !_isPageLoaded
+                          ? 'Loading...'
+                          : _isPausedForScroll
+                              ? '📜 Scroll down!'
+                              : '⏱️ ${_secondsLeft}s left',
+                      style: TextStyle(
+                        color: _isPausedForScroll ? Colors.orangeAccent : Colors.amber,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
             ),
           ],
@@ -603,11 +651,28 @@ class _WebVisitSimulatorScreenState extends State<WebVisitSimulatorScreen> {
           children: [
             // Linear Progress Bar
             LinearProgressIndicator(
-              value: _isPageLoaded ? (1.0 - (_secondsLeft / 15.0)) : 0.0,
+              value: _isPageLoaded ? (1.0 - (_secondsLeft / initialTotalSeconds)) : 0.0,
               backgroundColor: Colors.grey.shade200,
-              valueColor: AlwaysStoppedAnimation<Color>(_isClaimable ? Colors.green : Colors.amber),
+              valueColor: AlwaysStoppedAnimation<Color>(_isClaimable ? Colors.green : (_isPausedForScroll ? Colors.orangeAccent : Colors.amber)),
               minHeight: 4,
             ),
+            if (_isPausedForScroll)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                color: Colors.amber.shade900,
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.touch_app_rounded, color: Colors.white, size: 16),
+                    SizedBox(width: 8),
+                    Text(
+                      'Scroll down page to continue timer & claim!',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
             // Real WebView Widget
             Expanded(
               child: Stack(

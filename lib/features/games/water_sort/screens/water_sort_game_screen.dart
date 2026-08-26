@@ -302,7 +302,21 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
       sessionId: _sessionId,
     );
 
-    if (widget.levelNumber % 10 == 0) {
+    if (AdService.instance.isMilestoneLockLevel(widget.levelNumber)) {
+      await AdService.instance.showMilestoneLockDialog(
+        context: context,
+        levelCleared: widget.levelNumber,
+        userId: 'water_sort_user',
+        onUnlocked: () {},
+      );
+    } else if (AdService.instance.isPost170Level(widget.levelNumber)) {
+      await AdService.instance.showPost170RewardedDialog(
+        context: context,
+        levelCleared: widget.levelNumber,
+        userId: 'water_sort_user',
+        onEarned: () {},
+      );
+    } else if (AdService.instance.shouldShowLevelCompleteAd(widget.levelNumber)) {
       if (!AdService.instance.isInterstitialAdLoaded()) {
         AdService.instance.loadInterstitialAd();
       }

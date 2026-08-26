@@ -262,8 +262,21 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
       sessionId: _sessionId,
     );
 
-    // Show Interstitial Ad every 10 levels
-    if (_currentLevelNum % 10 == 0) {
+    if (AdService.instance.isMilestoneLockLevel(_currentLevelNum)) {
+      await AdService.instance.showMilestoneLockDialog(
+        context: context,
+        levelCleared: _currentLevelNum,
+        userId: 'arrow_escape_user',
+        onUnlocked: () {},
+      );
+    } else if (AdService.instance.isPost170Level(_currentLevelNum)) {
+      await AdService.instance.showPost170RewardedDialog(
+        context: context,
+        levelCleared: _currentLevelNum,
+        userId: 'arrow_escape_user',
+        onEarned: () {},
+      );
+    } else if (AdService.instance.shouldShowLevelCompleteAd(_currentLevelNum)) {
       if (!AdService.instance.isInterstitialAdLoaded()) {
         AdService.instance.loadInterstitialAd();
       }

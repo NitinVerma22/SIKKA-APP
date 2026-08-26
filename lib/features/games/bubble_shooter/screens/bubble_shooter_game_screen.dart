@@ -471,9 +471,23 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
       sessionId: _sessionId,
     );
 
-    if (widget.levelNumber % 10 == 0) {
+    if (AdService.instance.isMilestoneLockLevel(widget.levelNumber)) {
+      await AdService.instance.showMilestoneLockDialog(
+        context: context,
+        levelCleared: widget.levelNumber,
+        userId: 'bubble_shooter_user',
+        onUnlocked: () {},
+      );
+    } else if (AdService.instance.isPost170Level(widget.levelNumber)) {
+      await AdService.instance.showPost170RewardedDialog(
+        context: context,
+        levelCleared: widget.levelNumber,
+        userId: 'bubble_shooter_user',
+        onEarned: () {},
+      );
+    } else if (AdService.instance.shouldShowLevelCompleteAd(widget.levelNumber)) {
       if (!AdService.instance.isInterstitialAdLoaded()) {
-        AdService.instance.loadRewardedAd();
+        AdService.instance.loadInterstitialAd();
       }
       AdService.instance.showInterstitialAd(onAdDismissed: () {});
     }

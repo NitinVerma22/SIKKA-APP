@@ -22,7 +22,7 @@ class GameAudio {
     await _correctPlayer.setSource(AssetSource('audio/spin/correct.mp3'));
 
     await _wrongPlayer.setPlayerMode(PlayerMode.lowLatency);
-    await _wrongPlayer.setSource(AssetSource('audio/spin/wrong.mp3'));
+    await _wrongPlayer.setSource(AssetSource('audio/Arrow sound/Emoji Memory Game mai sab user galat tap kre tab.mp3'));
   }
 
   static Future<void> playTick() async {
