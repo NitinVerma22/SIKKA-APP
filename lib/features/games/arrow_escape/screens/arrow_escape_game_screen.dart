@@ -9,6 +9,7 @@ import '../widgets/arrow_escape_painter.dart';
 import '../services/arrow_escape_service.dart';
 import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
+import '../core/audio_haptic_helper.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
 import '../../../../core/user/user_service.dart';
 import '../../shared/utils/game_notifications.dart';
@@ -244,6 +245,9 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
   }
 
   Future<void> _onLevelComplete() async {
+    // Play level complete victory sound
+    AudioHapticHelper.playLevelComplete();
+
     setState(() {
       _isLevelComplete = true;
       _isClaiming = true;
@@ -262,26 +266,8 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
       sessionId: _sessionId,
     );
 
-    if (AdService.instance.isMilestoneLockLevel(_currentLevelNum)) {
-      await AdService.instance.showMilestoneLockDialog(
-        context: context,
-        levelCleared: _currentLevelNum,
-        userId: 'arrow_escape_user',
-        onUnlocked: () {},
-      );
-    } else if (AdService.instance.isPost170Level(_currentLevelNum)) {
-      await AdService.instance.showPost170RewardedDialog(
-        context: context,
-        levelCleared: _currentLevelNum,
-        userId: 'arrow_escape_user',
-        onEarned: () {},
-      );
-    } else if (AdService.instance.shouldShowLevelCompleteAd(_currentLevelNum)) {
-      if (!AdService.instance.isInterstitialAdLoaded()) {
-        AdService.instance.loadInterstitialAd();
-      }
-      AdService.instance.showInterstitialAd(onAdDismissed: () {});
-    }
+    // Ad logic removed from here — ads now fire ONLY via handleNextLevelTransition
+    // when user taps the "NEXT LEVEL" button, preventing double-ad bug.
 
     final coins = result['coinsEarned'] ?? (_currentLevelNum * widget.multiplier);
 
@@ -329,17 +315,28 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
   }
 
   void _handleExit() {
-    AdService.instance.showInterstitialAd(
-      onAdDismissed: () {
-        if (mounted) {
-          if (widget.onBack != null) {
-            widget.onBack!();
-          } else {
-            Navigator.pop(context);
+    // Respect ad frequency rules on exit — skip for early levels (1, 2, 4, 5...)
+    if (AdService.instance.shouldShowLevelCompleteAd(_currentLevelNum)) {
+      AdService.instance.showInterstitialAd(
+        onAdDismissed: () {
+          if (mounted) {
+            if (widget.onBack != null) {
+              widget.onBack!();
+            } else {
+              Navigator.pop(context);
+            }
           }
+        },
+      );
+    } else {
+      if (mounted) {
+        if (widget.onBack != null) {
+          widget.onBack!();
+        } else {
+          Navigator.pop(context);
         }
-      },
-    );
+      }
+    }
   }
 
   @override

@@ -122,7 +122,7 @@ class ArrowComponent extends PositionComponent with TapCallbacks {
         _startExitAnimation();
         break;
       case TapResult.blocked:
-        AudioHapticHelper.playFailure();
+        AudioHapticHelper.playCollision();
         _playBlockAnimation();
         break;
       case TapResult.ignored:

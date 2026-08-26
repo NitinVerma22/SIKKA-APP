@@ -147,15 +147,19 @@ class _VisitEarnScreenState extends ConsumerState<VisitEarnScreen> {
                 // Fetch latest links details (cooldowns, statuses) silently
                 final rawLinks = await userServ.getVisitLinks();
                 if (rawLinks != null && mounted) {
-                  setState(() {
-                    _links = rawLinks.map((l) => LinkOfferItem(
-                      id: l['id'] ?? '',
-                      title: l['title'] ?? '',
-                      url: l['url'] ?? '',
-                      estimatedTime: '15 Secs',
-                      rewardAmount: l['rewardAmount'] ?? 5,
-                      cooldownRemaining: l['cooldownRemaining'] ?? 0,
-                    )).toList();
+                   setState(() {
+                    _links = rawLinks.map((l) {
+                      final reqSec = ((l['timerSeconds'] ?? l['requiredSeconds'] ?? 15) as num).toInt();
+                      return LinkOfferItem(
+                        id: l['id'] ?? '',
+                        title: l['title'] ?? '',
+                        url: l['url'] ?? '',
+                        estimatedTime: '$reqSec Secs',
+                        requiredSeconds: reqSec,
+                        rewardAmount: l['rewardAmount'] ?? 5,
+                        cooldownRemaining: l['cooldownRemaining'] ?? 0,
+                      );
+                    }).toList();
                   });
                 }
               } else {

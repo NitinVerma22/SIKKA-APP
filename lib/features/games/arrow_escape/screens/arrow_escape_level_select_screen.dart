@@ -81,19 +81,25 @@ class _NativeArrowEscapeLevelSelectScreenState
                 return InkWell(
                   onTap: isUnlocked
                       ? () {
-                          AdService.instance.showInterstitialAd(
-                            onAdDismissed: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => NativeArrowEscapeGameScreen(
-                                    initialLevel: levelNum,
-                                  ),
+                          // Respect ad frequency rules — skip for levels that don't qualify
+                          void navigateToGame() async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NativeArrowEscapeGameScreen(
+                                  initialLevel: levelNum,
                                 ),
-                              );
-                              _loadProgress();
-                            },
-                          );
+                              ),
+                            );
+                            _loadProgress();
+                          }
+                          if (AdService.instance.shouldShowLevelCompleteAd(levelNum)) {
+                            AdService.instance.showInterstitialAd(
+                              onAdDismissed: navigateToGame,
+                            );
+                          } else {
+                            navigateToGame();
+                          }
                         }
                       : null,
                   borderRadius: BorderRadius.circular(16),

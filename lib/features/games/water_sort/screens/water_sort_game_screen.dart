@@ -302,26 +302,8 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
       sessionId: _sessionId,
     );
 
-    if (AdService.instance.isMilestoneLockLevel(widget.levelNumber)) {
-      await AdService.instance.showMilestoneLockDialog(
-        context: context,
-        levelCleared: widget.levelNumber,
-        userId: 'water_sort_user',
-        onUnlocked: () {},
-      );
-    } else if (AdService.instance.isPost170Level(widget.levelNumber)) {
-      await AdService.instance.showPost170RewardedDialog(
-        context: context,
-        levelCleared: widget.levelNumber,
-        userId: 'water_sort_user',
-        onEarned: () {},
-      );
-    } else if (AdService.instance.shouldShowLevelCompleteAd(widget.levelNumber)) {
-      if (!AdService.instance.isInterstitialAdLoaded()) {
-        AdService.instance.loadInterstitialAd();
-      }
-      AdService.instance.showInterstitialAd(onAdDismissed: () {});
-    }
+    // Ad logic removed from here — ads now fire ONLY via handleNextLevelTransition
+    // when user taps the "NEXT LEVEL" button, preventing double-ad bug.
 
     final coins = result['coinsEarned'] ?? (widget.levelNumber * widget.multiplier);
 
@@ -336,11 +318,16 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
   }
 
   void _handleExit() {
-    AdService.instance.showInterstitialAd(
-      onAdDismissed: () {
-        if (mounted) Navigator.pop(context);
-      },
-    );
+    // Respect ad frequency rules on exit — skip for early levels (1, 2, 4, 5...)
+    if (AdService.instance.shouldShowLevelCompleteAd(widget.levelNumber)) {
+      AdService.instance.showInterstitialAd(
+        onAdDismissed: () {
+          if (mounted) Navigator.pop(context);
+        },
+      );
+    } else {
+      if (mounted) Navigator.pop(context);
+    }
   }
 
   @override

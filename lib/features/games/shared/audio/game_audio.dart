@@ -13,10 +13,10 @@ class GameAudio {
     _initialized = true;
     
     await _tickPlayer.setPlayerMode(PlayerMode.lowLatency);
-    await _tickPlayer.setSource(AssetSource('audio/spin/tick.mp3'));
+    await _tickPlayer.setSource(AssetSource('audio/spin/spin_tick.mp3'));
 
     await _winPlayer.setPlayerMode(PlayerMode.lowLatency);
-    await _winPlayer.setSource(AssetSource('audio/spin/win.mp3'));
+    await _winPlayer.setSource(AssetSource('audio/spin/spin_win.mp3'));
 
     await _correctPlayer.setPlayerMode(PlayerMode.lowLatency);
     await _correctPlayer.setSource(AssetSource('audio/spin/correct.mp3'));
