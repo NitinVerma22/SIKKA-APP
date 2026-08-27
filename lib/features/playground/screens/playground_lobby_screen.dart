@@ -489,9 +489,9 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
                 Expanded(
                   child: _buildCrate(
                     'BRONZE',
-                    '60m',
+                    '80m',
                     activeMinutes,
-                    60,
+                    80,
                     _bronzeClaimed,
                     const Color(0xFFFFF1F2),
                     const Color(0xFFE11D48),
@@ -502,9 +502,9 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
                 Expanded(
                   child: _buildCrate(
                     'SILVER',
-                    '120m',
+                    '160m',
                     activeMinutes,
-                    120,
+                    160,
                     _silverClaimed,
                     const Color(0xFFF0F9FF),
                     const Color(0xFF0284C7),
@@ -515,9 +515,9 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
                 Expanded(
                   child: _buildCrate(
                     'GOLD',
-                    '180m',
+                    '280m',
                     activeMinutes,
-                    180,
+                    280,
                     _goldClaimed,
                     const Color(0xFFFEF3C7),
                     const Color(0xFFD97706),

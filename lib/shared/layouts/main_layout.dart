@@ -245,7 +245,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       });
 
       const androidDetails = AndroidNotificationDetails(
-        'sikkaplay_high_channel',
+        'sikkaplay_high_channel_v3',
         'SikkaPlay Notifications',
         channelDescription: 'Main notification channel for SikkaPlay',
         importance: Importance.max,

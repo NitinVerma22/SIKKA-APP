@@ -178,7 +178,7 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
   }
 
   final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-    'sikkaplay_high_channel_v2',
+    'sikkaplay_high_channel_v3',
     'SikkaPlay Notifications',
     channelDescription: 'Main notification channel for SikkaPlay',
     importance: Importance.max,
@@ -225,7 +225,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await localNotifications.initialize(settings: initializationSettings);
 
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      'sikkaplay_high_channel_v2',
+      'sikkaplay_high_channel_v3',
       'SikkaPlay Notifications',
       description: 'Main notification channel for SikkaPlay',
       importance: Importance.max,
@@ -269,7 +269,7 @@ Future<void> _initializeServices() async {
 
     // Configure Android Notification Channel  // Create high importance channel
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      'sikkaplay_high_channel_v2_v2',
+      'sikkaplay_high_channel_v3',
       'SikkaPlay Notifications',
       description: 'Main notification channel for SikkaPlay',
       importance: Importance.max,
