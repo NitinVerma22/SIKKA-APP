@@ -243,12 +243,12 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
     final userState = ref.read(userProvider);
     final userId = userState.userData?['id'] ?? '';
 
-    if (!AdService.instance.isRewardedAdLoaded() || userId.isEmpty) {
+    if (!AdService.instance.isInterstitialAdLoaded() || userId.isEmpty) {
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (_) => FakeAdDialog(
-          title: 'Playing Reward Ad...',
+          title: 'Playing Video Ad...',
           message: 'Watch video to get 3 Free Spins',
           onComplete: () async {
             if (_sessionId != null) {
@@ -265,22 +265,13 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
         ),
       );
       if (userId.isNotEmpty) {
-        AdService.instance.loadRewardedAd();
+        AdService.instance.loadInterstitialAd();
       }
       return;
     }
 
-    AdService.instance.showRewardedAd(
-      context: context,
-      userId: userId,
-      onAdDismissed: () {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ad was closed early. Watch full ad to get 3 Free Spins.')),
-          );
-        }
-      },
-      onUserEarnedReward: (reward) async {
+    AdService.instance.showInterstitialAd(
+      onAdDismissed: () async {
         if (_sessionId != null) {
           final response = await ref.read(userServiceProvider).recordSpinAd(_sessionId!);
           if (response != null && response['success'] == true) {

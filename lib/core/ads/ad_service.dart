@@ -574,7 +574,7 @@ class AdService {
 
   /// Check if Rewarded Ad is cached and ready to play
   bool isRewardedAdLoaded() {
-    return _rewardedAd != null;
+    return _rewardedAd != null || _rewardedInterstitialAd != null;
   }
 
   /// Check if Interstitial Ad is cached and ready to play
