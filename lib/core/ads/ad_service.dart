@@ -14,13 +14,17 @@ class AdService {
   InterstitialAd? _interstitialAd;
   bool _isLoadingRewarded = false;
   bool _isLoadingInterstitial = false;
+  DateTime? _rewardedAdLoadTime;
+  DateTime? _rewardedInterstitialAdLoadTime;
+  VoidCallback? _currentRewardedDismissCallback;
+  VoidCallback? _currentRewardedInterstitialDismissCallback;
 
   // Test & Production Ad Unit IDs
   static const String testBannerId = 'ca-app-pub-3940256099942544/6300978111';
   static const String productionBannerId = 'ca-app-pub-8599317656200402/2387421349';
 
   static const String testRewardedId = 'ca-app-pub-3940256099942544/5224354917';
-  static const String productionRewardedId = 'ca-app-pub-8599317656200402/6078042898';
+  static const String productionRewardedId = 'ca-app-pub-8599317656200402/1786559615';
 
   static const String testInterstitialId = 'ca-app-pub-3940256099942544/1033173712';
   static const String productionInterstitialId = 'ca-app-pub-8599317656200402/6461186277';
@@ -299,9 +303,19 @@ class AdService {
 
   /// Loads a Rewarded Video Ad in the background
   void loadRewardedAd({String? customAdUnitId}) {
-    if (_isLoadingRewarded || _rewardedAd != null) return;
-    _isLoadingRewarded = true;
+    if (_isLoadingRewarded) return;
+    
+    if (_rewardedAd != null) {
+      if (_rewardedAdLoadTime != null && DateTime.now().difference(_rewardedAdLoadTime!) > const Duration(hours: 4)) {
+        debugPrint('AdService: Stale Rewarded Ad detected. Discarding.');
+        _rewardedAd!.dispose();
+        _rewardedAd = null;
+      } else {
+        return;
+      }
+    }
 
+    _isLoadingRewarded = true;
     final adUnitId = customAdUnitId ?? rewardedAdUnitId;
     debugPrint('AdService: Loading Rewarded Ad for Unit: $adUnitId');
 
@@ -312,25 +326,31 @@ class AdService {
         onAdLoaded: (ad) {
           _rewardedAd = ad;
           _isLoadingRewarded = false;
+          _rewardedAdLoadTime = DateTime.now();
           debugPrint('AdService: Rewarded Ad loaded successfully.');
           
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
               ad.dispose();
               _rewardedAd = null;
-              // Pre-load the next rewarded ad instantly
+              final callback = _currentRewardedDismissCallback;
+              _currentRewardedDismissCallback = null;
+              callback?.call();
               loadRewardedAd(customAdUnitId: adUnitId);
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
-              debugPrint('AdService: Rewarded ad failed to show: $error');
+              debugPrint('AdService: Rewarded ad failed to show: ${error.code} - ${error.message}');
               ad.dispose();
               _rewardedAd = null;
+              final callback = _currentRewardedDismissCallback;
+              _currentRewardedDismissCallback = null;
+              callback?.call();
               loadRewardedAd(customAdUnitId: adUnitId);
             },
           );
         },
         onAdFailedToLoad: (error) {
-          debugPrint('AdService: Failed to load rewarded ad: $error');
+          debugPrint('AdService: Failed to load rewarded ad: ${error.code} - ${error.message}');
           _isLoadingRewarded = false;
           _rewardedAd = null;
         },
@@ -340,7 +360,7 @@ class AdService {
 
   /// Plays the loaded Rewarded Video / Rewarded Interstitial Ad and runs the onEarned callback on completion.
   /// Enforces Server-Side Verification (SSV) options using the userId parameter.
-  Future<void> showRewardedAd({
+  Future<bool> showRewardedAd({
     required BuildContext context,
     required String userId,
     required VoidCallback onAdDismissed,
@@ -348,80 +368,35 @@ class AdService {
     String? customAdUnitId,
   }) async {
     if (_rewardedInterstitialAd != null) {
-      return showRewardedInterstitialAd(
-        context: context,
-        userId: userId,
-        onAdDismissed: onAdDismissed,
-        onUserEarnedReward: onUserEarnedReward,
-        customAdUnitId: customAdUnitId,
-      );
+      if (_rewardedInterstitialAdLoadTime != null && DateTime.now().difference(_rewardedInterstitialAdLoadTime!) > const Duration(hours: 4)) {
+         _rewardedInterstitialAd!.dispose();
+         _rewardedInterstitialAd = null;
+      } else {
+        return showRewardedInterstitialAd(
+          context: context,
+          userId: userId,
+          onAdDismissed: onAdDismissed,
+          onUserEarnedReward: onUserEarnedReward,
+          customAdUnitId: customAdUnitId,
+        );
+      }
+    }
+
+    if (_rewardedAd != null && _rewardedAdLoadTime != null && DateTime.now().difference(_rewardedAdLoadTime!) > const Duration(hours: 4)) {
+        _rewardedAd!.dispose();
+        _rewardedAd = null;
     }
 
     if (_rewardedAd == null) {
-      debugPrint('AdService: Rewarded ad not ready. Attempting to load...');
-      onAdDismissed();
+      debugPrint('AdService: Rewarded ad not ready. Returning false.');
       loadRewardedAd(customAdUnitId: customAdUnitId);
       loadRewardedInterstitialAd(customAdUnitId: customAdUnitId);
-      return;
+      return false;
     }
 
-    // Show Confirmation Dialog before showing the ad!
-    final bool? watchAd = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogCtx) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1E1E2E),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Color(0xFF863BFF), width: 1.5),
-          ),
-          title: Row(
-            children: [
-              const Icon(Icons.play_circle_fill_rounded, color: Color(0xFF863BFF), size: 28),
-              const SizedBox(width: 10),
-              Text(
-                'Watch Video? 🎮',
-                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ],
-          ),
-          content: Text(
-            'Watch video to claim this reward.',
-            style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14),
-          ),
-          actionsAlignment: MainAxisAlignment.spaceEvenly,
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: Text(
-                'CANCEL',
-                style: GoogleFonts.outfit(color: Colors.redAccent, fontWeight: FontWeight.bold),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF863BFF),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: Text(
-                'WATCH NOW',
-                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (watchAd != true) {
-      onAdDismissed();
-      return;
-    }
+    _currentRewardedDismissCallback = onAdDismissed;
 
     try {
-      // Set Server-Side Verification (SSV) options to map user credit requests securely on the backend
       await _rewardedAd!.setServerSideOptions(
         ServerSideVerificationOptions(
           userId: userId,
@@ -436,9 +411,13 @@ class AdService {
           UserService().recordAdImpression('rewarded_video', 'admob');
         },
       );
+      return true;
     } catch (e) {
       debugPrint('AdService: Error showing rewarded ad: $e');
-      onAdDismissed();
+      final callback = _currentRewardedDismissCallback;
+      _currentRewardedDismissCallback = null;
+      callback?.call();
+      return false;
     }
   }
 
@@ -446,9 +425,19 @@ class AdService {
   bool _isLoadingRewardedInterstitial = false;
 
   void loadRewardedInterstitialAd({String? customAdUnitId}) {
-    if (_rewardedInterstitialAd != null || _isLoadingRewardedInterstitial) return;
-    _isLoadingRewardedInterstitial = true;
+    if (_isLoadingRewardedInterstitial) return;
+    
+    if (_rewardedInterstitialAd != null) {
+      if (_rewardedInterstitialAdLoadTime != null && DateTime.now().difference(_rewardedInterstitialAdLoadTime!) > const Duration(hours: 4)) {
+        debugPrint('AdService: Stale Rewarded Interstitial Ad detected. Discarding.');
+        _rewardedInterstitialAd!.dispose();
+        _rewardedInterstitialAd = null;
+      } else {
+        return;
+      }
+    }
 
+    _isLoadingRewardedInterstitial = true;
     final adUnitId = customAdUnitId ?? rewardedInterstitialAdUnitId;
     debugPrint('AdService: Loading Rewarded Interstitial Ad for Unit: $adUnitId');
 
@@ -459,24 +448,31 @@ class AdService {
         onAdLoaded: (ad) {
           _rewardedInterstitialAd = ad;
           _isLoadingRewardedInterstitial = false;
+          _rewardedInterstitialAdLoadTime = DateTime.now();
           debugPrint('AdService: Rewarded Interstitial Ad loaded successfully.');
 
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
               ad.dispose();
               _rewardedInterstitialAd = null;
+              final callback = _currentRewardedInterstitialDismissCallback;
+              _currentRewardedInterstitialDismissCallback = null;
+              callback?.call();
               loadRewardedInterstitialAd(customAdUnitId: adUnitId);
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
-              debugPrint('AdService: Rewarded Interstitial ad failed to show: $error');
+              debugPrint('AdService: Rewarded Interstitial ad failed to show: ${error.code} - ${error.message}');
               ad.dispose();
               _rewardedInterstitialAd = null;
+              final callback = _currentRewardedInterstitialDismissCallback;
+              _currentRewardedInterstitialDismissCallback = null;
+              callback?.call();
               loadRewardedInterstitialAd(customAdUnitId: adUnitId);
             },
           );
         },
         onAdFailedToLoad: (error) {
-          debugPrint('AdService: Failed to load Rewarded Interstitial ad: $error');
+          debugPrint('AdService: Failed to load Rewarded Interstitial ad: ${error.code} - ${error.message}');
           _isLoadingRewardedInterstitial = false;
           _rewardedInterstitialAd = null;
         },
@@ -484,73 +480,25 @@ class AdService {
     );
   }
 
-  Future<void> showRewardedInterstitialAd({
+  Future<bool> showRewardedInterstitialAd({
     required BuildContext context,
     required String userId,
     required VoidCallback onAdDismissed,
     required Function(RewardItem reward) onUserEarnedReward,
     String? customAdUnitId,
   }) async {
+    if (_rewardedInterstitialAd != null && _rewardedInterstitialAdLoadTime != null && DateTime.now().difference(_rewardedInterstitialAdLoadTime!) > const Duration(hours: 4)) {
+        _rewardedInterstitialAd!.dispose();
+        _rewardedInterstitialAd = null;
+    }
+
     if (_rewardedInterstitialAd == null) {
-      debugPrint('AdService: Rewarded Interstitial ad not ready. Attempting to load...');
-      onAdDismissed();
+      debugPrint('AdService: Rewarded Interstitial ad not ready. Returning false.');
       loadRewardedInterstitialAd(customAdUnitId: customAdUnitId);
-      return;
+      return false;
     }
 
-    final bool? watchAd = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogCtx) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1E1E2E),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Color(0xFF863BFF), width: 1.5),
-          ),
-          title: Row(
-            children: [
-              const Icon(Icons.play_circle_fill_rounded, color: Color(0xFF863BFF), size: 28),
-              const SizedBox(width: 10),
-              Text(
-                'Watch Ad? 🎮',
-                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ],
-          ),
-          content: Text(
-            'Watch short ad to claim this reward.',
-            style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14),
-          ),
-          actionsAlignment: MainAxisAlignment.spaceEvenly,
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: Text(
-                'CANCEL',
-                style: GoogleFonts.outfit(color: Colors.redAccent, fontWeight: FontWeight.bold),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF863BFF),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: Text(
-                'WATCH NOW',
-                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (watchAd != true) {
-      onAdDismissed();
-      return;
-    }
+    _currentRewardedInterstitialDismissCallback = onAdDismissed;
 
     try {
       await _rewardedInterstitialAd!.setServerSideOptions(
@@ -566,9 +514,13 @@ class AdService {
           UserService().recordAdImpression('rewarded_interstitial', 'admob');
         },
       );
+      return true;
     } catch (e) {
       debugPrint('AdService: Error showing rewarded interstitial ad: $e');
-      onAdDismissed();
+      final callback = _currentRewardedInterstitialDismissCallback;
+      _currentRewardedInterstitialDismissCallback = null;
+      callback?.call();
+      return false;
     }
   }
 
