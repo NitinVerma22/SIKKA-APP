@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:sikkaplay/core/config/app_config.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LinkPhoneScreen extends ConsumerStatefulWidget {
   const LinkPhoneScreen({super.key});
@@ -84,11 +85,11 @@ class _LinkPhoneScreenState extends ConsumerState<LinkPhoneScreen> {
       final phoneIdToken = await phoneUser.getIdToken();
       
       // Sync with backend using the phone ID token
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token') ?? '';
+      const secureStorage = FlutterSecureStorage();
+      final token = await secureStorage.read(key: 'jwt_token') ?? '';
       
       final response = await http.post(
-        Uri.parse('${AuthService.baseUrl}/user/sync-phone'),
+        Uri.parse(AuthService.baseUrl.replaceAll('/auth', '/user/sync-phone')),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
