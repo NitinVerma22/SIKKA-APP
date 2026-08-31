@@ -349,6 +349,7 @@ class GamesHubScreen extends ConsumerWidget {
                     colors: [const Color(0xFF0D9488), const Color(0xFF2DD4BF)],
                     leftImagePath: 'assets/images/games_hub/arrow left.png',
                     rightImagePath: 'assets/images/games_hub/arrow_right.png',
+                    isComingSoon: true,
                     onTap: () {
                       context.push('/games/arrow_escape');
                     },
@@ -490,10 +491,15 @@ class GamesHubScreen extends ConsumerWidget {
     required String leftImagePath,
     required String rightImagePath,
     required VoidCallback onTap,
+    bool isComingSoon = false,
   }) {
     final Color primaryColor = colors.first;
     return GestureDetector(
-      onTap: onTap,
+      onTap: isComingSoon ? () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(selectedLanguage == 'Hindi' ? 'जल्द आ रहा है!' : 'Coming Soon!')),
+        );
+      } : onTap,
       child: Container(
         height: 124,
         decoration: BoxDecoration(
@@ -565,13 +571,38 @@ class GamesHubScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          title,
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFF0F172A),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF0F172A),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (isComingSoon)
+                              Container(
+                                margin: const EdgeInsets.only(left: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  selectedLanguage == 'Hindi' ? 'जल्द' : 'Soon',
+                                  style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                    color: Colors.orange.shade800,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Padding(
