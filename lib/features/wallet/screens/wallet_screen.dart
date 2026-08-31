@@ -1735,7 +1735,7 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
       await widget.onWithdraw(coins, netRupees, cashbackCoins, upiId, name, optionId);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        if (e.toString().contains('PHONE_VERIFICATION_REQUIRED')) { Navigator.of(context).pop(); context.push('/link-phone'); } else { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'))); }
       }
     } finally {
       if (mounted) {
