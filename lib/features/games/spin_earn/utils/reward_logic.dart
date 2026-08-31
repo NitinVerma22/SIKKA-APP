@@ -13,13 +13,13 @@ class RewardLogic {
 
   /// The wheel layout (used to draw the segments).
   static const List<RewardItem> wheelSlots = [
-    RewardItem(2, '2\nSPINS'),
+    RewardItem(2, '2\nSIKKA'),
     RewardItem(15, '15\nSIKKA'),
-    RewardItem(3, '3\nSPINS'),
+    RewardItem(3, '3\nSIKKA'),
+    RewardItem(5, '5\nSIKKA'),
     RewardItem(30, '30\nSIKKA'),
-    RewardItem(5, '5\nSPINS'),
     RewardItem(20, '20\nSIKKA'),
-    RewardItem(1, '1\nSPIN'),
+    RewardItem(1, '1\nSIKKA'),
     RewardItem(10, '10\nSIKKA'),
   ];
 

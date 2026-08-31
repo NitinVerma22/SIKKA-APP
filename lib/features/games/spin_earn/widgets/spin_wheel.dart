@@ -146,10 +146,10 @@ class _WheelPainter extends CustomPainter {
       final segmentPaint = Paint()..style = PaintingStyle.fill;
       
       // 1. Alternating mockup colors:
-      // Index 3: Golden Yellow
+      // Index 4: Golden Yellow (30 SIKKA)
       // Index 0, 2, 6: White
-      // Index 1, 4, 5, 7: Purple
-      if (i == 3) {
+      // Index 1, 3, 5, 7: Purple
+      if (i == 4) {
         segmentPaint.color = const Color(0xFFFFD54F); // Gold/Yellow
       } else if (i == 0 || i == 2 || i == 6) {
         segmentPaint.color = const Color(0xFFFCF8F2); // White/Cream
@@ -200,10 +200,12 @@ class _WheelPainter extends CustomPainter {
       final valText = parts[0];
       final unitText = parts.length > 1 ? parts[1] : '';
 
-      final isPurple = (i == 1 || i == 4 || i == 5 || i == 7);
+      final isPurple = (i == 1 || i == 3 || i == 5 || i == 7);
 
       // 1. Draw Coins Stack or Single Coin Icon
-      if (unitText.contains('SPIN')) {
+      // Indices 0, 2, 3, 6 (previously SPINS) get single coin
+      // Indices 1, 4, 5, 7 get stack
+      if (i == 0 || i == 2 || i == 3 || i == 6) {
         _drawCoin(canvas, const Offset(0, -32), 9);
       } else {
         _drawCoinsStack(canvas, const Offset(0, -32), 20, 13);
