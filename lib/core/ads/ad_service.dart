@@ -367,20 +367,6 @@ class AdService {
     required Function(RewardItem reward) onUserEarnedReward,
     String? customAdUnitId,
   }) async {
-    if (_rewardedInterstitialAd != null) {
-      if (_rewardedInterstitialAdLoadTime != null && DateTime.now().difference(_rewardedInterstitialAdLoadTime!) > const Duration(hours: 4)) {
-         _rewardedInterstitialAd!.dispose();
-         _rewardedInterstitialAd = null;
-      } else {
-        return showRewardedInterstitialAd(
-          context: context,
-          userId: userId,
-          onAdDismissed: onAdDismissed,
-          onUserEarnedReward: onUserEarnedReward,
-          customAdUnitId: customAdUnitId,
-        );
-      }
-    }
 
     if (_rewardedAd != null && _rewardedAdLoadTime != null && DateTime.now().difference(_rewardedAdLoadTime!) > const Duration(hours: 4)) {
         _rewardedAd!.dispose();
@@ -526,7 +512,12 @@ class AdService {
 
   /// Check if Rewarded Ad is cached and ready to play
   bool isRewardedAdLoaded() {
-    return _rewardedAd != null || _rewardedInterstitialAd != null;
+    return _rewardedAd != null;
+  }
+
+  /// Check if Rewarded Interstitial Ad is cached and ready to play
+  bool isRewardedInterstitialAdLoaded() {
+    return _rewardedInterstitialAd != null;
   }
 
   /// Check if Interstitial Ad is cached and ready to play

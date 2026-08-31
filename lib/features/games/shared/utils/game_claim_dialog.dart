@@ -27,7 +27,7 @@ class GameClaimDialog {
 
     // Read config sequence
     final configState = ref.read(appConfigProvider);
-    final String sequenceStr = configState.config?['gullakAdSequence'] ?? 'interstitial,rewarded,none';
+    final String sequenceStr = configState.config?['gullakAdSequence'] ?? 'rewarded_interstitial,rewarded,interstitial';
     final List<String> sequence = sequenceStr.split(',').map((e) => e.trim().toLowerCase()).toList();
     if (sequence.isEmpty) {
       sequence.add('rewarded');
@@ -339,23 +339,25 @@ class GameClaimDialog {
                                   onAdDismissed: onCompleteClaim,
                                 );
                               } else {
-                                // rewarded
-                                final showRewardedOrSimulation = () {
-                                  if (!AdService.instance.isRewardedAdLoaded() || userId.isEmpty) {
-                                    showDialog(
+                                // rewarded or rewarded_interstitial
+                                final playAd = () async {
+                                  bool success = false;
+                                  if (adType == 'rewarded_interstitial') {
+                                    success = await AdService.instance.showRewardedInterstitialAd(
                                       context: context,
-                                      barrierDismissible: false,
-                                      builder: (_) => FakeAdDialog(
-                                        title: context.tr('claiming_sikka_ad', selectedLanguage),
-                                        message: context.tr('watch_video_claim_reward', selectedLanguage),
-                                        onComplete: onCompleteClaim,
-                                      ),
+                                      userId: userId,
+                                      onAdDismissed: () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(context.tr('ad_closed_early_warn', selectedLanguage))),
+                                        );
+                                        if (onCancel != null) onCancel();
+                                      },
+                                      onUserEarnedReward: (reward) {
+                                        onCompleteClaim();
+                                      },
                                     );
-                                    if (userId.isNotEmpty) {
-                                      AdService.instance.loadRewardedAd();
-                                    }
                                   } else {
-                                    AdService.instance.showRewardedAd(
+                                    success = await AdService.instance.showRewardedAd(
                                       context: context,
                                       userId: userId,
                                       onAdDismissed: () {
@@ -369,10 +371,22 @@ class GameClaimDialog {
                                       },
                                     );
                                   }
+
+                                  if (!success && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(context.tr('ad_load_failed', selectedLanguage) ?? 'Video Ad not available right now. Please try again.')),
+                                    );
+                                    if (onCancel != null) onCancel();
+                                  }
                                 };
 
-                                if (!AdService.instance.isRewardedAdLoaded() && userId.isNotEmpty) {
+                                bool isLoaded = adType == 'rewarded_interstitial' 
+                                    ? AdService.instance.isRewardedInterstitialAdLoaded()
+                                    : AdService.instance.isRewardedAdLoaded();
+
+                                if (!isLoaded && userId.isNotEmpty) {
                                   AdService.instance.loadRewardedAd();
+                                  AdService.instance.loadRewardedInterstitialAd();
                                   showDialog(
                                     context: context,
                                     barrierDismissible: false,
@@ -381,37 +395,20 @@ class GameClaimDialog {
                                         selectedLanguage: selectedLanguage,
                                         onAdLoaded: () {
                                           Navigator.of(spinnerContext).pop(); // dismiss spinner
-                                          AdService.instance.showRewardedAd(
-                                            context: context,
-                                            userId: userId,
-                                            onAdDismissed: () {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(content: Text(context.tr('ad_closed_early_warn', selectedLanguage))),
-                                              );
-                                              if (onCancel != null) onCancel();
-                                            },
-                                            onUserEarnedReward: (reward) {
-                                              onCompleteClaim();
-                                            },
-                                          );
+                                          playAd();
                                         },
                                         onTimeout: () {
                                           Navigator.of(spinnerContext).pop(); // dismiss spinner
-                                          showDialog(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (_) => FakeAdDialog(
-                                              title: context.tr('claiming_sikka_ad', selectedLanguage),
-                                              message: context.tr('watch_video_claim_reward', selectedLanguage),
-                                              onComplete: onCompleteClaim,
-                                            ),
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text(context.tr('ad_load_failed', selectedLanguage) ?? 'Video Ad not available right now. Please try again.')),
                                           );
+                                          if (onCancel != null) onCancel();
                                         },
                                       );
                                     },
                                   );
                                 } else {
-                                  showRewardedOrSimulation();
+                                  playAd();
                                 }
                               }
                             },
