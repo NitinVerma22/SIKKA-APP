@@ -73,38 +73,43 @@ class _LinkPhoneScreenState extends ConsumerState<LinkPhoneScreen> {
         smsCode: _otpController.text.trim(),
       );
 
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await user.linkWithCredential(credential);
-        
-        // Sync with backend
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString('auth_token') ?? '';
-        
-        final response = await http.post(
-          Uri.parse('${AuthService.baseUrl}/user/sync-phone'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        );
+      // Sign in with the phone credential to get a valid Firebase ID token for this phone number
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final phoneUser = userCredential.user;
+      
+      if (phoneUser == null) {
+        throw Exception('Failed to authenticate phone number with Firebase.');
+      }
 
-        if (response.statusCode == 200) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phone number linked successfully!')));
-            
-            context.pop(); // Go back to wallet
-          }
-        } else {
-          final data = jsonDecode(response.body);
-          throw Exception(data['error'] ?? 'Failed to sync phone number');
+      final phoneIdToken = await phoneUser.getIdToken();
+      
+      // Sync with backend using the phone ID token
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token') ?? '';
+      
+      final response = await http.post(
+        Uri.parse('${AuthService.baseUrl}/user/sync-phone'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'phoneIdToken': phoneIdToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phone number linked successfully!')));
+          
+          context.pop(); // Go back to wallet
         }
       } else {
-         throw Exception('User is not logged in to Firebase.');
+        final data = jsonDecode(response.body);
+        throw Exception(data['error'] ?? 'Failed to sync phone number');
       }
     } catch (e) {
       if (mounted) {
-        // If error is about credential already in use, they should login instead, but we can just show error.
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
       }
     } finally {
