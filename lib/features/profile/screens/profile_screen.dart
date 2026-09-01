@@ -23,6 +23,10 @@ import 'package:sikkaplay/features/playground/services/playground_service.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
 import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
 
+import 'dart:ui' as ui;
+import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
 import 'package:sikkaplay/shared/models/badge_model.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -48,6 +52,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _showAllGifts = false;
   bool _loadingGifts = false;
   bool _isUploadingAvatar = false;
+  String _appVersion = '';
 
   final List<Map<String, dynamic>> avatarOptions = [
     // Male Avatars (1 to 6)
@@ -72,6 +77,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _loadStats();
     _loadSelectedAvatar();
     _loadPlaygroundGifts();
+    _loadAppVersion();
     
     // Refresh user profile and network silently on entering the profile screen to fetch latest referral count & balance
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -80,6 +86,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ref.read(networkProvider.notifier).fetchNetwork();
       }
     });
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to load app version: $e');
+    }
   }
 
   Future<void> _loadPlaygroundGifts() async {
@@ -1363,6 +1382,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _buildLogoutCard(context, ref),
                       const SizedBox(height: 10),
                       _buildDeleteAccountCard(context, ref),
+                      const SizedBox(height: 24),
+                      if (_appVersion.isNotEmpty)
+                        Center(
+                          child: Text(
+                            'Version $_appVersion',
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
