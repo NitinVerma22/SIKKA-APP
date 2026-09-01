@@ -282,11 +282,11 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
   }
 
   void _watchRewardedAdForLives() {
-    if (!AdService.instance.isRewardedAdLoaded()) {
-      AdService.instance.loadRewardedAd();
+    if (!AdService.instance.isRewardedInterstitialAdLoaded()) {
+      AdService.instance.loadRewardedInterstitialAd();
     }
 
-    AdService.instance.showRewardedAd(
+    AdService.instance.showRewardedInterstitialAd(
       context: context,
       userId: 'arrow_escape_user',
       onAdDismissed: () {},

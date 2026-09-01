@@ -531,11 +531,11 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
   }
 
   void _handleWatchAdForExtraShots() {
-    if (!AdService.instance.isRewardedAdLoaded()) {
-      AdService.instance.loadRewardedAd();
+    if (!AdService.instance.isRewardedInterstitialAdLoaded()) {
+      AdService.instance.loadRewardedInterstitialAd();
     }
 
-    AdService.instance.showRewardedAd(
+    AdService.instance.showRewardedInterstitialAd(
       context: context,
       userId: 'bubble_shooter_user',
       onAdDismissed: () {},

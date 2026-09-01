@@ -104,11 +104,11 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
   }
 
   void _showRewardedAdHelper(VoidCallback onEarned) {
-    if (!AdService.instance.isRewardedAdLoaded()) {
-      AdService.instance.loadRewardedAd();
+    if (!AdService.instance.isRewardedInterstitialAdLoaded()) {
+      AdService.instance.loadRewardedInterstitialAd();
     }
 
-    AdService.instance.showRewardedAd(
+    AdService.instance.showRewardedInterstitialAd(
       context: context,
       userId: 'water_sort_user',
       onAdDismissed: () {},
