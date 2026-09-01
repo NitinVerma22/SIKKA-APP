@@ -486,6 +486,8 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
   }
 
   void _generateQuestion() {
+    if (_isPaused || !mounted) return;
+    
     setState(() {
       _selectedOption = null;
       _isAnswerEvaluated = false;
@@ -620,6 +622,8 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
     GameNotifications.showCoinUpdate(context, 'Timeout! -$timeoutPenalty Sikka', isPenalty: true);
     
     _questionCount++;
+    if (_gullakCoins >= 35) return;
+
     if (_selectedDifficultyMode == 'default' && _questionCount == 12) {
       _showLevelUpDialog('medium');
     } else if (_selectedDifficultyMode == 'default' && _questionCount == 25) {
@@ -691,6 +695,8 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
     }
     
     _questionCount++;
+    if (_gullakCoins >= 35) return;
+
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
         if (_selectedDifficultyMode == 'default' && _questionCount == 12) {
