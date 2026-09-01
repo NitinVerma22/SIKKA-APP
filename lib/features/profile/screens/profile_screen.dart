@@ -358,7 +358,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final userName = userData['name'] ?? 'SikkaPlay User';
     final String rawPhone = userData['phoneNumber'] ?? '';
-    final String userPhone = rawPhone.startsWith('G-') ? 'Google Account' : (rawPhone.isEmpty ? '+91 -' : rawPhone);
+    final String userEmail = userData['email'] ?? '';
+    
+    final String userPhone = rawPhone.startsWith('G-') 
+        ? (userEmail.isNotEmpty ? userEmail : 'Google Account') 
+        : (rawPhone.isEmpty ? '+91 -' : rawPhone);
+        
     final userCity = userData['city'] ?? 'Unknown City';
     final referralCode = userData['referralCode'] ?? 'SIKKA2026';
     final referralCount = userData['referralCount'] ?? networkState.level1.length;
@@ -2701,7 +2706,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     String displayName = player['name'] as String? ?? '';
     if (displayName.trim().isEmpty) {
       final phone = player['phoneNumber'] as String? ?? '';
-      if (phone.length > 4) {
+      final email = player['email'] as String? ?? '';
+
+      if (phone.startsWith('G-')) {
+        if (email.isNotEmpty) {
+          final parts = email.split('@');
+          if (parts.length == 2 && parts[0].isNotEmpty) {
+            final prefix = parts[0];
+            final maskedPrefix = prefix.length > 2 
+              ? '${prefix.substring(0, 2)}***' 
+              : '${prefix[0]}***';
+            displayName = '$maskedPrefix@${parts[1]}';
+          } else {
+            displayName = email;
+          }
+        } else {
+          displayName = 'Google Account';
+        }
+      } else if (phone.length > 4) {
         displayName = '${phone.substring(0, phone.length - 4)}****';
       } else {
         displayName = phone.isNotEmpty ? phone : context.tr('sikkaplay_user', selectedLanguage);
