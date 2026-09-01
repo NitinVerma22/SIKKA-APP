@@ -10,6 +10,7 @@ import 'package:sikkaplay/core/config/app_config.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 
 class LinkPhoneScreen extends ConsumerStatefulWidget {
   const LinkPhoneScreen({super.key});
@@ -83,31 +84,17 @@ class _LinkPhoneScreenState extends ConsumerState<LinkPhoneScreen> {
       }
 
       final phoneIdToken = await phoneUser.getIdToken();
+      if (phoneIdToken == null) {
+        throw Exception('Could not retrieve phone authentication token.');
+      }
       
-      // Sync with backend using the phone ID token
-      const secureStorage = FlutterSecureStorage();
-      final token = await secureStorage.read(key: 'jwt_token') ?? '';
+      // Sync with backend using the phone ID token via UserService
+      await ref.read(userServiceProvider).syncPhone(phoneIdToken);
       
-      final response = await http.post(
-        Uri.parse(AuthService.baseUrl.replaceAll('/auth', '/user/sync-phone')),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'phoneIdToken': phoneIdToken,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phone number linked successfully!')));
-          
-          context.pop(); // Go back to wallet
-        }
-      } else {
-        final data = jsonDecode(response.body);
-        throw Exception(data['error'] ?? 'Failed to sync phone number');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phone number linked successfully!')));
+        
+        context.pop(); // Go back to wallet
       }
     } catch (e) {
       if (mounted) {

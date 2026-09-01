@@ -409,6 +409,25 @@ class UserService {
     }
   }
 
+  Future<bool> syncPhone(String phoneIdToken) async {
+    try {
+      final response = await _sendRequest('POST', '/sync-phone', body: {
+        'phoneIdToken': phoneIdToken,
+      });
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        final data = jsonDecode(response.body);
+        throw Exception(data['error'] ?? 'Failed to sync phone number');
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Network error: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> updateProfileDetails({String? name, String? username, String? gender, String? city}) async {
     try {
       final body = <String, dynamic>{};

@@ -451,6 +451,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 _buildAnnouncementBar(context, selectedLanguage),
                 const SizedBox(height: AppSizes.lg),
 
+                if (configState.config?['showVideoTutorialBar'] ?? true)
+                  _buildVideoTutorialBar(context, selectedLanguage),
+                if (configState.config?['showVideoTutorialBar'] ?? true)
+                  const SizedBox(height: AppSizes.lg),
+
                 // 2. Daily Streak Widget (Restored at the top)
                 const DailyStreakWidget(),
                 const SizedBox(height: AppSizes.lg),
@@ -762,6 +767,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVideoTutorialBar(BuildContext context, String selectedLanguage) {
+    return GestureDetector(
+      onTap: () => context.push('/home/video_tutorials'),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE52D27), Color(0xFFB31217)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFE52D27).withValues(alpha: 0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.play_circle_fill, color: Colors.white, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'How to use Sikka Play',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    'Watch video to learn',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+          ],
         ),
       ),
     );
