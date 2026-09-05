@@ -20,9 +20,10 @@ class TapjoyService {
     'TAPJOY_PLACEMENT',
     defaultValue: 'earn_coins',
   );
+  // Tapjoy SikkaPlay virtual currency ID confirmed by the publisher dashboard.
   static const String currencyId = String.fromEnvironment(
     'TAPJOY_CURRENCY_ID',
-    defaultValue: '',
+    defaultValue: '13f7c34e-9484-43ee-9e82-cd1330940992',
   );
 
   String? _initializedTapjoyUserId;
