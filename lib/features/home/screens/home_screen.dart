@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sikkaplay/core/animations/custom_animations.dart';
@@ -61,7 +66,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(appConfigProvider.notifier).fetchConfig();
       _preloadAllData();
+      _requestPermissions();
     });
+  }
+
+  Future<void> _requestPermissions() async {
+    try {
+      // 1. Core notification permissions (Android 13+ / iOS)
+      await Permission.notification.request();
+      await FirebaseMessaging.instance.requestPermission();
+      
+      // 2. Safely prompt FCM setup permissions
+      final FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      await androidImplementation?.requestNotificationsPermission();
+
+      // 3. Storage/Photos permissions as originally configured
+      if (Platform.isAndroid) {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        if (androidInfo.version.sdkInt >= 33) {
+          await Permission.photos.request();
+        } else {
+          await Permission.storage.request();
+        }
+      } else {
+        await Permission.photos.request();
+      }
+    } catch (e) {
+      debugPrint('Error requesting permissions on home screen: $e');
+    }
   }
 
   @override

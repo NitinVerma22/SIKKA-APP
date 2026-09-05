@@ -284,9 +284,9 @@ Future<void> _initializeServices() async {
             
     await androidImplementation?.createNotificationChannel(channel);
     
-    // Request permission safely (requires active Activity attached)
-    await androidImplementation?.requestNotificationsPermission();
-    await FirebaseMessaging.instance.requestPermission();
+    // Permissions are now requested on the Home Screen instead of startup
+    // await androidImplementation?.requestNotificationsPermission();
+    // await FirebaseMessaging.instance.requestPermission();
 
     // Handle foreground notifications
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -370,7 +370,7 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
 
   Future<void> _requestPermissions() async {
     try {
-      await Permission.notification.request();
+      // await Permission.notification.request(); // Moved to Home Screen
       if (Platform.isAndroid) {
         final androidInfo = await DeviceInfoPlugin().androidInfo;
         if (androidInfo.version.sdkInt >= 33) {

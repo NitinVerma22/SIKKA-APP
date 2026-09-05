@@ -447,10 +447,12 @@ class UserService {
     }
   }
 
-  Future<bool> requestWithdrawal(int coinsAmount, String upiId, {String earningType = 'self', String? optionId}) async {
+  Future<bool> requestWithdrawal(int coinsAmount, String upiId, String name, String phone, {String earningType = 'self', String? optionId}) async {
     final response = await _sendRequest('POST', '/withdraw', body: {
       'amount': coinsAmount,
       'upiId': upiId,
+      'name': name,
+      'phone': phone,
       'earningType': earningType,
       'withdrawalOptionId': optionId,
     });
