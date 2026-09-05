@@ -2,29 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/constants/app_sizes.dart';
-import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
-import 'package:sikkaplay/core/user/user_service.dart';
-
-class AppOfferItem {
-  final String id;
-  final String title;
-  final String description;
-  final String size;
-  final int rewardAmount;
-  final IconData icon;
-  final Color iconBg;
-
-  AppOfferItem({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.size,
-    required this.rewardAmount,
-    required this.icon,
-    required this.iconBg,
-  });
-}
+import 'package:sikkaplay/features/rewards/services/tapjoy_service.dart';
 
 class AppInstallScreen extends ConsumerStatefulWidget {
   const AppInstallScreen({super.key});
@@ -34,193 +13,77 @@ class AppInstallScreen extends ConsumerStatefulWidget {
 }
 
 class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
-  final Set<String> _completedOffers = {};
-  String? _installingAppId;
-
-  final List<AppOfferItem> _offers = [];
-  bool _isLoading = true;
+  bool _openingOfferwall = false;
 
   @override
   void initState() {
     super.initState();
-    _loadOffers();
-  }
-
-  Future<void> _loadOffers() async {
-    setState(() {
-      _isLoading = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeTapjoy();
     });
-
-    final res = await UserService().getAppInstallOffers();
-    if (res != null && res['success'] == true) {
-      final List<dynamic> rawOffers = res['offers'] ?? [];
-      final List<dynamic> completedIds = res['completedOfferIds'] ?? [];
-
-      _offers.clear();
-      for (final o in rawOffers) {
-        _offers.add(AppOfferItem(
-          id: o['offerId'] as String,
-          title: o['title'] as String,
-          description: o['description'] as String,
-          size: o['size'] as String,
-          rewardAmount: o['rewardAmount'] as int,
-          icon: _getIconData(o['iconName'] as String),
-          iconBg: _getColor(o['iconBg'] as String),
-        ));
-      }
-
-      _completedOffers.clear();
-      for (final id in completedIds) {
-        _completedOffers.add(id as String);
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
-  IconData _getIconData(String iconName) {
-    switch (iconName) {
-      case 'currency_bitcoin':
-        return Icons.currency_bitcoin;
-      case 'account_balance':
-        return Icons.account_balance;
-      case 'send_rounded':
-        return Icons.send_rounded;
-      case 'payments':
-        return Icons.payments;
-      case 'business_center':
-        return Icons.business_center;
-      default:
-        return Icons.apps_rounded;
-    }
+  Future<void> _initializeTapjoy() async {
+    final userId = ref.read(userProvider).userData?['id']?.toString();
+    if (userId == null || userId.isEmpty) return;
+    await TapjoyService.instance.initialize(userId);
   }
 
-  Color _getColor(String hexColor) {
+  Future<void> _openOfferwall() async {
+    if (_openingOfferwall) return;
+
+    final userState = ref.read(userProvider);
+    final userId = userState.userData?['id']?.toString();
+    final balance = (userState.userData?['balance'] as num?)?.toInt() ?? 0;
+
+    if (userId == null || userId.isEmpty) {
+      _showMessage('Please wait for your profile to load.');
+      return;
+    }
+
+    if (!TapjoyService.instance.isConfigured) {
+      _showMessage('Offerwall is not configured in this build yet.');
+      return;
+    }
+
+    setState(() => _openingOfferwall = true);
+
     try {
-      final hex = hexColor.replaceAll('#', '');
-      return Color(int.parse('FF$hex', radix: 16));
-    } catch (_) {
-      return Colors.blue;
-    }
-  }
+      final initialized = await TapjoyService.instance.initialize(userId);
+      if (!initialized) {
+        _showMessage('Unable to connect to offers. Please try again.');
+        return;
+      }
 
-  void _startDownload(AppOfferItem offer) async {
-    if (_completedOffers.contains(offer.id) || _installingAppId != null) return;
+      final opened = await TapjoyService.instance.showOfferwall(
+        currentBalance: balance,
+      );
 
-    setState(() {
-      _installingAppId = offer.id;
-    });
-
-    // Simulate download flow
-    await _showDownloadProgressDialog(offer);
-
-    if (mounted) {
-      setState(() {
-        _installingAppId = null;
-        _completedOffers.add(offer.id);
-      });
-
-      // Claim reward
-      ref.read(homeProvider.notifier).claimSurvey('Installed ${offer.title}', offer.rewardAmount);
-      await ref.read(userProvider.notifier).claimReward(offer.rewardAmount, 'app_install', 'Installed & verified ${offer.title}');
-
+      if (!opened) {
+        _showMessage('Offers are temporarily unavailable. Please try again later.');
+      }
+    } finally {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Offer verified! Earned ${offer.rewardAmount} coins.'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        setState(() => _openingOfferwall = false);
       }
     }
   }
 
-  Future<void> _showDownloadProgressDialog(AppOfferItem offer) async {
-    double progress = 0.0;
-    String statusText = 'Starting download...';
-
-    return showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            Future.delayed(const Duration(milliseconds: 300), () {
-              if (progress < 1.0) {
-                setStateDialog(() {
-                  progress += 0.1;
-                  if (progress >= 1.0) {
-                    statusText = 'Verifying installation...';
-                    Future.delayed(const Duration(seconds: 1), () {
-                      if (context.mounted) Navigator.of(context).pop();
-                    });
-                  } else if (progress > 0.7) {
-                    statusText = 'Installing...';
-                  } else {
-                    statusText = 'Downloading... ${(progress * 100).toInt()}%';
-                  }
-                });
-              }
-            });
-
-            return AlertDialog(
-              backgroundColor: const Color(0xFF1E1E2E),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: 70,
-                    height: 70,
-                    child: CircularProgressIndicator(
-                      value: progress.clamp(0.0, 1.0),
-                      strokeWidth: 6,
-                      backgroundColor: Colors.white10,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    statusText,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    offer.title,
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _openInstalledApp(AppOfferItem offer) {
+  void _showMessage(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.rocket_launch_rounded, color: Colors.white),
-            const SizedBox(width: 8),
-            Text('Opening ${offer.title}... 🚀'),
-          ],
-        ),
-        backgroundColor: AppColors.success,
-        duration: const Duration(seconds: 2),
+        content: Text(message),
+        backgroundColor: AppColors.textPrimary,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(userProvider);
+    final balance = (userState.userData?['balance'] as num?)?.toInt() ?? 0;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -228,164 +91,202 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
         elevation: 0.5,
         title: const Text(
           'Install Apps & Earn',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : _offers.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No offers available at the moment.',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(userProvider.notifier).refresh(silent: true);
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(AppSizes.lg),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.18),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
                   ),
-                )
-              : ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.all(AppSizes.md),
-                  itemCount: _offers.length,
-        itemBuilder: (context, index) {
-          final offer = _offers[index];
-          final isCompleted = _completedOffers.contains(offer.id);
-          final isDownloading = _installingAppId == offer.id;
-
-          return Card(
-            elevation: 0,
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: AppColors.borderLight, width: 1),
-            ),
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // App Icon
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: offer.iconBg.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(offer.icon, color: offer.iconBg, size: 32),
+                  const Icon(
+                    Icons.workspace_premium_rounded,
+                    color: Colors.white,
+                    size: 42,
                   ),
-                  const SizedBox(width: 16),
-                  // App details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Earn More Coins',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 25,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Complete app installs, game milestones and other partner offers to earn Sikka Coins.',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.88),
+                      height: 1.45,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                offer.title,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: isCompleted ? AppColors.textSecondary : AppColors.textPrimary,
-                                  decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              offer.size,
-                              style: const TextStyle(color: AppColors.textLight, fontSize: 11),
-                            ),
-                          ],
+                        const Icon(
+                          Icons.account_balance_wallet_rounded,
+                          color: Colors.white,
+                          size: 20,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(width: 8),
                         Text(
-                          offer.description,
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        // Claim Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'NEW USER ONLY',
-                            style: TextStyle(color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.bold),
+                          'Current balance: $balance coins',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // Install Button
-                  GestureDetector(
-                    onTap: isDownloading
-                        ? null
-                        : isCompleted
-                            ? () => _openInstalledApp(offer)
-                            : () => _startDownload(offer),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        gradient: isDownloading ? null : AppColors.primaryGradient,
-                        color: isDownloading ? Colors.grey.shade200 : null,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: isDownloading
-                            ? null
-                            : [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(alpha: 0.24),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                )
-                              ],
-                      ),
-                      child: isDownloading
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _openingOfferwall ? null : _openOfferwall,
+                      icon: _openingOfferwall
                           ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                              ),
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : isCompleted
-                              ? const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Go',
-                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Icon(Icons.open_in_new_rounded, color: Colors.white, size: 12),
-                                  ],
-                                )
-                              : Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '+${offer.rewardAmount}',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                                    ),
-                                    const SizedBox(width: 2),
-                                    const Icon(Icons.monetization_on, color: AppColors.yellowGlow, size: 12),
-                                  ],
-                                ),
+                          : const Icon(Icons.local_offer_rounded),
+                      label: Text(
+                        _openingOfferwall ? 'Opening Offers...' : 'VIEW OFFERS',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primary,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          );
-        },
+            const SizedBox(height: 24),
+            _infoTile(
+              icon: Icons.install_mobile_rounded,
+              title: 'Install & Try',
+              description: 'Discover partner apps and complete their required actions.',
+            ),
+            _infoTile(
+              icon: Icons.sports_esports_rounded,
+              title: 'Complete Milestones',
+              description: 'Some offers reward you for reaching levels or completing tasks.',
+            ),
+            _infoTile(
+              icon: Icons.verified_rounded,
+              title: 'Verified Rewards',
+              description: 'Rewards are credited after the partner network verifies the completed offer.',
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Rewards may take some time to appear after an offer is completed.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoTile({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.primary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
