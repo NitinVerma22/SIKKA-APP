@@ -5,8 +5,8 @@ import 'package:tapjoy_offerwall/tapjoy_offerwall.dart';
 
 /// SikkaPlay Tapjoy integration for self-managed currency.
 ///
-/// SDK credentials are intentionally supplied at build time with --dart-define
-/// and are not stored in the repository.
+/// Tapjoy configuration is kept as build-time defaults so a normal
+/// `flutter build apk --release` is enough for local/release builds.
 class TapjoyService {
   TapjoyService._();
 
@@ -14,7 +14,7 @@ class TapjoyService {
 
   static const String _sdkKey = String.fromEnvironment(
     'TAPJOY_ANDROID_SDK_KEY',
-    defaultValue: '',
+    defaultValue: 'E_fDTpSEQ-6egs0TMJQJkgECaNhNdJHvrP5Yce3WAmgKVuk0Dslrjo1LbxTg',
   );
   static const String placementName = String.fromEnvironment(
     'TAPJOY_PLACEMENT',
