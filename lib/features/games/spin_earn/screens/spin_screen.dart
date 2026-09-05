@@ -14,6 +14,7 @@ import 'package:sikkaplay/features/games/spin_earn/widgets/spin_wheel.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_banner_ad.dart';
 import 'package:sikkaplay/core/ads/ad_service.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_exit_button.dart';
+import 'package:sikkaplay/features/games/shared/widgets/game_audio_toggle.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
 
 class SpinScreen extends ConsumerStatefulWidget {
@@ -84,13 +85,6 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
 
   void _onSpinUpdate() {
     _currentAngle = _spinAnimation.value;
-
-    final segmentAngle = (2 * pi) / RewardLogic.wheelSlots.length;
-    final currentTickIndex = (_currentAngle / segmentAngle).floor();
-    if (currentTickIndex != _lastTickIndex) {
-      _lastTickIndex = currentTickIndex;
-      GameAudio.playTick();
-    }
   }
 
   void _onSpinStatus(AnimationStatus status) async {
@@ -99,6 +93,8 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
         setState(() {
           _isSpinning = false;
         });
+        
+        GameAudio.playSpinStop();
         
         // Add a tiny delay so the wheel appears to fully stop before the balance updates
         await Future.delayed(const Duration(milliseconds: 500));
@@ -142,6 +138,8 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
       _isSpinning = true;
       _spinsLeft--;
     });
+
+    GameAudio.playSpinStart();
 
     // Record starting time to enforce minimum spin duration
     final startTime = DateTime.now();
@@ -313,6 +311,7 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
 
   @override
   void dispose() {
+    GameAudio.stopAll();
     _gameTimer?.cancel();
     _spinController.dispose();
     super.dispose();
@@ -404,7 +403,7 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(), // Placeholder for removed wallet
+                            const GameAudioToggle(),
                             // Spins Left Display
                             if (_spinsLeft > 0)
                               Container(

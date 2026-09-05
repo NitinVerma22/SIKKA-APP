@@ -11,6 +11,7 @@ import 'package:sikkaplay/features/games/shared/widgets/game_banner_ad.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_exit_button.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_gullak_bar.dart';
+import 'package:sikkaplay/features/games/shared/widgets/game_audio_toggle.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_claim_dialog.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -49,6 +50,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
   int _elapsedSeconds = 0;
   bool _isSessionLoading = true;
   bool _isPaused = false;
+  bool _isWaitingForPlayAgain = false;
   
   bool _isRoundEnding = false;
   bool _isTransitioning = false;
@@ -285,6 +287,8 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
 
   Future<void> _startNewRound() async {
     if (!mounted) return;
+    
+    GameAudio.playEmojiShow();
 
     _allEmojis.shuffle();
     _grid = _allEmojis.take(9).toList();
@@ -339,6 +343,8 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
 
   Future<void> _hideBoardSequentially() async {
     if (!mounted) return;
+    
+    GameAudio.playEmojiHide();
 
     // Sequential flip closed (Right to Left)
     // Column 2: indices 2, 5, 8
@@ -380,7 +386,8 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
     final guessedEmoji = _grid[index];
     
     if (guessedEmoji == _targetEmoji) {
-      GameAudio.playCorrect();
+      GameAudio.playEmojiTap();
+      GameAudio.playEmojiReward();
       
       int reward = 3;
 
@@ -407,7 +414,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
       }
     } else {
       // Wrong!
-      GameAudio.playWrong();
+      GameAudio.playEmojiWrong();
       HapticFeedback.vibrate();
       _shakeController.forward(from: 0.0);
 
@@ -640,6 +647,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
 
   @override
   void dispose() {
+    GameAudio.stopAll();
     _previewTimer?.cancel();
     _gameTimer?.cancel();
     _countdownTimer?.cancel();
@@ -666,8 +674,9 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
           if (mounted) {
             setState(() {
               _sessionCoins = 0;
-              _isPaused = false;
-              _isSessionLoading = true;
+              _isPaused = true;
+              _isWaitingForPlayAgain = true;
+              _isSessionLoading = false;
             });
           }
           WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -681,17 +690,11 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
               if (mounted) {
                 setState(() {
                   _sessionId = session;
-                  _isSessionLoading = false;
                 });
-                _startGame();
               }
               await prefs.setString('saved_session_emoji_memory', session);
               await prefs.setInt('saved_coins_emoji_memory', 0);
               await prefs.setInt('saved_time_emoji_memory', DateTime.now().millisecondsSinceEpoch);
-            } else {
-              if (mounted) {
-                Navigator.of(context).pop();
-              }
             }
           });
         },
@@ -800,10 +803,16 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
                         ),
                       ),
                       // Wallet
-                      GameGullakBar(
-                        currentCoins: _sessionCoins,
-                        maxCoins: 35,
-                        onClaim: _claimGullak,
+                      Row(
+                        children: [
+                          const GameAudioToggle(),
+                          const SizedBox(width: 8),
+                          GameGullakBar(
+                            currentCoins: _sessionCoins,
+                            maxCoins: 35,
+                            onClaim: _claimGullak,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -1011,10 +1020,64 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
                   ),
                 ),
 
-                const SizedBox(height: 16),
-                const GameExitButton(),
-              ],
-            ),
+                  const SizedBox(height: 10),
+                  if (_isWaitingForPlayAgain)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isWaitingForPlayAgain = false;
+                                  _startGame();
+                                  _resumeGame();
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.amberAccent,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text(
+                                'PLAY AGAIN',
+                                style: TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white24,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text(
+                                'EXIT',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    const GameExitButton(),
+                ],
+              ),
           ),
         ),
       ),

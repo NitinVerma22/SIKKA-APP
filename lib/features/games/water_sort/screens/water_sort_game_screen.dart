@@ -7,6 +7,8 @@ import '../services/water_sort_service.dart';
 import '../services/water_sort_audio_service.dart';
 import '../widgets/water_sort_tube_widget.dart';
 import '../widgets/water_sort_pour_overlay.dart';
+import 'package:sikkaplay/features/games/shared/widgets/game_exit_button.dart';
+import 'package:sikkaplay/features/games/shared/widgets/game_audio_toggle.dart';
 import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,6 +81,7 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
   void dispose() {
     _pourController.dispose();
     WaterSortAudioService.instance.stopBgm();
+    WaterSortAudioService.instance.stopPourSfx();
     super.dispose();
   }
 
@@ -375,21 +378,7 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
                           ),
                           tooltip: 'Restart Level',
                         ),
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              WaterSortAudioService.instance.toggleMute();
-                            });
-                          },
-                          icon: Icon(
-                            WaterSortAudioService.instance.isMuted
-                                ? Icons.volume_off_rounded
-                                : Icons.volume_up_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
+                        const GameAudioToggle(),const SizedBox(width: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(

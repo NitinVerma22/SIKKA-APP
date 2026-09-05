@@ -188,6 +188,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const WaterSortLevelSelectScreen(),
       ),
+      GoRoute(
+        path: '/games/bubble_shooter',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const BubbleShooterLevelSelectScreen(),
+      ),
+      GoRoute(
+        path: '/games/arrow_escape',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const ArrowEscapeRootWidget(),
+      ),
       ShellRoute(
         navigatorKey: shellNavigatorKey,
         builder: (context, state, child) {
@@ -243,7 +253,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: 'profile',
-                parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) {
                   final username = state.extra as String? ?? '';
                   return PlaygroundProfileScreen(username: username);
@@ -251,7 +260,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: 'search',
-                parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) => const PlaygroundSearchScreen(),
               ),
             ],
@@ -260,21 +268,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/games',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: GamesHubScreen()),
-          ),
-          GoRoute(
-            path: '/games/water_sort',
-            parentNavigatorKey: rootNavigatorKey,
-            builder: (context, state) => const WaterSortLevelSelectScreen(),
-          ),
-          GoRoute(
-            path: '/games/bubble_shooter',
-            parentNavigatorKey: rootNavigatorKey,
-            builder: (context, state) => const BubbleShooterLevelSelectScreen(),
-          ),
-          GoRoute(
-            path: '/games/arrow_escape',
-            parentNavigatorKey: rootNavigatorKey,
-            builder: (context, state) => const ArrowEscapeRootWidget(),
           ),
           GoRoute(
             path: '/wallet',

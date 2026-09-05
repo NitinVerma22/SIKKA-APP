@@ -10,6 +10,7 @@ import '../services/bubble_shooter_service.dart';
 import '../services/bubble_shooter_audio_service.dart';
 import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
+import 'package:sikkaplay/features/games/shared/widgets/game_audio_toggle.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
 import '../../../../core/user/user_service.dart';
@@ -732,27 +733,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
             ],
           ),
           const Spacer(),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                BubbleShooterAudioService.instance.toggleMute();
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                BubbleShooterAudioService.instance.isMuted
-                    ? Icons.volume_off_rounded
-                    : Icons.volume_up_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-          ),
+          const GameAudioToggle(),
         ],
       ),
     );

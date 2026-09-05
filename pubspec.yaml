@@ -63,12 +63,12 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/audio/spin/
     - assets/audio/water_sort/
     - assets/audio/bubble_shooter/
-    - assets/audio/arrow_escape/
-    - assets/audio/calling.wav
-    - assets/audio/ringing.wav
+    - assets/audio/spin_wheel/
+    - assets/audio/treasure_grid/
+    - assets/audio/emoji_memory/
+    - assets/audio/math_rush/
     - assets/images/
     - assets/images/games_hub/
     - assets/images/bubble_shooter/

@@ -11,6 +11,7 @@ import 'package:sikkaplay/features/games/shared/widgets/game_banner_ad.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_exit_button.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_gullak_bar.dart';
+import 'package:sikkaplay/features/games/shared/widgets/game_audio_toggle.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_claim_dialog.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
@@ -57,6 +58,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
   int _elapsedSeconds = 0;
   bool _isSessionLoading = true;
   bool _isPaused = false;
+  bool _isWaitingForPlayAgain = false;
 
   @override
   void initState() {
@@ -265,6 +267,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
 
   @override
   void dispose() {
+    GameAudio.stopAll();
     _gameTimer?.cancel();
     _countdownTimer?.cancel();
     super.dispose();
@@ -283,10 +286,15 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
       _isRevealed = true;
       _isShuffling = false;
     });
+    
+    GameAudio.playTreasureBlockShow();
 
     // Briefly show the grid, then hide and shuffle
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted || _isPaused || _isTransitioning) return;
+      
+      GameAudio.playTreasureBlockHide();
+      
       setState(() {
         _isRevealed = false;
         _isShuffling = true;
@@ -355,14 +363,14 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
       _picksLeft--;
       
       if (_grid[index].type == TileType.bomb) {
-        GameAudio.playWrong();
+        GameAudio.playTreasureBomb();
         final penalty = _grid[index].coins; // negative value, e.g. -1, -2, -3
         _roundCoins = _roundCoins + penalty;
         _isPerfectStreak = false;
         HapticFeedback.vibrate();
         GameNotifications.showCoinUpdate(context, '$penalty Sikka', isPenalty: true);
       } else {
-        GameAudio.playCorrect();
+        GameAudio.playTreasureCoin();
         final reward = _grid[index].coins;
         _roundCoins += reward;
         // Clamp to prevent exceeding Gullak limit
@@ -578,8 +586,9 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
           if (mounted) {
             setState(() {
               _sessionCoins = 0;
-              _isPaused = false;
-              _isSessionLoading = true;
+              _isPaused = true;
+              _isWaitingForPlayAgain = true;
+              _isSessionLoading = false;
             });
           }
           WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -710,10 +719,16 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
                         ),
                       ),
                       // Wallet
-                      GameGullakBar(
-                        currentCoins: _sessionCoins,
-                        maxCoins: 35,
-                        onClaim: _claimGullak,
+                      Row(
+                        children: [
+                          const GameAudioToggle(),
+                          const SizedBox(width: 8),
+                          GameGullakBar(
+                            currentCoins: _sessionCoins,
+                            maxCoins: 35,
+                            onClaim: _claimGullak,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -847,7 +862,61 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
                   ),
 
                 const SizedBox(height: 8),
-                const GameExitButton(),
+                if (_isWaitingForPlayAgain)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _isWaitingForPlayAgain = false;
+                                _startGame();
+                                _resumeGame();
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amberAccent,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text(
+                              'PLAY AGAIN',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white24,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text(
+                              'EXIT',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  const GameExitButton(),
               ],
             ),
           ),

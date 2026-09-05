@@ -10,6 +10,7 @@ import 'package:sikkaplay/features/games/shared/widgets/game_banner_ad.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_exit_button.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_gullak_bar.dart';
+import 'package:sikkaplay/features/games/shared/widgets/game_audio_toggle.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_claim_dialog.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
@@ -33,6 +34,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
   int _gullakCoins = 0;
   bool _isSessionLoading = true;
   bool _isPaused = false;
+  bool _isWaitingForPlayAgain = false;
 
   String _currentQuestion = '';
   int _correctAnswer = 0;
@@ -604,7 +606,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
   }
 
   void _handleTimeout() {
-    GameAudio.playWrong();
+    GameAudio.playMathWrong();
     int timeoutPenalty = 2;
     if (_selectedDifficultyMode == 'medium') {
       timeoutPenalty = 3;
@@ -645,7 +647,8 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
     _timerController.stop();
 
     if (answer == _correctAnswer) {
-      GameAudio.playCorrect();
+      GameAudio.playMathCorrect();
+      GameAudio.playMathCoinDrop();
       
       int reward = 1;
       if (_selectedDifficultyMode == 'medium') {
@@ -676,7 +679,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
         }
       }
     } else {
-      GameAudio.playWrong();
+      GameAudio.playMathWrong();
       int penalty = 1;
       if (_selectedDifficultyMode == 'medium') {
         penalty = 2;
@@ -778,6 +781,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
 
   void _claimGullak() {
     if (_gullakCoins >= 35) {
+      GameAudio.playMathClaim();
       setState(() {
         _isPaused = true;
       });
@@ -792,33 +796,32 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
         gameName: 'Math Rush',
         coinsEarned: _gullakCoins,
         onClaimCompleted: () {
+          GameAudio.playMathSikkaEarned();
           if (mounted) {
             setState(() {
               _gullakCoins = 0;
-              _isPaused = false;
-              _isSessionLoading = true;
+              _isPaused = true;
+              _isWaitingForPlayAgain = true;
+              _isSessionLoading = false;
             });
           }
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             final prefs = await SharedPreferences.getInstance();
             await prefs.remove('saved_session_math_rush');
             await prefs.remove('saved_coins_math_rush');
+            await prefs.remove('saved_gullak_math_rush');
             await prefs.remove('saved_time_math_rush');
-            await prefs.remove('saved_difficulty_math_rush');
-            await prefs.remove('saved_question_count_math_rush');
-            await prefs.remove('saved_current_level_math_rush');
-
+            
             final session = await ref.read(userServiceProvider).startGameSession('math_rush');
             if (session != null) {
               if (mounted) {
                 setState(() {
                   _sessionId = session;
-                  _isSessionLoading = false;
                 });
-                _startGame();
               }
               await prefs.setString('saved_session_math_rush', session);
               await prefs.setInt('saved_coins_math_rush', 0);
+              await prefs.setInt('saved_gullak_math_rush', 0);
               await prefs.setInt('saved_time_math_rush', DateTime.now().millisecondsSinceEpoch);
             } else {
               if (mounted) {
@@ -852,6 +855,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
 
   @override
   void dispose() {
+    GameAudio.stopAll();
     _questionTimer?.cancel();
     _timerController.dispose();
     _gameTimer?.cancel();
@@ -924,10 +928,16 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       // Wallet
-                      GameGullakBar(
-                        currentCoins: _gullakCoins,
-                        maxCoins: 35,
-                        onClaim: _claimGullak,
+                      Row(
+                        children: [
+                          const GameAudioToggle(),
+                          const SizedBox(width: 8),
+                          GameGullakBar(
+                            currentCoins: _gullakCoins,
+                            maxCoins: 35,
+                            onClaim: _claimGullak,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -1051,9 +1061,63 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
                     },
                   ),
                 ),
-                const SizedBox(height: 10),
-                const GameExitButton(),
-              ],
+                  const SizedBox(height: 10),
+                  if (_isWaitingForPlayAgain)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isWaitingForPlayAgain = false;
+                                  _startGame();
+                                  _resumeGame();
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.amberAccent,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text(
+                                'PLAY AGAIN',
+                                style: TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white24,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text(
+                                'EXIT',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    const GameExitButton(),
+                ],
             ),
           ),
         ),

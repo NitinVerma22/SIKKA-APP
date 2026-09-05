@@ -16,6 +16,7 @@ class AdService {
   bool _isLoadingInterstitial = false;
   DateTime? _rewardedAdLoadTime;
   DateTime? _rewardedInterstitialAdLoadTime;
+  VoidCallback? _currentInterstitialDismissCallback;
   VoidCallback? _currentRewardedDismissCallback;
   VoidCallback? _currentRewardedInterstitialDismissCallback;
 
@@ -159,14 +160,21 @@ class AdService {
     );
 
     if (watchAd == true) {
+      bool rewardEarned = false;
       showRewardedAd(
         context: context,
         userId: userId,
-        onAdDismissed: onUnlocked,
-        onUserEarnedReward: (_) => onUnlocked(),
+        onAdDismissed: () {
+          if (rewardEarned) {
+            onUnlocked();
+          }
+        },
+        onUserEarnedReward: (_) {
+          rewardEarned = true;
+        },
       );
     } else {
-      onUnlocked();
+      // User cancelled dialog, do not unlock
     }
   }
 
@@ -223,14 +231,21 @@ class AdService {
     );
 
     if (watchAd == true) {
+      bool rewardEarned = false;
       showRewardedAd(
         context: context,
         userId: userId,
-        onAdDismissed: onEarned,
-        onUserEarnedReward: (_) => onEarned(),
+        onAdDismissed: () {
+          if (rewardEarned) {
+            onEarned();
+          }
+        },
+        onUserEarnedReward: (_) {
+          rewardEarned = true;
+        },
       );
     } else {
-      onEarned();
+      // User cancelled dialog, do not proceed
     }
   }
 
@@ -546,12 +561,18 @@ class AdService {
             onAdDismissedFullScreenContent: (ad) {
               ad.dispose();
               _interstitialAd = null;
+              final callback = _currentInterstitialDismissCallback;
+              _currentInterstitialDismissCallback = null;
+              callback?.call();
               loadInterstitialAd(customAdUnitId: adUnitId);
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
               debugPrint('AdService: Interstitial ad failed to show: $error');
               ad.dispose();
               _interstitialAd = null;
+              final callback = _currentInterstitialDismissCallback;
+              _currentInterstitialDismissCallback = null;
+              callback?.call();
               loadInterstitialAd(customAdUnitId: adUnitId);
             },
           );
@@ -577,13 +598,16 @@ class AdService {
       return;
     }
 
+    _currentInterstitialDismissCallback = onAdDismissed;
+
     try {
       _interstitialAd!.show();
       UserService().recordAdImpression('interstitial', 'admob');
-      onAdDismissed(); // Trigger callback immediately to not block app user transition flow
     } catch (e) {
       debugPrint('AdService: Error showing interstitial ad: $e');
-      onAdDismissed();
+      final callback = _currentInterstitialDismissCallback;
+      _currentInterstitialDismissCallback = null;
+      callback?.call();
     }
   }
 }

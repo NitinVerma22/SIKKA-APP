@@ -12,8 +12,13 @@ import 'package:sikkaplay/routes/app_router.dart';
 import 'package:flutter/services.dart';
 
 class AuthService {
-  // Centralized Base URL for the backend API.
-  static const String baseUrl = 'https://sikkaplay-backend-834810172223.asia-south1.run.app/api/auth';
+  static const bool isDevelopmentMode = false; // Set to false before building for production
+
+  // Centralized Base URLs for the backend API.
+  static const String liveBaseUrl = 'https://sikkaplay-backend-834810172223.asia-south1.run.app/api/auth';
+  static const String devBaseUrl = 'https://sikkaplay-backend-2.onrender.com/api/auth'; 
+  
+  static const String baseUrl = isDevelopmentMode ? devBaseUrl : liveBaseUrl;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 

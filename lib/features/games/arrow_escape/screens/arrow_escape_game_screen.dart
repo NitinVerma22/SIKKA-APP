@@ -13,6 +13,7 @@ import '../core/audio_haptic_helper.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
 import '../../../../core/user/user_service.dart';
 import '../../shared/utils/game_notifications.dart';
+import 'package:sikkaplay/features/games/shared/widgets/game_audio_toggle.dart';
 
 class NativeArrowEscapeGameScreen extends ConsumerStatefulWidget {
   final int initialLevel;
@@ -416,9 +417,15 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            onPressed: _handleExit,
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22),
+          Row(
+            children: [
+              IconButton(
+                onPressed: _handleExit,
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 8),
+              const GameAudioToggle(),
+            ],
           ),
           Text(
             'LEVEL $_currentLevelNum',

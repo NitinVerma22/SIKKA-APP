@@ -1,21 +1,21 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:sikkaplay/features/games/shared/audio/game_audio.dart';
 
 class ArrowEscapeAudioService {
   static final ArrowEscapeAudioService instance = ArrowEscapeAudioService._internal();
   ArrowEscapeAudioService._internal();
 
   final AudioPlayer _sfxPlayer = AudioPlayer();
-  bool _isMuted = false;
 
-  bool get isMuted => _isMuted;
+  bool get isMuted => GameAudio.isMuted.value;
 
   void toggleMute() {
-    _isMuted = !_isMuted;
+    GameAudio.toggleMute();
   }
 
   Future<void> playTapSfx() async {
-    if (_isMuted) return;
+    if (isMuted) return;
     try {
       await _sfxPlayer.stop();
       await _sfxPlayer.play(AssetSource('audio/spin/tick.mp3'), volume: 0.4);
@@ -25,7 +25,7 @@ class ArrowEscapeAudioService {
   }
 
   Future<void> playEscapeSfx() async {
-    if (_isMuted) return;
+    if (isMuted) return;
     try {
       await _sfxPlayer.stop();
       await _sfxPlayer.play(AssetSource('audio/spin/tick.mp3'), volume: 0.7);
@@ -35,7 +35,7 @@ class ArrowEscapeAudioService {
   }
 
   Future<void> playCollisionSfx() async {
-    if (_isMuted) return;
+    if (isMuted) return;
     try {
       await _sfxPlayer.stop();
       await _sfxPlayer.play(AssetSource('audio/spin/tick.mp3'), volume: 0.3);
