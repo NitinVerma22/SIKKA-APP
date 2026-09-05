@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:tapjoy_offerwall/tapjoy_offerwall.dart';
 
@@ -26,7 +28,7 @@ class TapjoyService {
   String? _initializedTapjoyUserId;
   Future<bool>? _initializing;
 
-  bool get isConfigured => _sdkKey.trim().isNotEmpty;
+  bool get isConfigured => Platform.isAndroid && _sdkKey.trim().isNotEmpty;
 
   /// Converts SikkaPlay's UUID user ID into the numeric, stable Tapjoy user ID
   /// required by self-managed currency. The mapping is reversible on the server.
@@ -49,6 +51,11 @@ class TapjoyService {
   }
 
   Future<bool> _initializeInternal(String sikkaUserId) async {
+    if (!Platform.isAndroid) {
+      debugPrint('[Tapjoy] Android integration only; skipping on this platform.');
+      return false;
+    }
+
     if (!isConfigured) {
       debugPrint('[Tapjoy] SDK key not configured; integration is disabled.');
       return false;
