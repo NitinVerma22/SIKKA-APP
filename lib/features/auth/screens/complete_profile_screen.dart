@@ -19,6 +19,7 @@ class CompleteProfileScreen extends ConsumerStatefulWidget {
 
 class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
   final _usernameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _cityController = TextEditingController();
   final _referralController = TextEditingController();
   String? _selectedGender;
@@ -33,6 +34,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
   @override
   void dispose() {
     _usernameController.dispose();
+    _phoneController.dispose();
     _cityController.dispose();
     _referralController.dispose();
     _debounceTimer?.cancel();
@@ -95,10 +97,11 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
   void _submitProfile() async {
     final selectedLanguage = ref.read(languageProvider);
     final username = _usernameController.text.trim();
+    final phone = _phoneController.text.trim();
 
-    if (username.isEmpty || _cityController.text.isEmpty || _selectedGender == null) {
+    if (username.isEmpty || phone.isEmpty || _cityController.text.isEmpty || _selectedGender == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username, City and Gender are required')),
+        const SnackBar(content: Text('Username, Phone Number, City and Gender are required')),
       );
       return;
     }
@@ -117,11 +120,13 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
 
     final result = await _authService.completeGoogleSignup(
       firebaseUid: widget.userData['firebaseUid'],
+      email: widget.userData['email'],
       name: widget.userData['name'] ?? '',
-      city: _cityController.text,
+      city: _cityController.text.trim(),
       gender: _selectedGender!,
       username: username,
-      referralCode: _referralController.text.isNotEmpty ? _referralController.text : null,
+      referredBy: _referralController.text.trim(),
+      phoneNumber: phone,
     );
 
     setState(() => _isLoading = false);
@@ -204,6 +209,15 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                     },
                   ),
                 ),
+              ),
+              const SizedBox(height: 20),
+
+              // Phone Number
+              _buildInputField(
+                controller: _phoneController,
+                hint: 'Phone Number',
+                icon: Icons.phone,
+                keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 20),
 
