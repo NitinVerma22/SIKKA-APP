@@ -51,7 +51,10 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
     try {
       final initialized = await TapjoyService.instance.initialize(userId);
       if (!initialized) {
-        _showMessage('Unable to connect to offers. Please try again.');
+        final service = TapjoyService.instance;
+        final code = service.lastConnectCode;
+        final error = service.lastConnectError ?? 'Unknown connection failure';
+        _showMessage('Tapjoy connection failed${code == null ? '' : ' ($code)'}: $error');
         return;
       }
 
@@ -60,7 +63,7 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
       );
 
       if (!opened) {
-        _showMessage('Offers are temporarily unavailable. Please try again later.');
+        _showMessage('Tapjoy could not request the Offerwall. Check Tapjoy logs for the placement error.');
       }
     } finally {
       if (mounted) {
@@ -75,6 +78,7 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.textPrimary,
+        duration: const Duration(seconds: 8),
       ),
     );
   }
@@ -150,28 +154,18 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
                   ),
                   const SizedBox(height: 20),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.account_balance_wallet_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
+                        const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
                         const SizedBox(width: 8),
                         Text(
                           'Current balance: $balance coins',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
@@ -188,17 +182,13 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.local_offer_rounded),
-                      label: Text(
-                        _openingOfferwall ? 'Opening Offers...' : 'VIEW OFFERS',
-                      ),
+                      label: Text(_openingOfferwall ? 'Opening Offers...' : 'VIEW OFFERS'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: AppColors.primary,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
                   ),
@@ -225,10 +215,7 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
             const Text(
               'Rewards may take some time to appear after an offer is completed.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ],
         ),
@@ -236,11 +223,7 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
     );
   }
 
-  Widget _infoTile({
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
+  Widget _infoTile({required IconData icon, required String title, required String description}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -266,23 +249,9 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
-                ),
+                Text(title, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 14)),
                 const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    height: 1.35,
-                    fontSize: 12,
-                  ),
-                ),
+                Text(description, style: const TextStyle(color: AppColors.textSecondary, height: 1.35, fontSize: 12)),
               ],
             ),
           ),
