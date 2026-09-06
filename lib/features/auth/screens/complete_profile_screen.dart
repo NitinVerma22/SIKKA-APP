@@ -125,7 +125,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
       city: _cityController.text.trim(),
       gender: _selectedGender!,
       username: username,
-      referredBy: _referralController.text.trim(),
+      referralCode: _referralController.text.trim(),
       phoneNumber: phone,
     );
 
