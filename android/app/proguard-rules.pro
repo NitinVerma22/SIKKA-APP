@@ -9,6 +9,7 @@
 
 # Tapjoy SDK Proguard Rules
 -keep class com.tapjoy.** { *; }
+-keep class com.tapjoy.flutter.** { *; }
 -keep class com.moat.** { *; }
 -keepattributes JavascriptInterface
 -keepattributes *Annotation*
