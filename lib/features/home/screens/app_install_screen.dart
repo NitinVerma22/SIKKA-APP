@@ -63,7 +63,12 @@ class _AppInstallScreenState extends ConsumerState<AppInstallScreen> {
       );
 
       if (!opened) {
-        _showMessage('Tapjoy could not request the Offerwall. Check Tapjoy logs for the placement error.');
+        final error = TapjoyService.instance.lastPlacementError;
+        _showMessage(
+          error == null || error.isEmpty
+              ? 'Tapjoy could not request the Offerwall. Check Tapjoy logs.'
+              : 'Tapjoy Offerwall error: $error',
+        );
       }
     } finally {
       if (mounted) {
