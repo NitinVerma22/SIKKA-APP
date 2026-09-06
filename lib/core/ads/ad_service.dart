@@ -12,6 +12,7 @@ class AdService {
   bool _isInitialized = false;
   RewardedAd? _rewardedAd;
   InterstitialAd? _interstitialAd;
+  DateTime? _interstitialShowTime;
   bool _isLoadingRewarded = false;
   bool _isLoadingInterstitial = false;
   DateTime? _rewardedAdLoadTime;
@@ -563,6 +564,13 @@ class AdService {
               _interstitialAd = null;
               final callback = _currentInterstitialDismissCallback;
               _currentInterstitialDismissCallback = null;
+
+              if (_interstitialShowTime != null && DateTime.now().difference(_interstitialShowTime!).inSeconds < 2) {
+                debugPrint('AdService: Interstitial skipped too quickly. Not advancing.');
+                loadInterstitialAd(customAdUnitId: adUnitId);
+                return;
+              }
+
               callback?.call();
               loadInterstitialAd(customAdUnitId: adUnitId);
             },
@@ -601,6 +609,7 @@ class AdService {
     _currentInterstitialDismissCallback = onAdDismissed;
 
     try {
+      _interstitialShowTime = DateTime.now();
       _interstitialAd!.show();
       UserService().recordAdImpression('interstitial', 'admob');
     } catch (e) {

@@ -132,15 +132,17 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final userData = ref.read(userProvider).userData ?? {};
     final savedUpiId = userData['upiId'] as String?;
     final savedName = userData['name'] as String?;
+    final savedPhone = userData['phone'] as String? ?? userData['phoneNumber'] as String?;
 
     final appConfig = ref.read(appConfigProvider).config;
     final minLimit = appConfig?['minWithdrawalLimit'] as int? ?? 5000;
-
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.radiusXl)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return Padding(
@@ -151,10 +153,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             earningType: earningType,
             initialUpiId: savedUpiId,
             initialName: savedName,
+            initialPhone: savedPhone,
             minWithdrawalLimit: minLimit,
             withdrawalNotice: notice,
             showWithdrawalPackages: _showWithdrawalPackages,
-            onWithdraw: (coinsAmount, netRupees, cashbackCoins, upiId, name, optionId) async {
+            onWithdraw: (coinsAmount, netRupees, cashbackCoins, upiId, name, phone, optionId) async {
               if (savedUpiId == null || savedUpiId.isEmpty) {
                 await ref.read(userProvider.notifier).updateUpi(upiId);
               }
@@ -162,6 +165,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 coinsAmount,
                 upiId,
                 name,
+                phone,
                 earningType: earningType,
                 optionId: optionId,
               );
@@ -1450,10 +1454,11 @@ class WithdrawalSheetContent extends StatefulWidget {
   final String earningType;
   final String? initialUpiId;
   final String? initialName;
+  final String? initialPhone;
   final int minWithdrawalLimit;
   final String withdrawalNotice;
   final bool showWithdrawalPackages;
-  final Future<bool> Function(int coinsAmount, int netRupees, int cashbackCoins, String upiId, String name, String? optionId) onWithdraw;
+  final Future<bool> Function(int coinsAmount, int netRupees, int cashbackCoins, String upiId, String name, String phone, String? optionId) onWithdraw;
 
   const WithdrawalSheetContent({
     super.key,
@@ -1462,6 +1467,7 @@ class WithdrawalSheetContent extends StatefulWidget {
     required this.earningType,
     this.initialUpiId,
     this.initialName,
+    this.initialPhone,
     required this.minWithdrawalLimit,
     required this.withdrawalNotice,
     required this.showWithdrawalPackages,
@@ -1476,6 +1482,7 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
   int? _selectedOptionIndex = 0; // Default first option
   final _upiController = TextEditingController();
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _manualCoinsController = TextEditingController();
   bool _isProcessing = false;
 
@@ -1484,6 +1491,7 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
     super.initState();
     _upiController.text = widget.initialUpiId ?? '';
     _nameController.text = widget.initialName ?? '';
+    _phoneController.text = widget.initialPhone ?? '';
     if (widget.options.isEmpty || !widget.showWithdrawalPackages) {
       _selectedOptionIndex = null;
     }
@@ -1493,12 +1501,14 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
   void dispose() {
     _upiController.dispose();
     _nameController.dispose();
+    _phoneController.dispose();
     _manualCoinsController.dispose();
     super.dispose();
   }
 
   void _showEditUpiDialog() {
     final tempUpiController = TextEditingController(text: _upiController.text);
+    final tempPhoneController = TextEditingController(text: _phoneController.text);
     final tempNameController = TextEditingController(
       text: _nameController.text.isNotEmpty
           ? _nameController.text
@@ -1515,6 +1525,20 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              TextField(
+                controller: tempPhoneController,
+                style: GoogleFonts.outfit(color: Colors.white),
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  labelStyle: GoogleFonts.outfit(color: const Color(0xFF94A3B8)),
+                  hintText: 'Enter your phone number',
+                  hintStyle: GoogleFonts.outfit(color: const Color(0xFF64748B)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF8B5CF6))),
+                ),
+              ),
+              const SizedBox(height: 16),
               TextField(
                 controller: tempNameController,
                 style: GoogleFonts.outfit(color: Colors.white),
@@ -1556,6 +1580,7 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
               onPressed: () {
                 setState(() {
                   _nameController.text = tempNameController.text.trim();
+                  _phoneController.text = tempPhoneController.text.trim();
                   _upiController.text = tempUpiController.text.trim();
                 });
                 Navigator.pop(dialogCtx);
@@ -1624,11 +1649,15 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
         ? _nameController.text.trim()
         : ((widget.initialName != null && widget.initialName!.isNotEmpty) ? widget.initialName! : 'Sikka User');
 
+    final phone = _phoneController.text.trim().isNotEmpty
+        ? _phoneController.text.trim()
+        : ((widget.initialPhone != null && widget.initialPhone!.isNotEmpty) ? widget.initialPhone! : 'Not Provided');
+
     final feeRupees = totalRupees - netRupees;
-    _showReceiptModal(amountCoins, totalRupees, feeRupees, netRupees, cashbackCoins, upiId, name, selectedOptionId);
+    _showReceiptModal(amountCoins, totalRupees, feeRupees, netRupees, cashbackCoins, upiId, name, phone, selectedOptionId);
   }
 
-  void _showReceiptModal(int coins, int totalRupees, int feeRupees, int netRupees, int cashbackCoins, String upiId, String name, String? optionId) {
+  void _showReceiptModal(int coins, int totalRupees, int feeRupees, int netRupees, int cashbackCoins, String upiId, String name, String phone, String? optionId) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -1716,7 +1745,7 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
                 text: 'CONFIRM & TRANSFER',
                 onTap: () {
                   Navigator.pop(modalContext);
-                  _executeFinalWithdraw(coins, netRupees, cashbackCoins, upiId, name, optionId);
+                  _executeFinalWithdraw(coins, netRupees, cashbackCoins, upiId, name, phone, optionId);
                 },
               ),
             ],
@@ -1726,13 +1755,13 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
     );
   }
 
-  void _executeFinalWithdraw(int coins, int netRupees, int cashbackCoins, String upiId, String name, String? optionId) async {
+  void _executeFinalWithdraw(int coins, int netRupees, int cashbackCoins, String upiId, String name, String phone, String? optionId) async {
     setState(() {
       _isProcessing = true;
     });
 
     try {
-      await widget.onWithdraw(coins, netRupees, cashbackCoins, upiId, name, optionId);
+      await widget.onWithdraw(coins, netRupees, cashbackCoins, upiId, name, phone, optionId);
     } catch (e) {
       if (mounted) {
         if (e.toString().contains('PHONE_VERIFICATION_REQUIRED')) { Navigator.of(context).pop(); context.push('/link-phone'); } else { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'))); }

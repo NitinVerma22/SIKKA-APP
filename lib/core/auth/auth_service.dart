@@ -331,10 +331,12 @@ class AuthService {
 
   Future<Map<String, dynamic>> completeGoogleSignup({
     required String firebaseUid,
+    String? email,
     required String name,
     required String city,
     required String gender,
     required String username,
+    required String phoneNumber,
     String? referralCode,
   }) async {
     try {
@@ -344,10 +346,12 @@ class AuthService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'firebaseUid': firebaseUid,
+          'email': email,
           'name': name,
           'city': city,
           'gender': gender,
           'username': username,
+          'phoneNumber': phoneNumber,
           'referredBy': referralCode,
           'deviceId': deviceId,
         }),
