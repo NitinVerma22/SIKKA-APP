@@ -105,9 +105,10 @@ class WaterSortService {
     required int levelNumber,
     required int stars,
     required int movesCount,
+    required int multiplier,
     String? sessionId,
   }) async {
-    final int coinsEarned = levelNumber <= 25 ? levelNumber * 2 : levelNumber + 25;
+    final int coinsEarned = levelNumber * multiplier;
     try {
       final headers = await _getHeaders();
       final res = await http.post(

@@ -469,6 +469,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
       levelNumber: widget.levelNumber,
       stars: 3,
       score: score,
+      multiplier: widget.multiplier,
       sessionId: _sessionId,
     );
 

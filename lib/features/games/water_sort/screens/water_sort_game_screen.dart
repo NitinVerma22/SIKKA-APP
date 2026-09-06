@@ -302,6 +302,7 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
       levelNumber: widget.levelNumber,
       stars: stars,
       movesCount: _gameState.movesCount,
+      multiplier: widget.multiplier,
       sessionId: _sessionId,
     );
 
