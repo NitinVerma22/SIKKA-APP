@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -69,6 +70,10 @@ class TapjoyService {
     }
 
     try {
+      final completer = Completer<bool>();
+      
+      await Tapjoy.setLoggingLevel(TJLoggingLevel.debug);
+
       await Tapjoy.connect(
         sdkKey: _sdkKey,
         options: <String, dynamic>{
@@ -76,16 +81,32 @@ class TapjoyService {
         },
         onConnectSuccess: () {
           debugPrint('[Tapjoy] Connected for user $tapjoyUserId');
+          if (!completer.isCompleted) completer.complete(true);
         },
         onConnectWarning: (code, warning) {
           debugPrint('[Tapjoy] Connect warning $code: $warning');
         },
         onConnectFailure: (code, error) {
           debugPrint('[Tapjoy] Connect failure $code: $error');
+          if (!completer.isCompleted) completer.complete(false);
         },
       );
 
-      if (!await Tapjoy.isConnected()) {
+      bool connected = false;
+      for (int i = 0; i < 20; i++) {
+        if (await Tapjoy.isConnected()) {
+          connected = true;
+          break;
+        }
+        if (completer.isCompleted) {
+          connected = await completer.future;
+          break;
+        }
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      if (!connected) {
+        debugPrint('[Tapjoy] Connection timed out or failed.');
         return false;
       }
 
@@ -134,20 +155,27 @@ class TapjoyService {
         },
       );
 
+      
+      
+
+      if (placement == null) {
+        debugPrint('[Tapjoy] Placement is null');
+        return false;
+      }
+
       if (currencyId.trim().isNotEmpty) {
         await placement.setCurrencyBalance(
           currencyBalance: currentBalance,
           currencyId: currencyId,
-          onSuccess: (_) {
-            debugPrint('[Tapjoy] Currency balance synced.');
-          },
-          onFailure: (_, error) {
-            debugPrint('[Tapjoy] Currency balance sync failed: $error');
-          },
+          onSuccess: (_) {},
+          onFailure: (_, error) {},
         );
       } else {
         debugPrint('[Tapjoy] Currency ID not configured; skipping balance sync.');
       }
+
+      
+      
 
       await placement.requestContent();
       return true;
