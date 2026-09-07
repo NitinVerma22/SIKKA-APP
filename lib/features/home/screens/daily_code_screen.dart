@@ -17,6 +17,7 @@ import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/shared/widgets/premium_button.dart';
 import 'package:sikkaplay/core/ads/ad_service.dart';
 import 'package:sikkaplay/shared/widgets/ad_banner_widget.dart';
+import 'package:sikkaplay/shared/widgets/native_ad_widget.dart';
 import 'package:sikkaplay/features/games/spin_earn/widgets/fake_ad_dialog.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
@@ -964,6 +965,11 @@ class _DailyCodeScreenState extends ConsumerState<DailyCodeScreen> {
 
                 // 6. Bottom Banner Ad
                 const AdBannerWidget(placementName: 'daily_code'),
+                const SizedBox(height: 20),
+
+                // Native Ad
+                const NativeAdWidget(),
+                const SizedBox(height: 20),
               ],
             ),
           ),

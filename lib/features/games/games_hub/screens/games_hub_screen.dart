@@ -12,6 +12,7 @@ import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
+import 'package:sikkaplay/shared/widgets/native_ad_widget.dart';
 
 class GamesHubScreen extends ConsumerWidget {
   const GamesHubScreen({super.key});
@@ -294,6 +295,10 @@ class GamesHubScreen extends ConsumerWidget {
                     },
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // Native Ad in the middle of games list
+                const NativeAdWidget(),
                 const SizedBox(height: 16),
 
                 // Game Card 5: Water Sort Puzzle
