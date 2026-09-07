@@ -63,6 +63,7 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
   @override
   void initState() {
     super.initState();
+    WaterSortAudioService.instance.init();
     UserService().startGameSession('water_sort').then((id) {
       if (mounted) _sessionId = id;
     });

@@ -111,6 +111,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
   @override
   void initState() {
     super.initState();
+    BubbleShooterAudioService.instance.init();
     UserService().startGameSession('bubble_shooter').then((id) {
       if (mounted) _sessionId = id;
     });
