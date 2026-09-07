@@ -169,7 +169,7 @@ class _WaterSortLevelSelectScreenState extends State<WaterSortLevelSelectScreen>
                         final levelNum = index + 1;
                         final isUnlocked = levelNum <= _maxUnlockedLevel;
                         final stars = _starsMap[levelNum] ?? 0;
-                        final projectedCoins = levelNum * _multiplier;
+                        final projectedCoins = levelNum <= 25 ? levelNum * _multiplier : levelNum + 25;
 
                         return _buildLevelCard(
                           levelNum: levelNum,
