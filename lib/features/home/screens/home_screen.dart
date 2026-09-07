@@ -541,15 +541,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       badgeText: context.tr('hot_badge', selectedLanguage),
                       onTap: () => context.push('/home/surveys'),
                     ),
-                    _buildGridCard(
-                      title: context.tr('app_install', selectedLanguage),
-                      description: context.tr('app_install_desc', selectedLanguage),
-                      icon: Icons.install_mobile_rounded,
-                      color: Colors.indigo.shade600,
-                      gradientColors: const [Color(0xFF4361EE), Color(0xFF3F37C9)],
-                      badgeText: 'EARN BIG',
-                      onTap: () => context.push('/home/app_install'),
-                    ),
+                    if (configState.config?['isTapjoyOfferwallEnabled'] == true)
+                      _buildGridCard(
+                        title: context.tr('app_install', selectedLanguage),
+                        description: context.tr('app_install_desc', selectedLanguage),
+                        icon: Icons.install_mobile_rounded,
+                        color: Colors.indigo.shade600,
+                        gradientColors: const [Color(0xFF4361EE), Color(0xFF3F37C9)],
+                        badgeText: 'EARN BIG',
+                        onTap: () => context.push('/home/app_install'),
+                      ),
                     _buildGridCard(
                       title: context.tr('visit_earn', selectedLanguage),
                       description: context.tr('visit_earn_desc', selectedLanguage),

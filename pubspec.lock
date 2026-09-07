@@ -1328,10 +1328,9 @@ packages:
   tapjoy_offerwall:
     dependency: "direct main"
     description:
-      name: tapjoy_offerwall
-      sha256: f7cd3adc6ef6b56ff3219976c24ba6eb798bbf099f9e5b7568fb47fff22ed3da
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/tapjoy_offerwall"
+      relative: true
+    source: path
     version: "14.6.0"
   term_glyph:
     dependency: transitive

@@ -80,3 +80,7 @@ flutter:
       fonts:
         - asset: assets/fonts/BebasNeue-Regular.ttf
 
+
+dependency_overrides:
+  tapjoy_offerwall:
+    path: packages/tapjoy_offerwall

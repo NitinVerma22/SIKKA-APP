@@ -26,3 +26,8 @@
 -keepnames class * implements android.os.Parcelable {
     public static final ** CREATOR;
 }
+
+# Keep Google Play Services (Crucial for Advertising ID and Tapjoy)
+-keep class com.google.android.gms.ads.identifier.** { *; }
+-keep class com.google.android.gms.common.** { *; }
+-dontwarn com.google.android.gms.**
