@@ -13,6 +13,7 @@ import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
+import 'package:sikkaplay/shared/widgets/native_ad_widget.dart';
 
 class MyNetworkScreen extends ConsumerStatefulWidget {
   const MyNetworkScreen({super.key});
@@ -206,6 +207,10 @@ class _MyNetworkScreenState extends ConsumerState<MyNetworkScreen> {
 
                   // 3. Personal Playtime & Withdrawal Requirements Card
                   _buildRequirementsSection(personalPlaytimeHours.toInt(), activeReferrals, minPlaytimeHours.toInt(), minReferrals),
+                  const SizedBox(height: 20),
+
+                  // Native Ad
+                  const NativeAdWidget(),
                   const SizedBox(height: 20),
 
                   // 4. My Referrals (Tree Structure or Empty State Mockup design)

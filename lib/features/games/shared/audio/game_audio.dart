@@ -51,7 +51,7 @@ class GameAudio {
     await AudioPlayer.global.setAudioContext(AudioContextConfig(
       focus: AudioContextConfigFocus.mixWithOthers,
       route: AudioContextConfigRoute.system,
-      respectSilence: true,
+      respectSilence: false,
     ).build());
 
     for (var player in players) {

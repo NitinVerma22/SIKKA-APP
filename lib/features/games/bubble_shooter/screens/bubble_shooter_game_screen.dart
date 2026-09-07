@@ -111,6 +111,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
   @override
   void initState() {
     super.initState();
+    BubbleShooterAudioService.instance.init();
     UserService().startGameSession('bubble_shooter').then((id) {
       if (mounted) _sessionId = id;
     });
@@ -476,7 +477,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
     // Ad logic removed from here — ads now fire ONLY via handleNextLevelTransition
     // when user taps the "NEXT LEVEL" button, preventing double-ad bug.
 
-    final coins = result['coinsEarned'] ?? (widget.levelNumber * widget.multiplier);
+    final coins = result['coinsEarned'] ?? (widget.levelNumber <= 25 ? widget.levelNumber * widget.multiplier : widget.levelNumber + 25);
 
     if (mounted) {
       setState(() {

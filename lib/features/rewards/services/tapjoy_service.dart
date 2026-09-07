@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:tapjoy_offerwall/tapjoy_offerwall.dart';
 
 /// SikkaPlay Tapjoy integration for self-managed currency.
@@ -176,31 +177,34 @@ class TapjoyService {
 
       final placement = await Tapjoy.getPlacement(
         placementName: placementName,
-        onRequestSuccess: (_) {
-          debugPrint('[Tapjoy] PLACEMENT REQUEST SUCCESS: $placementName');
-        },
-        onRequestFailure: (_, error) {
-          _lastPlacementError = error ?? 'Unknown placement request failure';
-          debugPrint('[Tapjoy] PLACEMENT REQUEST FAILURE: $error');
-        },
-        onContentReady: (readyPlacement) async {
-          debugPrint('[Tapjoy] OFFERWALL CONTENT READY');
-          try {
-            await readyPlacement.showContent();
-            debugPrint('[Tapjoy] OFFERWALL SHOW REQUESTED');
-          } catch (e, stack) {
-            _lastPlacementError = 'Failed to show Offerwall: $e';
-            debugPrint('[Tapjoy] Failed to show Offerwall: $e');
-            debugPrintStack(stackTrace: stack);
-          }
-        },
-        onContentShow: (_) {
-          debugPrint('[Tapjoy] OFFERWALL CONTENT SHOWN');
-        },
-        onContentDismiss: (_) {
-          debugPrint('[Tapjoy] OFFERWALL CONTENT DISMISSED');
-        },
+        onRequestSuccess: (_) => debugPrint('[Tapjoy] REQUEST SUCCESS'),
+        onRequestFailure: (_, e) => debugPrint('[Tapjoy] REQUEST FAILURE: $e'),
+        onContentReady: (_) => debugPrint('[Tapjoy] CONTENT READY (Plugin callback)'),
+        onContentShow: (_) => debugPrint('[Tapjoy] CONTENT SHOWN'),
+        onContentDismiss: (_) => debugPrint('[Tapjoy] CONTENT DISMISSED'),
       );
+
+      // THE ULTIMATE MONKEYPATCH
+      // We must do this AFTER Tapjoy.getPlacement() because getPlacement() triggers
+      // the plugin's lazy initialization, which registers its broken handler.
+      // By calling setMethodCallHandler here, we forcibly overwrite their broken
+      // handler with our own working one for the 'tapjoy_offerwall' channel!
+      MethodChannel('tapjoy_offerwall').setMethodCallHandler((call) async {
+        debugPrint('[Tapjoy Monkeypatch] Intercepted native call: ${call.method}');
+        try {
+          if (call.method == 'onContentReady') {
+            final String argPlacementName = call.arguments as String;
+            debugPrint('[Tapjoy Monkeypatch] Content Ready for $argPlacementName!');
+            if (placement != null && placement.placementName == argPlacementName) {
+              debugPrint('[Tapjoy Monkeypatch] Forcing showContent() NOW!');
+              await placement.showContent();
+            }
+          }
+        } catch (e) {
+          debugPrint('[Tapjoy Monkeypatch] Error handling ${call.method}: $e');
+        }
+        return null; // Prevents notImplemented crash on native side
+      });
 
       if (placement == null) {
         _lastPlacementError = 'Tapjoy returned a null placement';

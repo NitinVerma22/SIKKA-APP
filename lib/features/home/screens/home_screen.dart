@@ -14,6 +14,7 @@ import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/features/home/widgets/social_join_tasks_widget.dart';
+import 'package:sikkaplay/shared/widgets/native_ad_widget.dart';
 import 'package:sikkaplay/features/home/widgets/daily_streak_widget.dart';
 import 'package:sikkaplay/core/ads/ad_service.dart';
 import 'package:sikkaplay/features/games/spin_earn/widgets/fake_ad_dialog.dart';
@@ -541,15 +542,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       badgeText: context.tr('hot_badge', selectedLanguage),
                       onTap: () => context.push('/home/surveys'),
                     ),
-                    _buildGridCard(
-                      title: context.tr('app_install', selectedLanguage),
-                      description: context.tr('app_install_desc', selectedLanguage),
-                      icon: Icons.install_mobile_rounded,
-                      color: Colors.indigo.shade600,
-                      gradientColors: const [Color(0xFF4361EE), Color(0xFF3F37C9)],
-                      badgeText: 'EARN BIG',
-                      onTap: () => context.push('/home/app_install'),
-                    ),
+                    if (configState.config?['isTapjoyOfferwallEnabled'] == true)
+                      _buildGridCard(
+                        title: context.tr('app_install', selectedLanguage),
+                        description: context.tr('app_install_desc', selectedLanguage),
+                        icon: Icons.install_mobile_rounded,
+                        color: Colors.indigo.shade600,
+                        gradientColors: const [Color(0xFF4361EE), Color(0xFF3F37C9)],
+                        badgeText: 'EARN BIG',
+                        onTap: () => context.push('/home/app_install'),
+                      ),
                     _buildGridCard(
                       title: context.tr('visit_earn', selectedLanguage),
                       description: context.tr('visit_earn_desc', selectedLanguage),
@@ -581,6 +583,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 ),
                 const SizedBox(height: AppSizes.xl),
 
+                // Native Ad below Ways to Earn
+                const NativeAdWidget(),
+                const SizedBox(height: AppSizes.xl),
+
                 // 5. Refer & Earn Banner
                 FadeInSlideWidget(
                   slideOffset: 28,
@@ -600,6 +606,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     },
                   ),
                 ),
+                const SizedBox(height: AppSizes.xl),
+
+                // Native Ad below Join and Earn
+                const NativeAdWidget(),
                 const SizedBox(height: AppSizes.xxl),
               ],
             ),

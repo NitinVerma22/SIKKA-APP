@@ -161,7 +161,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               if (savedUpiId == null || savedUpiId.isEmpty) {
                 await ref.read(userProvider.notifier).updateUpi(upiId);
               }
-              final success = await ref.read(homeProvider.notifier).requestWithdrawal(
+              final result = await ref.read(homeProvider.notifier).requestWithdrawal(
                 coinsAmount,
                 upiId,
                 name,
@@ -171,17 +171,44 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               );
               if (context.mounted) {
                 Navigator.of(context).pop();
-                if (success) {
+                if (result.$1) {
                   _showSuccessSheet(context, netRupees, cashbackCoins);
                   ref.read(walletProvider.notifier).fetchWalletData();
                   ref.read(userProvider.notifier).refresh();
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Failed to request withdrawal. Please check your balance or UPI ID.')),
-                  );
+                  final errorMsg = result.$2 ?? 'Failed to request withdrawal. Please check your balance or UPI ID.';
+                  if (errorMsg.contains('already used this withdrawal card')) {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        title: Row(
+                          children: [
+                            const Icon(Icons.error_outline_rounded, color: Colors.orange, size: 28),
+                            const SizedBox(width: 8),
+                            const Text('Offer Already Claimed', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                          ],
+                        ),
+                        content: const Text(
+                          'You have already used this withdrawal card. Please select another package or enter coins manually.',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(errorMsg)),
+                    );
+                  }
                 }
               }
-              return success;
+              return result.$1;
             },
           ),
         );

@@ -14,6 +14,18 @@ class BubbleShooterAudioService {
 
   bool get isMuted => GameAudio.isMuted.value;
 
+  Future<void> init() async {
+    await AudioPlayer.global.setAudioContext(AudioContextConfig(
+      focus: AudioContextConfigFocus.mixWithOthers,
+      route: AudioContextConfigRoute.system,
+      respectSilence: false,
+    ).build());
+    await _shootPlayer.setPlayerMode(PlayerMode.lowLatency);
+    await _popPlayer.setPlayerMode(PlayerMode.lowLatency);
+    await _explosionPlayer.setPlayerMode(PlayerMode.lowLatency);
+    await _bgmPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+  }
+
   void toggleMute() {
     GameAudio.toggleMute();
     if (GameAudio.isMuted.value) {
