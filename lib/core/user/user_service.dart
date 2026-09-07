@@ -447,7 +447,7 @@ class UserService {
     }
   }
 
-  Future<bool> requestWithdrawal(int coinsAmount, String upiId, String name, String phone, {String earningType = 'self', String? optionId}) async {
+  Future<(bool, String?)> requestWithdrawal(int coinsAmount, String upiId, String name, String phone, {String earningType = 'self', String? optionId}) async {
     final response = await _sendRequest('POST', '/withdraw', body: {
       'amount': coinsAmount,
       'upiId': upiId,
@@ -458,17 +458,18 @@ class UserService {
     });
     
     if (response.statusCode == 200) {
-      return true;
+      return (true, null);
     } else {
       try {
         final data = jsonDecode(response.body);
         if (data['error'] == 'PHONE_VERIFICATION_REQUIRED') {
           throw Exception('PHONE_VERIFICATION_REQUIRED');
         }
+        return (false, data['error']?.toString());
       } catch (e) {
         if (e.toString().contains('PHONE_VERIFICATION_REQUIRED')) rethrow;
       }
-      return false;
+      return (false, 'Failed to request withdrawal.');
     }
   }
 

@@ -354,19 +354,19 @@ class HomeNotifier extends StateNotifier<HomeState> {
     );
   }
 
-  Future<bool> requestWithdrawal(int coinsAmount, String upiId, String name, String phone, {String earningType = 'self', String? optionId}) async {
+  Future<(bool, String?)> requestWithdrawal(int coinsAmount, String upiId, String name, String phone, {String earningType = 'self', String? optionId}) async {
     if (earningType == 'self') {
-      if (state.balance < coinsAmount) return false;
+      if (state.balance < coinsAmount) return (false, 'Insufficient balance');
     } else {
-      if (state.referralEarning < coinsAmount) return false;
+      if (state.referralEarning < coinsAmount) return (false, 'Insufficient referral balance');
     }
 
-    final success = await _userService.requestWithdrawal(coinsAmount, upiId, name, phone, earningType: earningType, optionId: optionId);
-    if (success) {
+    final result = await _userService.requestWithdrawal(coinsAmount, upiId, name, phone, earningType: earningType, optionId: optionId);
+    if (result.$1) {
       _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
-      return true;
+      return (true, null);
     }
-    return false;
+    return result;
   }
 
   void claimSurvey(String title, int rewardAmount) {
