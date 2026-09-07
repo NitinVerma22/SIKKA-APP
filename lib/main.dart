@@ -45,9 +45,11 @@ Future<String?> _checkDeviceSafety() async {
       return "This device is rooted/jailbroken. SikkaPlay cannot run on rooted devices for security reasons.";
     } else if (!isRealDevice) {
       return "SikkaPlay cannot run on an emulator.";
-    } else if (isDevelopmentMode) {
-      return "Developer Mode is enabled. Please disable Developer Options in your settings to use SikkaPlay.";
-    }
+    } 
+    // TEMPORARILY DISABLED SO USER CAN KEEP USB DEBUGGING ON TO GET LOGS
+    // else if (isDevelopmentMode) {
+    //   return "Developer Mode is enabled. Please disable Developer Options in your settings to use SikkaPlay.";
+    // }
   } catch (e) {
     print("Error during device safety check: $e");
   }
