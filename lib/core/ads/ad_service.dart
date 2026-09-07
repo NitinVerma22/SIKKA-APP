@@ -28,6 +28,9 @@ class AdService {
   static const String testRewardedId = 'ca-app-pub-3940256099942544/5224354917';
   static const String productionRewardedId = 'ca-app-pub-8599317656200402/1786559615';
 
+  static const String testNativeId = 'ca-app-pub-3940256099942544/2247696110';
+  static const String productionNativeId = 'ca-app-pub-8599317656200402/2178890987';
+
   static const String testInterstitialId = 'ca-app-pub-3940256099942544/1033173712';
   static const String productionInterstitialId = 'ca-app-pub-8599317656200402/6461186277';
 
@@ -39,6 +42,7 @@ class AdService {
 
   /// Returns production Rewarded Ad Unit ID for Release build, Test ID for Debug build
   static String get rewardedAdUnitId => kDebugMode ? testRewardedId : productionRewardedId;
+  static String get nativeAdUnitId => kDebugMode ? testNativeId : productionNativeId;
 
   /// Returns production Interstitial Ad Unit ID for Release build, Test ID for Debug build
   static String get interstitialAdUnitId => kDebugMode ? testInterstitialId : productionInterstitialId;
