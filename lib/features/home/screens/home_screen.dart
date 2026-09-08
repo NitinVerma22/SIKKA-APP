@@ -605,8 +605,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 ),
                 const SizedBox(height: AppSizes.xl),
 
-                // Native Ad below Join and Earn
-                const NativeAdWidget(),
+                // Native Ad below Join and Earn (Taller for Video)
+                const NativeAdWidget(isSmallCard: false),
                 const SizedBox(height: AppSizes.xxl),
               ],
             ),
