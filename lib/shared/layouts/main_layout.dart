@@ -251,7 +251,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         importance: Importance.max,
         priority: Priority.high,
         color: Color(0xFF7C3AED),
-        icon: 'ic_launcher',
+        icon: '@mipmap/ic_launcher',
         playSound: true,
         enableVibration: true,
       );
@@ -259,7 +259,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
       final FlutterLocalNotificationsPlugin localPlugin = FlutterLocalNotificationsPlugin();
       await localPlugin.show(
-        id: (channelName.hashCode ^ text.hashCode).abs(),
+        id: (friendId != null ? friendId.hashCode : (channelName.hashCode ^ text.hashCode)).abs() % 100000,
         title: friendName,
         body: text,
         notificationDetails: details,
@@ -589,3 +589,4 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     );
   }
 }
+
