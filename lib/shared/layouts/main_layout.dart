@@ -251,7 +251,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         importance: Importance.max,
         priority: Priority.high,
         color: Color(0xFF7C3AED),
-        icon: 'ic_launcher',
+        icon: '@mipmap/ic_launcher',
         playSound: true,
         enableVibration: true,
       );
@@ -259,7 +259,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
       final FlutterLocalNotificationsPlugin localPlugin = FlutterLocalNotificationsPlugin();
       await localPlugin.show(
-        id: (channelName.hashCode ^ text.hashCode).abs(),
+        id: (friendId != null ? friendId.hashCode : (channelName.hashCode ^ text.hashCode)).abs() % 100000,
         title: friendName,
         body: text,
         notificationDetails: details,
@@ -372,6 +372,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
 
+        // 1. If we are deep inside a tab (e.g. Game -> Game Details), pop that first.
+        if (GoRouter.of(context).canPop()) {
+          GoRouter.of(context).pop();
+          return;
+        }
+
+        // 2. Otherwise, we are at the root of a tab. Handle tab switching history.
         final navHistory = ref.read(navigationHistoryProvider);
         if (navHistory.length > 1) {
           // Go back to previous tab
@@ -589,3 +596,4 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     );
   }
 }
+

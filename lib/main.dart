@@ -391,19 +391,19 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
       // 1. App killed state - opened via notification tap
       final message = await FirebaseMessaging.instance.getInitialMessage();
       if (message != null) {
-        _handleFirebaseMessageTap(message);
+        _handleFirebaseMessageTap(message, isKilledState: true);
       }
 
       // 2. App background state - opened via notification tap
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        _handleFirebaseMessageTap(message);
+        _handleFirebaseMessageTap(message, isKilledState: false);
       });
     } catch (e) {
       debugPrint('Error init push listeners: $e');
     }
   }
 
-  void _handleFirebaseMessageTap(RemoteMessage message) {
+  void _handleFirebaseMessageTap(RemoteMessage message, {bool isKilledState = false}) async {
     // When backend sends FCM data payload, it comes in message.data
     final channelName = message.data['channelName'] ?? '';
     final partnerId = message.data['senderId'] ?? message.data['partnerId'] ?? '';
@@ -411,7 +411,17 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
     final partnerAvatar = message.data['senderAvatar'] ?? '';
 
     if (channelName.isNotEmpty && partnerId.isNotEmpty) {
-      _pushChatScreenWithRetry(channelName, partnerId, partnerName, 10, partnerAvatar: partnerAvatar);
+      if (isKilledState) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('pending_chat_route', json.encode({
+          'channelName': channelName,
+          'partnerId': partnerId,
+          'partnerName': partnerName,
+          'senderAvatar': partnerAvatar,
+        }));
+      } else {
+        _pushChatScreenWithRetry(channelName, partnerId, partnerName, 10, partnerAvatar: partnerAvatar);
+      }
     }
   }
 
@@ -681,4 +691,5 @@ class UnsafeDeviceApp extends StatelessWidget {
     );
   }
 }
+
 
