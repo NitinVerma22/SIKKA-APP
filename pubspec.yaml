@@ -2,7 +2,7 @@ name: sikkaplay
 description: "A premium gamified engagement app."
 publish_to: 'none'
 
-version: 1.0.13+14
+version: 1.0.14+15
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -84,3 +84,4 @@ flutter:
 dependency_overrides:
   tapjoy_offerwall:
     path: packages/tapjoy_offerwall
+
