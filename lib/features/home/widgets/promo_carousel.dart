@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
@@ -96,9 +96,9 @@ class _PromoCarouselState extends State<PromoCarousel> {
                 return GestureDetector(
                   onTap: () {
                     if (banner['route'] != null && banner['route']!.isNotEmpty) {
-                      // Safe navigation: using go() instead of push() prevents the "blank screen / stuck without back button" issue
-                      // for bottom navigation tabs.
-                      context.go(banner['route']!);
+                      // Safe navigation: using push() preserves the back stack perfectly
+                      // so the user can press the phone's back button to return to Home.
+                      context.push(banner['route']!);
                     }
                   },
                   child: Container(
