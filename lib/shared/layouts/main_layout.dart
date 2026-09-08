@@ -372,6 +372,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
 
+        // 1. If we are deep inside a tab (e.g. Game -> Game Details), pop that first.
+        if (GoRouter.of(context).canPop()) {
+          GoRouter.of(context).pop();
+          return;
+        }
+
+        // 2. Otherwise, we are at the root of a tab. Handle tab switching history.
         final navHistory = ref.read(navigationHistoryProvider);
         if (navHistory.length > 1) {
           // Go back to previous tab
