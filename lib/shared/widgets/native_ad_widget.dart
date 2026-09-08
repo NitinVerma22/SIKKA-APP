@@ -114,7 +114,7 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
               offset: const Offset(0, 4),
             )
           else
-            AppColors.premiumShadow,
+            ...AppColors.premiumShadow,
         ],
         border: widget.isSmallCard ? null : Border.all(color: AppColors.borderLight, width: 1),
       ),
