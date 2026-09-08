@@ -481,7 +481,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 const SizedBox(height: AppSizes.lg),
 
                 // Daily Code Banner
-                _buildDailyCodeBanner(context, selectedLanguage),
+                const PromoCarousel(),
                 const SizedBox(height: AppSizes.lg),
 
                 _buildAnnouncementBar(context, selectedLanguage),
@@ -494,10 +494,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
                 // 2. Daily Streak Widget (Restored at the top)
                 const DailyStreakWidget(),
-                const SizedBox(height: AppSizes.lg),
-
-                // 3. Promo Banner (Lucky Spin Wheel banner)
-                const PromoCarousel(),
                 const SizedBox(height: AppSizes.lg),
 
 
