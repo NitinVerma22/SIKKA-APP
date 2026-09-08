@@ -5,11 +5,11 @@ import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/constants/app_sizes.dart';
 
 class NativeAdWidget extends StatefulWidget {
-  final TemplateType templateType;
+  final bool isSmallCard;
   
   const NativeAdWidget({
     super.key,
-    this.templateType = TemplateType.medium,
+    this.isSmallCard = true,
   });
 
   @override
@@ -27,6 +27,8 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
   }
 
   void _loadAd() {
+    final type = widget.isSmallCard ? TemplateType.small : TemplateType.medium;
+
     _nativeAd = NativeAd(
       adUnitId: AdService.nativeAdUnitId,
       request: const AdRequest(),
@@ -50,30 +52,30 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
         },
       ),
       nativeTemplateStyle: NativeTemplateStyle(
-        templateType: widget.templateType,
-        mainBackgroundColor: Colors.white,
-        cornerRadius: 16.0,
+        templateType: type,
+        mainBackgroundColor: widget.isSmallCard ? const Color(0xFFEEF2FF) : Colors.white,
+        cornerRadius: 24.0,
         callToActionTextStyle: NativeTemplateTextStyle(
           textColor: Colors.white,
           backgroundColor: AppColors.primary,
           style: NativeTemplateFontStyle.bold,
-          size: 15.0,
+          size: 14.0,
         ),
         primaryTextStyle: NativeTemplateTextStyle(
           textColor: AppColors.textPrimary,
-          backgroundColor: Colors.white,
+          backgroundColor: widget.isSmallCard ? const Color(0xFFEEF2FF) : Colors.white,
           style: NativeTemplateFontStyle.bold,
           size: 16.0,
         ),
         secondaryTextStyle: NativeTemplateTextStyle(
           textColor: AppColors.textSecondary,
-          backgroundColor: Colors.white,
+          backgroundColor: widget.isSmallCard ? const Color(0xFFEEF2FF) : Colors.white,
           style: NativeTemplateFontStyle.normal,
-          size: 14.0,
+          size: 13.0,
         ),
         tertiaryTextStyle: NativeTemplateTextStyle(
           textColor: AppColors.textSecondary,
-          backgroundColor: Colors.white,
+          backgroundColor: widget.isSmallCard ? const Color(0xFFEEF2FF) : Colors.white,
           style: NativeTemplateFontStyle.normal,
           size: 12.0,
         ),
@@ -93,16 +95,28 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
       return const SizedBox.shrink();
     }
 
-    final height = widget.templateType == TemplateType.medium ? 320.0 : 90.0;
+    final height = widget.isSmallCard ? 124.0 : 320.0;
 
     return Container(
       height: height,
-      margin: const EdgeInsets.symmetric(vertical: AppSizes.md, horizontal: AppSizes.md),
+      margin: EdgeInsets.symmetric(
+        vertical: AppSizes.md, 
+        horizontal: widget.isSmallCard ? 0 : AppSizes.md
+      ),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.premiumShadow,
-        border: Border.all(color: AppColors.borderLight, width: 1),
+        color: widget.isSmallCard ? const Color(0xFFEEF2FF) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          if (widget.isSmallCard)
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            )
+          else
+            ...AppColors.premiumShadow,
+        ],
+        border: widget.isSmallCard ? null : Border.all(color: AppColors.borderLight, width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
