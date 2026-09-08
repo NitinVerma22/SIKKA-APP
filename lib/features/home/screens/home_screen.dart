@@ -16,6 +16,7 @@ import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/features/home/widgets/social_join_tasks_widget.dart';
 import 'package:sikkaplay/shared/widgets/native_ad_widget.dart';
 import 'package:sikkaplay/features/home/widgets/daily_streak_widget.dart';
+import 'package:sikkaplay/features/home/widgets/promo_carousel.dart';
 import 'package:sikkaplay/core/ads/ad_service.dart';
 import 'package:sikkaplay/features/games/spin_earn/widgets/fake_ad_dialog.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
@@ -496,7 +497,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 const SizedBox(height: AppSizes.lg),
 
                 // 3. Promo Banner (Lucky Spin Wheel banner)
-                _buildPromoBanners(context),
+                const PromoCarousel(),
                 const SizedBox(height: AppSizes.lg),
 
 
