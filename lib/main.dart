@@ -184,12 +184,12 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
     importance: Importance.max,
     priority: Priority.high,
     color: const Color(0xFF7C3AED), // App brand theme color (Purple)
-    icon: 'ic_launcher',
-    largeIcon: const DrawableResourceAndroidBitmap('ic_launcher'),
+    icon: '@mipmap/ic_launcher',
+    largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
     styleInformation: bigPicturePath != null
         ? BigPictureStyleInformation(
             FilePathAndroidBitmap(bigPicturePath),
-            largeIcon: const DrawableResourceAndroidBitmap('ic_launcher'),
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
             contentTitle: title,
             summaryText: body,
           )
@@ -207,7 +207,7 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
   });
 
   await localNotifications.show(
-    id: (message.hashCode.abs() % 100000),
+    id: (senderId != null ? senderId.hashCode : (message.messageId?.hashCode ?? message.hashCode)).abs() % 100000,
     title: title,
     body: body,
     notificationDetails: details,
@@ -220,7 +220,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
 
   try {
-    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
     const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
     await localNotifications.initialize(settings: initializationSettings);
 
@@ -259,7 +259,7 @@ Future<void> _initializeServices() async {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     
     // Initialize Local Notifications
-    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
     const InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
     await localNotifications.initialize(
       settings: initializationSettings,
@@ -477,7 +477,7 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
       importance: Importance.max,
       priority: Priority.high,
       color: Color(0xFF7C3AED),
-      icon: 'ic_launcher',
+      icon: '@mipmap/ic_launcher',
       playSound: true,
       enableVibration: true,
     );
@@ -681,3 +681,4 @@ class UnsafeDeviceApp extends StatelessWidget {
     );
   }
 }
+
