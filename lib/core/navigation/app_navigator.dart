@@ -114,28 +114,28 @@ class AppNavigator {
 
   /// Returns true if back was handled. False means caller may show exit confirm.
   static bool handleSystemBack(BuildContext context, WidgetRef ref) {
-    // 1. First check if there's a real pushed route on the root navigator
-    //    (e.g., fullscreen game screens pushed on top of the ShellRoute).
-    final rootNav = rootNavigatorKey.currentState;
-    if (rootNav != null && rootNav.canPop()) {
-      rootNav.pop();
-      return true;
-    }
-
-    // 2. Check if the shell navigator has a pushed sub-route
-    //    (e.g., /home/daily_code pushed inside the shell).
-    final shellNav = shellNavigatorKey.currentState;
-    if (shellNav != null && shellNav.canPop()) {
-      shellNav.pop();
-      return true;
-    }
-
-    // 3. For shell tab locations (/home, /games, /wallet, etc.), use our
-    //    custom route history instead of GoRouter.canPop().
-    //    GoRouter.canPop() is unreliable for shell tab switches done via go()
-    //    because go() replaces the route rather than pushing onto a stack.
     final currentLocation = currentLocationOf(context) ?? '/home';
+    final onShellTab = isShellTabLocation(currentLocation);
 
+    // 1. If user is NOT on a shell tab (e.g., inside a fullscreen game,
+    //    daily_code sub-route, etc.), try real navigator pops first.
+    if (!onShellTab) {
+      final rootNav = rootNavigatorKey.currentState;
+      if (rootNav != null && rootNav.canPop()) {
+        rootNav.pop();
+        return true;
+      }
+
+      final shellNav = shellNavigatorKey.currentState;
+      if (shellNav != null && shellNav.canPop()) {
+        shellNav.pop();
+        return true;
+      }
+    }
+
+    // 2. Use our custom route history to walk back through tabs.
+    //    Navigator canPop/pop is unreliable for shell tab switches done via
+    //    go() because go() replaces the route instead of pushing.
     final history = ref.read(routeHistoryProvider);
     if (history.length > 1) {
       final newHistory = List<String>.from(history)..removeLast();
@@ -144,14 +144,14 @@ class AppNavigator {
       return true;
     }
 
-    // 4. If there's no history but user is not on /home, go back to home.
+    // 3. If there's no history but user is not on /home, go back to home.
     if (currentLocation != '/home') {
       ref.read(routeHistoryProvider.notifier).state = ['/home'];
       context.go('/home');
       return true;
     }
 
-    // 5. Nothing left — caller should show "press back again to exit".
+    // 4. Nothing left — caller should show "press back again to exit".
     return false;
   }
 }
