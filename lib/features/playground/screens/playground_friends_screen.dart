@@ -67,10 +67,12 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
     super.dispose();
   }
 
-  Future<void> _loadFriendsData() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _loadFriendsData({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     final res = await _service.getFriendsList();
     if (!mounted) return;
@@ -102,7 +104,9 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
       setState(() {
         _isLoading = false;
       });
-      GameNotifications.showCoinUpdate(context, 'Failed to load friends');
+      if (!silent) {
+        GameNotifications.showCoinUpdate(context, 'Failed to load friends');
+      }
     }
   }
 
@@ -180,7 +184,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
         _isSearching = false;
         _searchResults = [];
       });
-      _loadFriendsData();
+      _loadFriendsData(silent: true);
     } else {
       GameNotifications.showCoinUpdate(context, res['error'] ?? 'Request failed');
     }
