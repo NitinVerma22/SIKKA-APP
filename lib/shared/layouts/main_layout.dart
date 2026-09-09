@@ -51,6 +51,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   void initState() {
     super.initState();
     _initGlobalSocket();
+    unawaited(_consumePendingChatRoute());
     
     Connectivity().checkConnectivity().then((results) {
       if (mounted) {
@@ -64,6 +65,69 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         setState(() => _isOffline = offline);
       }
     });
+  }
+
+  Future<void> _consumePendingChatRoute() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('pending_chat_route');
+      if (raw == null || raw.isEmpty) return;
+
+      final data = json.decode(raw) as Map<String, dynamic>;
+      final channelName = data['channelName']?.toString().trim() ?? '';
+      final partnerId = data['partnerId']?.toString().trim() ?? '';
+      final partnerName = data['partnerName']?.toString().trim().isNotEmpty == true
+          ? data['partnerName'].toString()
+          : 'SikkaPlay Friend';
+      final partnerAvatar = data['senderAvatar']?.toString() ?? '';
+
+      if (partnerId.isEmpty && channelName.isEmpty) {
+        await prefs.remove('pending_chat_route');
+        return;
+      }
+
+      // Remove first so a failed/repeated lifecycle callback cannot reopen the same chat.
+      await prefs.remove('pending_chat_route');
+
+      final effectiveChannel = partnerId.isNotEmpty
+          ? 'friend-chat-$partnerId'
+          : channelName;
+
+      // Wait until the shell/root navigator is mounted. This is important when
+      // Android launches the app from a notification while it was killed.
+      for (var attempt = 0; attempt < 20; attempt++) {
+        if (!mounted) return;
+        if (attempt > 0) {
+          await Future.delayed(const Duration(milliseconds: 250));
+        } else {
+          await Future.delayed(const Duration(milliseconds: 150));
+        }
+
+        if (!mounted) return;
+
+        try {
+          final router = GoRouter.of(context);
+          router.push('/playground/studio', extra: {
+            'channelName': effectiveChannel,
+            'agoraToken': effectiveChannel,
+            'partnerId': partnerId,
+            'partnerName': partnerName,
+            'partnerUsername': '',
+            'partnerAvatar': partnerAvatar,
+          });
+          debugPrint('[Notification] Opened pending chat for partner: $partnerId');
+          return;
+        } catch (e) {
+          debugPrint('[Notification] Chat navigation attempt ${attempt + 1} failed: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('[Notification] Error consuming pending chat route: $e');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('pending_chat_route');
+      } catch (_) {}
+    }
   }
 
   @override
@@ -596,4 +660,3 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     );
   }
 }
-
