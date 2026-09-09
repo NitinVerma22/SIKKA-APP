@@ -100,16 +100,23 @@ Future<void> _handleNotificationAction(NotificationResponse response) async {
 
 void globalPushChatScreenWithRetry(String channelName, String partnerId, String partnerName, int retries, {String? partnerAvatar}) async {
   if (rootNavigatorKey.currentContext == null) {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('pending_chat_route', json.encode({
-        'channelName': channelName,
-        'partnerId': partnerId,
-        'partnerName': partnerName,
-        'senderAvatar': partnerAvatar ?? '',
-      }));
-    } catch (e) {
-      debugPrint('Error saving pending chat route: $e');
+    if (retries > 0) {
+      Future.delayed(const Duration(milliseconds: 400), () {
+        globalPushChatScreenWithRetry(channelName, partnerId, partnerName, retries - 1, partnerAvatar: partnerAvatar);
+      });
+    } else {
+      // All retries exhausted (app likely in killed state) — save for SplashScreen to pick up.
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('pending_chat_route', json.encode({
+          'channelName': channelName,
+          'partnerId': partnerId,
+          'partnerName': partnerName,
+          'senderAvatar': partnerAvatar ?? '',
+        }));
+      } catch (e) {
+        debugPrint('Error saving pending chat route: $e');
+      }
     }
     return;
   }
@@ -433,16 +440,23 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
 
   void _pushChatScreenWithRetry(String channelName, String partnerId, String partnerName, int retries, {String? partnerAvatar}) async {
     if (rootNavigatorKey.currentContext == null) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('pending_chat_route', json.encode({
-          'channelName': channelName,
-          'partnerId': partnerId,
-          'partnerName': partnerName,
-          'senderAvatar': partnerAvatar ?? '',
-        }));
-      } catch (e) {
-        debugPrint('Error saving pending chat route: $e');
+      if (retries > 0) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _pushChatScreenWithRetry(channelName, partnerId, partnerName, retries - 1, partnerAvatar: partnerAvatar);
+        });
+      } else {
+        // All retries exhausted — save for SplashScreen to pick up.
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('pending_chat_route', json.encode({
+            'channelName': channelName,
+            'partnerId': partnerId,
+            'partnerName': partnerName,
+            'senderAvatar': partnerAvatar ?? '',
+          }));
+        } catch (e) {
+          debugPrint('Error saving pending chat route: $e');
+        }
       }
       return;
     }
