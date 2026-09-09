@@ -15,6 +15,7 @@ import 'package:sikkaplay/core/auth/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
 
 class ChatMessage {
   final String text;
@@ -2016,7 +2017,7 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
             ),
             onPressed: () {
               Navigator.pop(context);
-              context.push('/wallet');
+              AppNavigator.push(context, ref, '/wallet');
             },
             child: Text('ADD COINS', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
@@ -2232,9 +2233,9 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
           if (context.canPop()) {
             context.pop();
           } else if (_isMatchmakingChat) {
-            context.go('/playground');
+            AppNavigator.go(context, ref, '/playground');
           } else {
-            context.go('/playground/friends');
+            AppNavigator.go(context, ref, '/playground/friends');
           }
         }
       }
@@ -2244,7 +2245,7 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
         if (context.canPop()) {
           context.pop();
         } else {
-          context.go('/playground');
+          AppNavigator.go(context, ref, '/playground');
         }
       }
     } else {
@@ -2252,9 +2253,9 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
         if (context.canPop()) {
           context.pop();
         } else if (_isMatchmakingChat) {
-          context.go('/playground');
+          AppNavigator.go(context, ref, '/playground');
         } else {
-          context.go('/playground/friends');
+          AppNavigator.go(context, ref, '/playground/friends');
         }
       }
     }

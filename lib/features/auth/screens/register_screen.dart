@@ -8,6 +8,9 @@ import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/features/playground/services/playground_service.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
+import 'package:sikkaplay/features/home/controllers/home_controller.dart';
+import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -209,7 +212,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       setState(() => _isLoading = false);
 
       if (result['success'] == true && mounted) {
-        context.go('/home');
+        AppNavigator.resetTo(context, ref, '/home');
       } else if (mounted) {
         final errorMsg = result['error'] ?? context.tr('registration_failed_msg', selectedLanguage);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -242,7 +245,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         }
       } else {
         if (mounted) {
-          context.go('/home');
+          AppNavigator.resetTo(context, ref, '/home');
         }
       }
     } else {

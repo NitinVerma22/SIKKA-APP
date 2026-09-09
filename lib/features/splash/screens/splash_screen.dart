@@ -16,6 +16,7 @@ import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/features/wallet/controllers/wallet_controller.dart';
 import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -221,7 +222,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               await prefs.remove('pending_chat_route');
               final String effectiveChannel = partnerId.isNotEmpty ? 'friend-chat-$partnerId' : channelName;
               if (mounted) {
-                context.go('/playground/friends');
+                AppNavigator.resetTo(context, ref, '/playground/friends');
                 context.push('/playground/studio', extra: {
                   'channelName': effectiveChannel,
                   'agoraToken': effectiveChannel,
@@ -238,7 +239,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           }
         }
         if (mounted) {
-          context.go('/home'); // Session active, verified, and preloaded
+          AppNavigator.resetTo(context, ref, '/home'); // Session active, verified, and preloaded
         }
       }
     } else if (!hasChosenLanguage) {

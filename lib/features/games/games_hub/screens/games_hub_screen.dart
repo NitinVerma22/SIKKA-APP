@@ -13,6 +13,7 @@ import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/shared/widgets/native_ad_widget.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
 
 class GamesHubScreen extends ConsumerWidget {
   const GamesHubScreen({super.key});
@@ -81,7 +82,7 @@ class GamesHubScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     // Mockup wallet style pill
                     GestureDetector(
-                      onTap: () => context.push('/wallet'),
+                      onTap: () => AppNavigator.go(context, ref, '/wallet'),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(

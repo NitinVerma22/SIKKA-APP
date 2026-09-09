@@ -27,6 +27,8 @@ import 'dart:async';
 import 'package:sikkaplay/core/config/config_service.dart';
 import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -566,7 +568,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       icon: Icons.rocket_launch_rounded,
                       color: AppColors.primary,
                       gradientColors: const [Color(0xFF7209B7), Color(0xFFB5179E)],
-                      onTap: () => context.go('/playground'),
+                      onTap: () => AppNavigator.go(context, ref, '/playground'),
                     ),
                     _buildGridCard(
                       title: context.tr('play_games', selectedLanguage),
@@ -574,7 +576,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       icon: Icons.sports_esports_rounded,
                       color: Colors.blue.shade700,
                       gradientColors: const [Color(0xFF4361EE), Color(0xFF4CC9F0)],
-                      onTap: () => context.go('/games'),
+                      onTap: () => AppNavigator.go(context, ref, '/games'),
                     ),
                   ],
                 ),
@@ -936,7 +938,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   Widget _buildReferralBanner(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.go('/my_network'), // Clicking the banner opens the network page
+      onTap: () => AppNavigator.goWithContainer(context, '/my_network'), // Clicking the banner opens the network page
       child: AspectRatio(
         aspectRatio: 3 / 2,
         child: Container(
@@ -1099,7 +1101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         
         // Compact Wallet matching the image design exactly
         GestureDetector(
-          onTap: () => context.go('/wallet'),
+          onTap: () => AppNavigator.go(context, ref, '/wallet'),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(

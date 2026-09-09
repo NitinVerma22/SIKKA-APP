@@ -14,6 +14,7 @@ import 'package:sikkaplay/features/wallet/controllers/wallet_controller.dart';
 import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -576,7 +577,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.of(dialogContext).pop();
-                            context.go('/my_network');
+                            AppNavigator.go(context, ref, '/my_network');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
@@ -780,7 +781,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       const SizedBox(width: 8),
                       // Wallet Balance card with solid purple gradient
                       GestureDetector(
-                        onTap: () => context.push('/wallet'),
+                        onTap: () => AppNavigator.go(context, ref, '/wallet'),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
@@ -1151,7 +1152,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () => context.go('/wallet/transactions'),
+                        onPressed: () => context.push('/wallet/transactions'),
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           minimumSize: Size.zero,

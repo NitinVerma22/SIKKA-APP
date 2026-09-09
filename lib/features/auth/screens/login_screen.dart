@@ -8,6 +8,7 @@ import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -53,7 +54,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Force refresh providers so new user's data loads fresh
         ref.invalidate(userProvider);
         ref.invalidate(homeProvider);
-        context.go('/home');
+        AppNavigator.resetTo(context, ref, '/home');
       }
     } else {
       if (mounted) {
@@ -99,7 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (mounted) {
           ref.invalidate(userProvider);
           ref.invalidate(homeProvider);
-          context.go('/home');
+          AppNavigator.resetTo(context, ref, '/home');
         }
       }
     } else {

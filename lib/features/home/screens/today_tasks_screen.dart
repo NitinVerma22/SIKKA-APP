@@ -10,6 +10,7 @@ import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/shared/widgets/premium_button.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
 
 class MarqueeText extends StatefulWidget {
   final String text;
@@ -540,7 +541,7 @@ class _TodayTasksScreenState extends ConsumerState<TodayTasksScreen> {
                                 borderRadius: 8,
                                 customGradient: AppColors.cyanGradient,
                                 onTap: () async {
-                                  await context.push('/games');
+                                  AppNavigator.push(context, ref, '/games');
                                   if (mounted) {
                                     ref.read(homeProvider.notifier).refresh();
                                   }
@@ -581,7 +582,7 @@ class _TodayTasksScreenState extends ConsumerState<TodayTasksScreen> {
                                 borderRadius: 8,
                                 customGradient: AppColors.cyanGradient,
                                 onTap: () async {
-                                  await context.push('/games');
+                                  AppNavigator.push(context, ref, '/games');
                                   if (mounted) {
                                     ref.read(homeProvider.notifier).refresh();
                                   }
@@ -620,7 +621,7 @@ class _TodayTasksScreenState extends ConsumerState<TodayTasksScreen> {
                                 borderRadius: 8,
                                 customGradient: AppColors.cyanGradient,
                                 onTap: () async {
-                                  await context.push('/games');
+                                  AppNavigator.push(context, ref, '/games');
                                   if (mounted) {
                                     ref.read(homeProvider.notifier).refresh();
                                   }
@@ -641,7 +642,7 @@ class _TodayTasksScreenState extends ConsumerState<TodayTasksScreen> {
                       borderRadius: 8,
                       customGradient: AppColors.goldGradient,
                       onTap: () async {
-                        await context.push('/my_network');
+                        AppNavigator.push(context, ref, '/my_network');
                         if (mounted) {
                           ref.read(homeProvider.notifier).refresh();
                         }

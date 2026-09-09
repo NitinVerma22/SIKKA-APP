@@ -5,11 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/constants/app_sizes.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
-import 'package:sikkaplay/routes/app_router.dart';
 import 'package:sikkaplay/features/wallet/controllers/wallet_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
@@ -22,8 +22,7 @@ import 'package:sikkaplay/core/auth/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:sikkaplay/core/services/socket_provider.dart';
-
-final navigationHistoryProvider = StateProvider<List<int>>((ref) => [0]);
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
 
 class MainLayout extends ConsumerStatefulWidget {
   final Widget child;
@@ -51,6 +50,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   void initState() {
     super.initState();
     _initGlobalSocket();
+    unawaited(_consumePendingChatRoute());
     
     Connectivity().checkConnectivity().then((results) {
       if (mounted) {
@@ -64,6 +64,69 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         setState(() => _isOffline = offline);
       }
     });
+  }
+
+  Future<void> _consumePendingChatRoute() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('pending_chat_route');
+      if (raw == null || raw.isEmpty) return;
+
+      final data = json.decode(raw) as Map<String, dynamic>;
+      final channelName = data['channelName']?.toString().trim() ?? '';
+      final partnerId = data['partnerId']?.toString().trim() ?? '';
+      final partnerName = data['partnerName']?.toString().trim().isNotEmpty == true
+          ? data['partnerName'].toString()
+          : 'SikkaPlay Friend';
+      final partnerAvatar = data['senderAvatar']?.toString() ?? '';
+
+      if (partnerId.isEmpty && channelName.isEmpty) {
+        await prefs.remove('pending_chat_route');
+        return;
+      }
+
+      // Remove first so a failed/repeated lifecycle callback cannot reopen the same chat.
+      await prefs.remove('pending_chat_route');
+
+      final effectiveChannel = partnerId.isNotEmpty
+          ? 'friend-chat-$partnerId'
+          : channelName;
+
+      // Wait until the shell/root navigator is mounted. This is important when
+      // Android launches the app from a notification while it was killed.
+      for (var attempt = 0; attempt < 20; attempt++) {
+        if (!mounted) return;
+        if (attempt > 0) {
+          await Future.delayed(const Duration(milliseconds: 250));
+        } else {
+          await Future.delayed(const Duration(milliseconds: 150));
+        }
+
+        if (!mounted) return;
+
+        try {
+          final router = GoRouter.of(context);
+          router.push('/playground/studio', extra: {
+            'channelName': effectiveChannel,
+            'agoraToken': effectiveChannel,
+            'partnerId': partnerId,
+            'partnerName': partnerName,
+            'partnerUsername': '',
+            'partnerAvatar': partnerAvatar,
+          });
+          debugPrint('[Notification] Opened pending chat for partner: $partnerId');
+          return;
+        } catch (e) {
+          debugPrint('[Notification] Chat navigation attempt ${attempt + 1} failed: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('[Notification] Error consuming pending chat route: $e');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('pending_chat_route');
+      } catch (_) {}
+    }
   }
 
   @override
@@ -292,8 +355,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   void _onItemTapped(int index, WidgetRef ref) async {
-    final selectedIndex = _getSelectedIndex(context);
-    
     // Asynchronously refresh corresponding tab data silently in background to keep transitions buttery smooth
     if (index == 0) {
       ref.read(homeProvider.notifier).refresh(silent: true);
@@ -304,47 +365,31 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     } else if (index == 4) {
       ref.read(userProvider.notifier).refresh(silent: true);
     }
-    
-    // Close any open bottom sheet or dialog on root navigator before tab change
-    final rootNav = rootNavigatorKey.currentState;
-    if (rootNav != null && rootNav.canPop()) {
-      rootNav.pop();
-    }
-    
-    // Close any open bottom sheet or dialog on shell navigator before tab change
-    final shellNav = shellNavigatorKey.currentState;
-    if (shellNav != null && shellNav.canPop()) {
-      shellNav.pop();
-    }
 
     if (mounted) _navigateToIndex(index, ref);
   }
 
-  void _navigateToIndex(int index, WidgetRef ref, {bool isBack = false}) {
-    if (!isBack) {
-      final history = ref.read(navigationHistoryProvider);
-      if (history.isEmpty || history.last != index) {
-        ref.read(navigationHistoryProvider.notifier).state = [...history, index];
-      }
-    }
-
+  String _routeForIndex(int index) {
     final location = GoRouterState.of(context).matchedLocation;
     final isPgMode = _isPlaygroundMode(location);
 
-    String route = '/home';
-    if (index == 0) route = '/home';
-    else if (index == 1) route = '/games';
-    else if (index == 2) route = '/playground';
-    else if (index == 3) {
-      if (isPgMode) route = '/playground/friends';
-      else route = '/wallet';
+    if (index == 0) return '/home';
+    if (index == 1) return '/games';
+    if (index == 2) return '/playground';
+    if (index == 3) {
+      return isPgMode ? '/playground/friends' : '/wallet';
     }
-    else if (index == 4) {
-      if (isPgMode) route = '/wallet';
-      else route = '/profile';
+    if (index == 4) {
+      return isPgMode ? '/wallet' : '/profile';
     }
+    return '/home';
+  }
 
-    context.go(route);
+  void _navigateToIndex(int index, WidgetRef ref) {
+    final route = _routeForIndex(index);
+    final current = currentLocationOf(context);
+    if (current == route) return;
+    AppNavigator.go(context, ref, route);
   }
 
   @override
@@ -372,38 +417,26 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
 
-        // 1. If we are deep inside a tab (e.g. Game -> Game Details), pop that first.
-        if (GoRouter.of(context).canPop()) {
-          GoRouter.of(context).pop();
+        if (AppNavigator.handleSystemBack(context, ref)) {
           return;
         }
 
-        // 2. Otherwise, we are at the root of a tab. Handle tab switching history.
-        final navHistory = ref.read(navigationHistoryProvider);
-        if (navHistory.length > 1) {
-          // Go back to previous tab
-          final newHistory = List<int>.from(navHistory)..removeLast();
-          ref.read(navigationHistoryProvider.notifier).state = newHistory;
-          final prevIndex = newHistory.last;
-          _navigateToIndex(prevIndex, ref, isBack: true);
-        } else {
-          // Double tap to exit
-          final now = DateTime.now();
-          if (_lastPressedAt == null || now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
-            _lastPressedAt = now;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.tr('press_back_exit', selectedLanguage), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                backgroundColor: Colors.black87,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-            return;
-          }
-          SystemNavigator.pop();
+        // Only exit when already on Home with an empty back stack (double-tap).
+        final now = DateTime.now();
+        if (_lastPressedAt == null || now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
+          _lastPressedAt = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.tr('press_back_exit', selectedLanguage), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              backgroundColor: Colors.black87,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          return;
         }
+        SystemNavigator.pop();
       },
       child: Scaffold(
       resizeToAvoidBottomInset: false,
@@ -596,4 +629,3 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     );
   }
 }
-
