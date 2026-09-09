@@ -22,6 +22,8 @@ import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/features/playground/services/playground_service.dart';
 import 'package:sikkaplay/features/games/shared/utils/game_notifications.dart';
 import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
@@ -1189,7 +1191,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 child: Material(
                                   color: Colors.transparent,
                                   child: InkWell(
-                                    onTap: () => context.push('/my_network'),
+                                    onTap: () => AppNavigator.push(context, ref, '/my_network'),
                                     borderRadius: BorderRadius.circular(12),
                                     child: Center(
                                       child: Row(
@@ -1262,7 +1264,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 FadeInSlideWidget(
                   slideOffset: 24,
                   child: GestureDetector(
-                    onTap: () => context.push('/my_network'),
+                    onTap: () => AppNavigator.push(context, ref, '/my_network'),
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(22),
@@ -1319,7 +1321,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         icon: Icons.people_outline_rounded,
                         iconColor: const Color(0xFF3F37C9), // Dark vibrant blue
                         iconBgColor: const Color(0xFFEEECFF),
-                        onTap: () => context.push('/my_network'),
+                        onTap: () => AppNavigator.push(context, ref, '/my_network'),
                       ),
                       const SizedBox(height: 10),
                       _buildFullWidthMenuCard(
@@ -1411,7 +1413,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildNotificationBell(BuildContext context, WidgetRef ref) {
     final unreadCount = ref.watch(notificationProvider).unreadCount;
     return GestureDetector(
-      onTap: () => context.push('/notifications'),
+      onTap: () => AppNavigator.push(context, ref, '/notifications'),
       child: Stack(
         clipBehavior: Clip.none,
         children: [

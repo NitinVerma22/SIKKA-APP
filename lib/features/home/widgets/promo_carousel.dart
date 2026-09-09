@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
 
 class PromoCarousel extends StatefulWidget {
   const PromoCarousel({super.key});
@@ -75,10 +76,9 @@ class _PromoCarouselState extends State<PromoCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    // AspectRatio 3.0 gives exactly the banner proportion of 1200x400
-    // This perfectly matches the height of the old Daily Code banner.
+    // AspectRatio 2.0 gives a 2:1 banner proportion (e.g. 1200x600).
     return AspectRatio(
-      aspectRatio: 3.0,
+      aspectRatio: 2.0,
       child: SizedBox(
         width: double.infinity,
         child: Stack(
@@ -96,9 +96,7 @@ class _PromoCarouselState extends State<PromoCarousel> {
                 return GestureDetector(
                   onTap: () {
                     if (banner['route'] != null && banner['route']!.isNotEmpty) {
-                      // Safe navigation: using push() preserves the back stack perfectly
-                      // so the user can press the phone's back button to return to Home.
-                      context.push(banner['route']!);
+                      AppNavigator.pushWithContainer(context, banner['route']!);
                     }
                   },
                   child: Container(
