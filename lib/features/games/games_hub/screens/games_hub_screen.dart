@@ -667,7 +667,6 @@ class GamesHubScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-            ),
             // Optional Top Right Corner Badge
             if (badgeText != null)
               Positioned(
@@ -699,7 +698,7 @@ class GamesHubScreen extends ConsumerWidget {
                       const Icon(Icons.flash_on_rounded, color: Colors.white, size: 12),
                       const SizedBox(width: 2),
                       Text(
-                        badgeText,
+                        badgeText!,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
