@@ -211,6 +211,7 @@ class GamesHubScreen extends ConsumerWidget {
                     colors: [const Color(0xFFEF4444), const Color(0xFFFCA5A5)],
                     leftImagePath: 'assets/images/games_hub/treasure_grid_left.webp',
                     rightImagePath: 'assets/images/games_hub/treasure_grid_right.webp',
+                    badgeText: 'Get 50 / 1 min',
                     onTap: () {
                       context.push('/games/rules',
                           extra: GameRulesArgs(
@@ -310,7 +311,7 @@ class GamesHubScreen extends ConsumerWidget {
                     context: context,
                     selectedLanguage: selectedLanguage,
                     title: 'Water Sort Puzzle',
-                    description: selectedLanguage == 'Hindi' ? 'रंगों को छांटें और सिक्के जीतें' : 'Sort colorful liquids & win coins',
+                    description: selectedLanguage == 'Hindi' ? 'जितने लेवल पार करेंगे, 20000 तक सिक्के कमाएं' : 'Earn upto 20000 coins as much level you clear',
                     icon: Icons.science_rounded,
                     colors: [const Color(0xFF8B5CF6), const Color(0xFFC084FC)],
                     leftImagePath: 'assets/images/games_hub/water_left.png',
@@ -330,7 +331,7 @@ class GamesHubScreen extends ConsumerWidget {
                     context: context,
                     selectedLanguage: selectedLanguage,
                     title: 'Bubble Shooter 2D',
-                    description: selectedLanguage == 'Hindi' ? 'बबल्स फोड़ें और सिक्के कमाएं' : 'Match & pop colorful bubbles for coins',
+                    description: selectedLanguage == 'Hindi' ? 'जितने लेवल पार करेंगे, 20000 तक सिक्के कमाएं' : 'Earn upto 20000 coins as much level you clear',
                     icon: Icons.bubble_chart_rounded,
                     colors: [const Color(0xFF0284C7), const Color(0xFF38BDF8)],
                     leftImagePath: 'assets/images/games_hub/buble_left.png',
@@ -498,6 +499,7 @@ class GamesHubScreen extends ConsumerWidget {
     required String rightImagePath,
     required VoidCallback onTap,
     bool isComingSoon = false,
+    String? badgeText,
   }) {
     final Color primaryColor = colors.first;
     return GestureDetector(
@@ -665,10 +667,53 @@ class GamesHubScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+            // Optional Top Right Corner Badge
+            if (badgeText != null)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      topRight: Radius.circular(23),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFD97706).withValues(alpha: 0.4),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.flash_on_rounded, color: Colors.white, size: 12),
+                      const SizedBox(width: 2),
+                      Text(
+                        badgeText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
-      );
+      ),
+    );
   }
 }
 
