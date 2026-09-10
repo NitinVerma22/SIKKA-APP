@@ -552,6 +552,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         onTap: () => context.push('/home/app_install'),
                       ),
                     _buildGridCard(
+                      title: selectedLanguage == 'Hindi' ? 'और सिक्के कमाएं' : 'Earn More Sikka',
+                      description: selectedLanguage == 'Hindi' ? 'ऑफर पूरे करें और इनाम जीतें' : 'Complete offers & earn rewards',
+                      icon: Icons.local_offer_rounded,
+                      color: Colors.amber.shade700,
+                      gradientColors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+                      badgeText: selectedLanguage == 'Hindi' ? 'नया' : 'NEW',
+                      onTap: () {
+                        final userId = userState.userData?['id'];
+                        if (userId == null || userId.toString().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(selectedLanguage == 'Hindi' ? 'कृपया लॉग इन करें' : 'Please login to view offers.'),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                          return;
+                        }
+                        final url = "https://www.cdndn.com/wall/f4a8?subid=${Uri.encodeComponent(userId.toString())}";
+                        context.push('/webview', extra: {
+                          'url': url,
+                          'title': selectedLanguage == 'Hindi' ? 'और सिक्के कमाएं' : 'Earn More Sikka',
+                        });
+                      },
+                    ),
+                    _buildGridCard(
                       title: context.tr('visit_earn', selectedLanguage),
                       description: context.tr('visit_earn_desc', selectedLanguage),
                       icon: Icons.link_rounded,
