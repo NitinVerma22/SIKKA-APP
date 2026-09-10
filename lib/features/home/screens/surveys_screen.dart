@@ -5,7 +5,6 @@ import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/constants/app_sizes.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:sikkaplay/shared/widgets/ad_banner_widget.dart';
 
 class SurveysScreen extends ConsumerWidget {
@@ -204,32 +203,7 @@ class SurveysScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSizes.lg),
 
-            // YouTube Tutorials Section
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSizes.xs),
-              child: Text(
-                'YouTube Tutorials',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSizes.xs),
-              child: Text(
-                'Learn how to complete surveys easily & qualify for maximum coins.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildYoutubeTutorialsList(context),
-            const SizedBox(height: AppSizes.xl),
+
 
             // Bottom Banner Ad
             const AdBannerWidget(placementName: 'surveys'),
@@ -344,151 +318,4 @@ class SurveysScreen extends ConsumerWidget {
       ),
     );
   }
-
-  Widget _buildYoutubeTutorialsList(BuildContext context) {
-    final List<Map<String, String>> tutorials = [
-      {
-        'title': 'How to Complete Surveys Easily',
-        'duration': '4:20 Mins',
-        'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-        'thumbnailColor1': '0xFF6E5DE7',
-        'thumbnailColor2': '0xFF8F00FF',
-      },
-      {
-        'title': 'Earn 1000+ Coins Daily Guide',
-        'duration': '5:45 Mins',
-        'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-        'thumbnailColor1': '0xFFFF9E00',
-        'thumbnailColor2': '0xFFFFD600',
-      },
-      {
-        'title': 'Avoid Rejections & Screenouts',
-        'duration': '3:10 Mins',
-        'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-        'thumbnailColor1': '0xFF00B4D8',
-        'thumbnailColor2': '0xFF00E5FF',
-      },
-    ];
-
-    return SizedBox(
-      height: 165,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: tutorials.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final item = tutorials[index];
-          return Container(
-            width: 180,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.borderLight, width: 1),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () async {
-                final url = Uri.parse(item['url']!);
-                try {
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                  } else {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Could not launch tutorial video.')),
-                      );
-                    }
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Could not launch tutorial video.')),
-                    );
-                  }
-                }
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Stack(
-                    children: [
-                      Container(
-                        height: 90,
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(15),
-                            topRight: Radius.circular(15),
-                          ),
-                          gradient: LinearGradient(
-                            colors: [
-                              Color(int.parse(item['thumbnailColor1']!)),
-                              Color(int.parse(item['thumbnailColor2']!)),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
-                            ),
-                            child: const Icon(
-                              Icons.play_arrow_rounded,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 6,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            item['duration']!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        item['title']!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                          height: 1.3,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
 }
