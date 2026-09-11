@@ -3,7 +3,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 class AdGemOfferwallService {
   static const String _appId = '33508';
-  static const String _baseUrl = 'https://api.adgem.com/v1/wall';
 
   /// Opens the AdGem offerwall for the given user ID.
   /// Validates the user ID according to AdGem requirements.
@@ -22,7 +21,14 @@ class AdGemOfferwallService {
       return;
     }
 
-    final uri = Uri.parse('$_baseUrl?appid=$_appId&playerid=$trimmedId');
+    final uri = Uri.https(
+      'api.adgem.com',
+      '/v1/wall',
+      {
+        'appid': _appId,
+        'playerid': trimmedId,
+      },
+    );
 
     try {
       if (!await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) {
