@@ -28,6 +28,7 @@ import 'package:sikkaplay/core/config/config_service.dart';
 import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sikkaplay/core/navigation/app_navigator.dart';
+import 'package:sikkaplay/services/adgem_offerwall_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -37,7 +38,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   Timer? _configTimer;
   bool _dialogShown = false;
 
@@ -79,11 +81,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       // 1. Core notification permissions (Android 13+ / iOS)
       await Permission.notification.request();
       await FirebaseMessaging.instance.requestPermission();
-      
+
       // 2. Safely prompt FCM setup permissions
-      final FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
+      final FlutterLocalNotificationsPlugin localNotifications =
+          FlutterLocalNotificationsPlugin();
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+          localNotifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
       await androidImplementation?.requestNotificationsPermission();
 
       // 3. Storage/Photos permissions as originally configured
@@ -120,16 +124,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   void _checkPendingSocialClaim() {
     if (_pendingSocialTask == null || _socialClickTime == null) return;
-    
+
     final clickTime = _socialClickTime!;
     final task = _pendingSocialTask!;
-    
+
     _pendingSocialTask = null;
     _socialClickTime = null;
-    
+
     final elapsed = DateTime.now().difference(clickTime).inSeconds;
     debugPrint('Social join task validation: elapsed time = $elapsed seconds');
-    
+
     if (elapsed < 10) {
       _showFollowWarningDialog();
     } else if (elapsed < 20) {
@@ -150,12 +154,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       builder: (context) => PopScope(
         canPop: false,
         child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              const Icon(Icons.warning_amber_rounded,
+                  color: Colors.orange, size: 28),
               const SizedBox(width: 12),
-              Text(context.tr('alert_title', selectedLanguage), style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(context.tr('alert_title', selectedLanguage),
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
           content: Text(
@@ -166,8 +173,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       ),
     );
   }
-
-
 
   void _handleSocialJoin(BuildContext context, WidgetRef ref, SocialTask task) {
     final selectedLanguage = ref.read(languageProvider);
@@ -182,7 +187,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             _pendingSocialTask = task;
             _socialClickTime = DateTime.now();
           });
-          
+
           try {
             final uri = Uri.parse(url);
             if (await canLaunchUrl(uri)) {
@@ -205,11 +210,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 28),
+            const Icon(Icons.warning_amber_rounded,
+                color: Colors.redAccent, size: 28),
             const SizedBox(width: 12),
             Text(
               selectedLanguage == 'Hindi' ? 'कृपया फॉलो करें' : 'Please Follow',
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 20),
+              style:
+                  GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 20),
             ),
           ],
         ),
@@ -224,7 +231,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               selectedLanguage == 'Hindi' ? 'ठीक है' : 'OK',
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppColors.primary),
+              style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.bold, color: AppColors.primary),
             ),
           ),
         ],
@@ -237,9 +245,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       _isValidating = true;
       _validationSecondsRemaining = seconds;
     });
-    
+
     final selectedLanguage = ref.read(languageProvider);
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -249,7 +257,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           child: StatefulBuilder(
             builder: (context, setDialogState) {
               _validationTimer?.cancel();
-              _validationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+              _validationTimer =
+                  Timer.periodic(const Duration(seconds: 1), (timer) {
                 if (_validationSecondsRemaining <= 1) {
                   timer.cancel();
                   Navigator.of(context).pop(); // Close validation dialog
@@ -265,10 +274,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   }
                 }
               });
-              
+
               return AlertDialog(
                 backgroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24)),
                 content: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Column(
@@ -284,7 +294,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        selectedLanguage == 'Hindi' 
+                        selectedLanguage == 'Hindi'
                             ? 'ज्वाइन स्थिति सत्यापित की जा रही है... 🔍'
                             : 'Validating join status... 🔍',
                         style: GoogleFonts.outfit(
@@ -326,21 +336,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
     if (userId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('user_session_expired', selectedLanguage))),
+        SnackBar(
+            content:
+                Text(context.tr('user_session_expired', selectedLanguage))),
       );
       return;
     }
 
     final onCompleteClaim = () async {
-      final success = await ref.read(userProvider.notifier).claimDynamicSocialTask(task.id, coinsEarned);
+      final success = await ref
+          .read(userProvider.notifier)
+          .claimDynamicSocialTask(task.id, coinsEarned);
       if (mounted) {
         if (success) {
-          ref.read(homeProvider.notifier).completeSocialTask(task.id, coinsEarned);
+          ref
+              .read(homeProvider.notifier)
+              .completeSocialTask(task.id, coinsEarned);
           _showRewardCreditedDialog(coinsEarned);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(context.tr('coins_claimed_failed', selectedLanguage)),
+              content:
+                  Text(context.tr('coins_claimed_failed', selectedLanguage)),
               backgroundColor: Colors.redAccent,
             ),
           );
@@ -354,7 +371,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         context: context,
         barrierDismissible: false,
         builder: (_) => FakeAdDialog(
-          title: selectedLanguage == 'Hindi' ? 'मनोरंजन पुरस्कार' : 'Social Reward Ad',
+          title: selectedLanguage == 'Hindi'
+              ? 'मनोरंजन पुरस्कार'
+              : 'Social Reward Ad',
           message: selectedLanguage == 'Hindi'
               ? 'रिवॉर्ड क्लेम करने के लिए विज्ञापन देखें'
               : 'Watch short ad to claim your reward',
@@ -408,7 +427,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             ),
             const SizedBox(height: 12),
             Text(
-              context.tr('coins_credited_desc', selectedLanguage).replaceAll('{coins}', '$coinsEarned'),
+              context
+                  .tr('coins_credited_desc', selectedLanguage)
+                  .replaceAll('{coins}', '$coinsEarned'),
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
                 fontSize: 14,
@@ -437,9 +458,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final selectedLanguage = ref.watch(languageProvider);
     final userData = userState.userData ?? {};
     final balance = userData['balance'] ?? homeState.balance;
-    final referralEarning = userData['referralBalance'] ?? homeState.referralEarning;
+    final referralEarning =
+        userData['referralBalance'] ?? homeState.referralEarning;
     final userName = userData['name'] ?? 'SikkaPlay User';
-    
+
     // Calculate level based on total earned (e.g. 1000 coins = 1 level)
     final totalEarned = userData['totalEarned'] ?? 0;
     final userLevel = (totalEarned / 1000).floor() + 1;
@@ -473,175 +495,240 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             },
             color: AppColors.primary,
             child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics()),
               padding: const EdgeInsets.all(AppSizes.md),
               child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Header with Compact Wallet
-                _buildHeader(context, ref, balance + referralEarning, userName, userLevel),
-                const SizedBox(height: AppSizes.lg),
-
-                // Daily Code Banner
-                const PromoCarousel(),
-                const SizedBox(height: AppSizes.lg),
-
-                _buildAnnouncementBar(context, selectedLanguage),
-                const SizedBox(height: AppSizes.lg),
-
-                if (configState.config?['showVideoTutorialBar'] ?? true)
-                  _buildVideoTutorialBar(context, selectedLanguage),
-                if (configState.config?['showVideoTutorialBar'] ?? true)
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Header with Compact Wallet
+                  _buildHeader(context, ref, balance + referralEarning,
+                      userName, userLevel),
                   const SizedBox(height: AppSizes.lg),
 
-                // 2. Daily Streak Widget (Restored at the top)
-                const DailyStreakWidget(),
-                const SizedBox(height: AppSizes.lg),
+                  // Daily Code Banner
+                  const PromoCarousel(),
+                  const SizedBox(height: AppSizes.lg),
 
+                  _buildAnnouncementBar(context, selectedLanguage),
+                  const SizedBox(height: AppSizes.lg),
 
-                // 4. Earning Tasks Grid
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.xs),
-                  child: Text(
-                    context.tr('ways_to_earn', selectedLanguage),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                      color: AppColors.textPrimary,
+                  if (configState.config?['showVideoTutorialBar'] ?? true)
+                    _buildVideoTutorialBar(context, selectedLanguage),
+                  if (configState.config?['showVideoTutorialBar'] ?? true)
+                    const SizedBox(height: AppSizes.lg),
+
+                  // 2. Daily Streak Widget (Restored at the top)
+                  const DailyStreakWidget(),
+                  const SizedBox(height: AppSizes.lg),
+
+                  // 4. Earning Tasks Grid
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSizes.xs),
+                    child: Text(
+                      context.tr('ways_to_earn', selectedLanguage),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: AppSizes.md),
+                  const SizedBox(height: AppSizes.md),
 
-                // Grid items (2-column, 3 rows)
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.25, // Adjusted for slightly wider layout to fit title/description/arrow beautifully
-                  children: [
-                    _buildGridCard(
-                      title: context.tr('today_tasks', selectedLanguage),
-                      description: context.tr('today_tasks_desc', selectedLanguage),
-                      icon: Icons.today_rounded,
-                      color: Colors.orange.shade600,
-                      gradientColors: const [Color(0xFFFF7E40), Color(0xFFFF9E00)],
-                      badgeText: context.tr('daily_badge', selectedLanguage),
-                      onTap: () => context.push('/home/today_tasks'),
-                      showAnimatedBorder: true,
-                    ),
-                    _buildGridCard(
-                      title: context.tr('complete_surveys', selectedLanguage),
-                      description: context.tr('complete_surveys_desc', selectedLanguage),
-                      icon: Icons.analytics_rounded,
-                      color: Colors.indigo.shade600,
-                      gradientColors: const [Color(0xFF6E5DE7), Color(0xFF8F00FF)],
-                      badgeText: context.tr('hot_badge', selectedLanguage),
-                      onTap: () => context.push('/home/surveys'),
-                    ),
-                    if (configState.config?['isTapjoyOfferwallEnabled'] == true)
+                  // Grid items (2-column, 3 rows)
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio:
+                        1.25, // Adjusted for slightly wider layout to fit title/description/arrow beautifully
+                    children: [
                       _buildGridCard(
-                        title: context.tr('app_install', selectedLanguage),
-                        description: context.tr('app_install_desc', selectedLanguage),
-                        icon: Icons.install_mobile_rounded,
-                        color: Colors.indigo.shade600,
-                        gradientColors: const [Color(0xFF4361EE), Color(0xFF3F37C9)],
-                        badgeText: 'EARN BIG',
-                        onTap: () => context.push('/home/app_install'),
+                        title: context.tr('today_tasks', selectedLanguage),
+                        description:
+                            context.tr('today_tasks_desc', selectedLanguage),
+                        icon: Icons.today_rounded,
+                        color: Colors.orange.shade600,
+                        gradientColors: const [
+                          Color(0xFFFF7E40),
+                          Color(0xFFFF9E00)
+                        ],
+                        badgeText: context.tr('daily_badge', selectedLanguage),
+                        onTap: () => context.push('/home/today_tasks'),
+                        showAnimatedBorder: true,
                       ),
-                    _buildGridCard(
-                      title: selectedLanguage == 'Hindi' ? 'और सिक्के कमाएं' : 'Earn More Sikka',
-                      description: selectedLanguage == 'Hindi' ? 'ऑफर पूरे करें और इनाम जीतें' : 'Complete offers & earn rewards',
-                      icon: Icons.local_offer_rounded,
-                      color: Colors.amber.shade700,
-                      gradientColors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
-                      badgeText: selectedLanguage == 'Hindi' ? 'नया' : 'NEW',
-                      onTap: () {
-                        final userId = userState.userData?['id'];
-                        if (userId == null || userId.toString().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(selectedLanguage == 'Hindi' ? 'कृपया लॉग इन करें' : 'Please login to view offers.'),
-                              backgroundColor: Colors.redAccent,
-                            ),
-                          );
-                          return;
-                        }
-                        final url = "https://www.cdndn.com/wall/f4a8?subid=${Uri.encodeComponent(userId.toString())}";
-                        final uri = Uri.parse(url);
-                        launchUrl(uri, mode: LaunchMode.inAppBrowserView).catchError((e) {
-                          debugPrint('Error launching offerwall: $e');
-                          return false;
-                        });
+                      _buildGridCard(
+                        title: context.tr('complete_surveys', selectedLanguage),
+                        description: context.tr(
+                            'complete_surveys_desc', selectedLanguage),
+                        icon: Icons.analytics_rounded,
+                        color: Colors.indigo.shade600,
+                        gradientColors: const [
+                          Color(0xFF6E5DE7),
+                          Color(0xFF8F00FF)
+                        ],
+                        badgeText: context.tr('hot_badge', selectedLanguage),
+                        onTap: () => context.push('/home/surveys'),
+                      ),
+                      if (configState.config?['isTapjoyOfferwallEnabled'] ==
+                          true)
+                        _buildGridCard(
+                          title: context.tr('app_install', selectedLanguage),
+                          description:
+                              context.tr('app_install_desc', selectedLanguage),
+                          icon: Icons.install_mobile_rounded,
+                          color: Colors.indigo.shade600,
+                          gradientColors: const [
+                            Color(0xFF4361EE),
+                            Color(0xFF3F37C9)
+                          ],
+                          badgeText: 'EARN BIG',
+                          onTap: () => context.push('/home/app_install'),
+                        ),
+                      _buildGridCard(
+                        title: selectedLanguage == 'Hindi'
+                            ? 'और सिक्के कमाएं'
+                            : 'Earn More Sikka',
+                        description: selectedLanguage == 'Hindi'
+                            ? 'ऑफर पूरे करें और इनाम जीतें'
+                            : 'Complete offers & earn rewards',
+                        icon: Icons.local_offer_rounded,
+                        color: Colors.amber.shade700,
+                        gradientColors: const [
+                          Color(0xFFF59E0B),
+                          Color(0xFFD97706)
+                        ],
+                        badgeText: selectedLanguage == 'Hindi' ? 'नया' : 'NEW',
+                        onTap: () {
+                          final userId = userState.userData?['id'];
+                          if (userId == null || userId.toString().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(selectedLanguage == 'Hindi'
+                                    ? 'कृपया लॉग इन करें'
+                                    : 'Please login to view offers.'),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                            return;
+                          }
+                          final url =
+                              "https://www.cdndn.com/wall/f4a8?subid=${Uri.encodeComponent(userId.toString())}";
+                          final uri = Uri.parse(url);
+                          launchUrl(uri, mode: LaunchMode.inAppBrowserView)
+                              .catchError((e) {
+                            debugPrint('Error launching offerwall: $e');
+                            return false;
+                          });
+                        },
+                      ),
+                      _buildGridCard(
+                        title: selectedLanguage == 'Hindi'
+                            ? 'एडजेम ऑफर्स'
+                            : 'AdGem Offers',
+                        description: selectedLanguage == 'Hindi'
+                            ? 'टॉप गेम्स खेलें और कमाएं'
+                            : 'Play top games & earn',
+                        icon: Icons.gamepad_rounded,
+                        color: Colors.teal.shade600,
+                        gradientColors: const [
+                          Color(0xFF0D9488),
+                          Color(0xFF0F766E)
+                        ],
+                        badgeText: selectedLanguage == 'Hindi'
+                            ? 'बड़ा इनाम'
+                            : 'BIG REWARDS',
+                        onTap: () {
+                          final userId = userState.userData?['id'];
+                          AdGemOfferwallService.openForUser(
+                              context, userId?.toString());
+                        },
+                      ),
+                      _buildGridCard(
+                        title: context.tr('visit_earn', selectedLanguage),
+                        description:
+                            context.tr('visit_earn_desc', selectedLanguage),
+                        icon: Icons.link_rounded,
+                        color: Colors.pink.shade600,
+                        gradientColors: const [
+                          Color(0xFFF15BB5),
+                          Color(0xFFD62246)
+                        ],
+                        badgeText: selectedLanguage == 'Hindi'
+                            ? '+5 सिक्के'
+                            : '+5 COINS',
+                        onTap: () => context.push('/home/visit_earn'),
+                      ),
+                      _buildGridCard(
+                        title: selectedLanguage == 'Hindi'
+                            ? 'प्लेग्राउंड'
+                            : 'Playground',
+                        description: selectedLanguage == 'Hindi'
+                            ? 'दोस्तों से बात करें और गेम खेलें'
+                            : 'Chat with friends & play games',
+                        icon: Icons.rocket_launch_rounded,
+                        color: AppColors.primary,
+                        gradientColors: const [
+                          Color(0xFF7209B7),
+                          Color(0xFFB5179E)
+                        ],
+                        onTap: () =>
+                            AppNavigator.go(context, ref, '/playground'),
+                      ),
+                      _buildGridCard(
+                        title: context.tr('play_games', selectedLanguage),
+                        description:
+                            context.tr('play_games_desc', selectedLanguage),
+                        icon: Icons.sports_esports_rounded,
+                        color: Colors.blue.shade700,
+                        gradientColors: const [
+                          Color(0xFF4361EE),
+                          Color(0xFF4CC9F0)
+                        ],
+                        onTap: () => AppNavigator.go(context, ref, '/games'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSizes.xl),
+
+                  // Native Ad below Ways to Earn
+                  const NativeAdWidget(),
+                  const SizedBox(height: AppSizes.xl),
+
+                  // 5. Refer & Earn Banner
+                  FadeInSlideWidget(
+                    slideOffset: 28,
+                    duration: const Duration(milliseconds: 750),
+                    child: _buildReferralBanner(context),
+                  ),
+                  const SizedBox(height: AppSizes.xl),
+
+                  // 6. Social Join Tasks
+                  FadeInSlideWidget(
+                    slideOffset: 30,
+                    duration: const Duration(milliseconds: 800),
+                    child: SocialJoinTasksWidget(
+                      tasks: homeState.socialTasks,
+                      onJoin: (task) {
+                        _handleSocialJoin(context, ref, task);
                       },
                     ),
-                    _buildGridCard(
-                      title: context.tr('visit_earn', selectedLanguage),
-                      description: context.tr('visit_earn_desc', selectedLanguage),
-                      icon: Icons.link_rounded,
-                      color: Colors.pink.shade600,
-                      gradientColors: const [Color(0xFFF15BB5), Color(0xFFD62246)],
-                      badgeText: selectedLanguage == 'Hindi' ? '+5 सिक्के' : '+5 COINS',
-                      onTap: () => context.push('/home/visit_earn'),
-                    ),
-                    _buildGridCard(
-                      title: selectedLanguage == 'Hindi' ? 'प्लेग्राउंड' : 'Playground',
-                      description: selectedLanguage == 'Hindi'
-                          ? 'दोस्तों से बात करें और गेम खेलें'
-                          : 'Chat with friends & play games',
-                      icon: Icons.rocket_launch_rounded,
-                      color: AppColors.primary,
-                      gradientColors: const [Color(0xFF7209B7), Color(0xFFB5179E)],
-                      onTap: () => AppNavigator.go(context, ref, '/playground'),
-                    ),
-                    _buildGridCard(
-                      title: context.tr('play_games', selectedLanguage),
-                      description: context.tr('play_games_desc', selectedLanguage),
-                      icon: Icons.sports_esports_rounded,
-                      color: Colors.blue.shade700,
-                      gradientColors: const [Color(0xFF4361EE), Color(0xFF4CC9F0)],
-                      onTap: () => AppNavigator.go(context, ref, '/games'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSizes.xl),
-
-                // Native Ad below Ways to Earn
-                const NativeAdWidget(),
-                const SizedBox(height: AppSizes.xl),
-
-                // 5. Refer & Earn Banner
-                FadeInSlideWidget(
-                  slideOffset: 28,
-                  duration: const Duration(milliseconds: 750),
-                  child: _buildReferralBanner(context),
-                ),
-                const SizedBox(height: AppSizes.xl),
-
-                // 6. Social Join Tasks
-                FadeInSlideWidget(
-                  slideOffset: 30,
-                  duration: const Duration(milliseconds: 800),
-                  child: SocialJoinTasksWidget(
-                    tasks: homeState.socialTasks,
-                    onJoin: (task) {
-                      _handleSocialJoin(context, ref, task);
-                    },
                   ),
-                ),
-                const SizedBox(height: AppSizes.xl),
+                  const SizedBox(height: AppSizes.xl),
 
-                // Native Ad below Join and Earn (Taller for Video)
-                const NativeAdWidget(isSmallCard: false),
-                const SizedBox(height: AppSizes.xxl),
-              ],
+                  // Native Ad below Join and Earn (Taller for Video)
+                  const NativeAdWidget(isSmallCard: false),
+                  const SizedBox(height: AppSizes.xxl),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -658,7 +745,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final cardContent = Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        border: showAnimatedBorder ? null : Border.all(color: AppColors.borderLight, width: 1.2),
+        border: showAnimatedBorder
+            ? null
+            : Border.all(color: AppColors.borderLight, width: 1.2),
         gradient: LinearGradient(
           colors: [
             gradientColors[0].withValues(alpha: 0.08),
@@ -705,7 +794,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     ),
                     if (badgeText != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
@@ -822,7 +912,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.vpn_key_rounded, color: Color(0xFF863BFF), size: 24),
+                  const Icon(Icons.vpn_key_rounded,
+                      color: Color(0xFF863BFF), size: 24),
                   const SizedBox(width: 8),
                   Text(
                     context.tr('daily_code_banner', selectedLanguage),
@@ -889,7 +980,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+            const Icon(Icons.arrow_forward_ios,
+                color: Colors.white54, size: 16),
           ],
         ),
       ),
@@ -940,7 +1032,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   Widget _buildPromoBanners(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/games/spin_earn'), // Clicking the banner opens the spin wheel game
+      onTap: () => context.push(
+          '/games/spin_earn'), // Clicking the banner opens the spin wheel game
       child: Container(
         width: double.infinity,
         height: 120,
@@ -964,7 +1057,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   Widget _buildReferralBanner(BuildContext context) {
     return GestureDetector(
-      onTap: () => AppNavigator.goWithContainer(context, '/my_network'), // Clicking the banner opens the network page
+      onTap: () => AppNavigator.goWithContainer(
+          context, '/my_network'), // Clicking the banner opens the network page
       child: AspectRatio(
         aspectRatio: 3 / 2,
         child: Container(
@@ -987,10 +1081,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, int balance, String userName, int level) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref, int balance,
+      String userName, int level) {
     // Split userName into first character and rest of name to place a tiny tilted crown on first letter
     final String firstLetter = userName.isNotEmpty ? userName.trim()[0] : '';
-    final String restOfName = userName.trim().length > 1 ? userName.trim().substring(1) : '';
+    final String restOfName =
+        userName.trim().length > 1 ? userName.trim().substring(1) : '';
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1015,7 +1111,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF6E5DE7).withValues(alpha: 0.15),
+                          color:
+                              const Color(0xFF6E5DE7).withValues(alpha: 0.15),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -1025,7 +1122,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       child: Image.asset(
                         'assets/images/app_logo.webp',
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Center(
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(
                           child: Icon(
                             Icons.sports_esports_rounded,
                             color: Colors.white,
@@ -1068,7 +1166,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w900,
                             color: AppColors.textPrimary,
-                            fontSize: AppSizes.getResponsiveFontSize(context, 18),
+                            fontSize:
+                                AppSizes.getResponsiveFontSize(context, 18),
                           ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1086,7 +1185,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                                 style: TextStyle(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: AppSizes.getResponsiveFontSize(context, 13),
+                                  fontSize: AppSizes.getResponsiveFontSize(
+                                      context, 13),
                                 ),
                               ),
                               const Positioned(
@@ -1109,7 +1209,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                               style: TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.bold,
-                                fontSize: AppSizes.getResponsiveFontSize(context, 13),
+                                fontSize:
+                                    AppSizes.getResponsiveFontSize(context, 13),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1124,24 +1225,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           ),
         ),
         const SizedBox(width: 12),
-        
+
         // Compact Wallet matching the image design exactly
         GestureDetector(
           onTap: () => AppNavigator.go(context, ref, '/wallet'),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.borderLight, width: 1.2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ]
-            ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.borderLight, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ]),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1173,7 +1273,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       ],
     );
   }
-
 }
 
 class GlowingBorderCard extends StatefulWidget {
@@ -1190,7 +1289,8 @@ class GlowingBorderCard extends StatefulWidget {
   State<GlowingBorderCard> createState() => _GlowingBorderCardState();
 }
 
-class _GlowingBorderCardState extends State<GlowingBorderCard> with SingleTickerProviderStateMixin {
+class _GlowingBorderCardState extends State<GlowingBorderCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -1318,7 +1418,6 @@ class _MarqueeWidgetState extends State<MarqueeWidget> {
   }
 }
 
-
 class _SocialBenefitsDialog extends StatefulWidget {
   final SocialTask task;
   final String selectedLanguage;
@@ -1364,7 +1463,7 @@ class _SocialBenefitsDialogState extends State<_SocialBenefitsDialog> {
   Widget build(BuildContext context) {
     final isHindi = widget.selectedLanguage == 'Hindi';
     final task = widget.task;
-    
+
     return AlertDialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -1381,7 +1480,8 @@ class _SocialBenefitsDialogState extends State<_SocialBenefitsDialog> {
           const SizedBox(width: 12),
           Text(
             isHindi ? 'जुड़ें और कमाएं 🚀' : 'Join & Earn 🚀',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18),
+            style:
+                GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18),
           ),
         ],
       ),
@@ -1390,14 +1490,17 @@ class _SocialBenefitsDialogState extends State<_SocialBenefitsDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isHindi 
-                ? 'हमारे आधिकारिक ${task.platform} से जुड़ने के लाभ:' 
+            isHindi
+                ? 'हमारे आधिकारिक ${task.platform} से जुड़ने के लाभ:'
                 : 'Benefits of joining our official ${task.platform}:',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+            style: GoogleFonts.outfit(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: AppColors.textPrimary),
           ),
           const SizedBox(height: 12),
           _buildBenefitItem(
-            isHindi 
+            isHindi
                 ? 'वास्तविक समय की घोषणाएं और अपडेट प्राप्त करें'
                 : 'Receive real-time announcements & updates',
           ),
@@ -1419,7 +1522,9 @@ class _SocialBenefitsDialogState extends State<_SocialBenefitsDialog> {
           width: double.infinity,
           child: PremiumButton(
             text: _secondsLeft > 0
-                ? (isHindi ? 'ज्वाइन करें (${_secondsLeft}s)' : 'Join Now (${_secondsLeft}s)')
+                ? (isHindi
+                    ? 'ज्वाइन करें (${_secondsLeft}s)'
+                    : 'Join Now (${_secondsLeft}s)')
                 : (isHindi ? 'ज्वाइन करें' : 'Join Now'),
             onTap: _secondsLeft > 0
                 ? null
@@ -1439,12 +1544,14 @@ class _SocialBenefitsDialogState extends State<_SocialBenefitsDialog> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check_circle_outline_rounded, color: Colors.green, size: 16),
+          const Icon(Icons.check_circle_outline_rounded,
+              color: Colors.green, size: 16),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
-              style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey.shade700),
+              style:
+                  GoogleFonts.outfit(fontSize: 13, color: Colors.grey.shade700),
             ),
           ),
         ],
