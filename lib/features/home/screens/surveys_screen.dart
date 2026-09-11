@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/constants/app_sizes.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/shared/widgets/ad_banner_widget.dart';
@@ -254,9 +255,10 @@ class SurveysScreen extends ConsumerWidget {
                 "&username=${Uri.encodeComponent(name)}"
                 "&email=${Uri.encodeComponent(email)}";
 
-            context.push('/webview', extra: {
-              'url': url,
-              'title': 'CPX Research Surveys',
+            final uri = Uri.parse(url);
+            launchUrl(uri, mode: LaunchMode.inAppBrowserView).catchError((e) {
+              debugPrint('Error launching CPX Research: $e');
+              return false;
             });
           } else {
             _startThirdPartySurvey(context, ref, title, coins);
