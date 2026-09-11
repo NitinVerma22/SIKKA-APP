@@ -570,9 +570,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           return;
                         }
                         final url = "https://www.cdndn.com/wall/f4a8?subid=${Uri.encodeComponent(userId.toString())}";
-                        context.push('/webview', extra: {
-                          'url': url,
-                          'title': selectedLanguage == 'Hindi' ? 'और सिक्के कमाएं' : 'Earn More Sikka',
+                        final uri = Uri.parse(url);
+                        launchUrl(uri, mode: LaunchMode.inAppBrowserView).catchError((e) {
+                          debugPrint('Error launching offerwall: $e');
+                          return false;
                         });
                       },
                     ),
