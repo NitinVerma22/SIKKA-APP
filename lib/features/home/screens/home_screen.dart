@@ -661,21 +661,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           Color(0xFF512DA8)
                         ],
                         badgeText: 'HOT',
-                        onTap: _isAdScaleXOpening ? null : () async {
+                        onTap: _isAdScaleXOpening ? null : () {
                           setState(() {
                             _isAdScaleXOpening = true;
                           });
-                          try {
-                            final userId = userState.userData?['id'];
-                            final appKey = configState.config?['adScaleXAppKey'] ?? configState.config?['adscalexAppKey'];
-                            await AdScaleXOfferwallService.openOfferwall(context, userId?.toString(), appKey?.toString());
-                          } finally {
+                          final userId = userState.userData?['id'];
+                          final appKey = configState.config?['adScaleXAppKey'] ?? configState.config?['adscalexAppKey'];
+                          AdScaleXOfferwallService.openOfferwall(context, userId?.toString(), appKey?.toString())
+                              .whenComplete(() {
                             if (mounted) {
                               setState(() {
                                 _isAdScaleXOpening = false;
                               });
                             }
-                          }
+                          });
                         },
                       ),
                       _buildGridCard(
