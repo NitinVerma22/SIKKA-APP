@@ -134,7 +134,7 @@ class _NativeArrowEscapeLevelSelectScreenState
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Lvl \',
+                                'Lvl $levelNum',
                                 style: GoogleFonts.poppins(
                                   color: const Color(0xFF282C36),
                                   fontWeight: FontWeight.w600,
@@ -154,7 +154,7 @@ class _NativeArrowEscapeLevelSelectScreenState
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '\',
+                                    '$rewardAmount',
                                     style: GoogleFonts.bebasNeue(
                                       color: Colors.amber,
                                       fontSize: 22,
@@ -174,7 +174,7 @@ class _NativeArrowEscapeLevelSelectScreenState
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    '\',
+                                    '$levelNum',
                                     style: GoogleFonts.bebasNeue(
                                       fontSize: 32,
                                       color: Colors.white,
