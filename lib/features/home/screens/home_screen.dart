@@ -661,7 +661,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           Color(0xFF512DA8)
                         ],
                         badgeText: 'HOT',
-                        onTap: _isAdScaleXOpening ? null : () {
+                        onTap: () {
+                          if (_isAdScaleXOpening) return;
                           setState(() {
                             _isAdScaleXOpening = true;
                           });
