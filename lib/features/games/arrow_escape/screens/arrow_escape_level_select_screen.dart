@@ -17,8 +17,7 @@ class _NativeArrowEscapeLevelSelectScreenState
     extends State<NativeArrowEscapeLevelSelectScreen> {
   final ArrowEscapeService _service = ArrowEscapeService();
 
-  int _maxUnlockedLevel = 1;
-  Map<int, int> _starsMap = {};
+  int _currentLevel = 1;
   bool _isLoading = true;
 
   @override
@@ -32,8 +31,10 @@ class _NativeArrowEscapeLevelSelectScreenState
     final progress = await _service.loadProgress();
     if (mounted) {
       setState(() {
-        _maxUnlockedLevel = progress.maxUnlockedLevel;
-        _starsMap = progress.starsMap;
+        _currentLevel = progress.maxUnlockedLevel;
+        if (_currentLevel < 1 || _currentLevel > 15) {
+           _currentLevel = 1;
+        }
         _isLoading = false;
       });
     }
@@ -52,120 +53,145 @@ class _NativeArrowEscapeLevelSelectScreenState
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'SELECT LEVEL',
+          'LEVEL SELECT',
           style: GoogleFonts.bebasNeue(
-            fontSize: 28,
-            letterSpacing: 2.0,
             color: Colors.white,
+            fontSize: 24,
+            letterSpacing: 1.5,
           ),
         ),
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF76ED12)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF76ED12)))
           : GridView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.88,
+                crossAxisCount: 3,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.85,
               ),
-              itemCount: 200,
+              itemCount: 15,
               itemBuilder: (context, index) {
                 final levelNum = index + 1;
-                final isUnlocked = levelNum <= _maxUnlockedLevel;
-                final stars = _starsMap[levelNum] ?? 0;
-                final isCurrent = levelNum == _maxUnlockedLevel;
+                // Strict progression: ONLY the current level is unlocked.
+                final isCurrent = levelNum == _currentLevel;
+                final isLocked = !isCurrent;
+                final isMilestone = levelNum % 5 == 0;
+
+                int rewardAmount = 0;
+                if (levelNum == 5) rewardAmount = 30;
+                if (levelNum == 10) rewardAmount = 70;
+                if (levelNum == 15) rewardAmount = 150;
 
                 return InkWell(
-                  onTap: isUnlocked
-                      ? () {
-                          // Respect ad frequency rules — skip for levels that don't qualify
-                          void navigateToGame() async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NativeArrowEscapeGameScreen(
-                                  initialLevel: levelNum,
-                                ),
+                  onTap: isCurrent
+                      ? () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NativeArrowEscapeGameScreen(
+                                initialLevel: levelNum,
                               ),
-                            );
-                            _loadProgress();
-                          }
-                          if (AdService.instance.shouldShowLevelCompleteAd(levelNum)) {
-                            AdService.instance.showInterstitialAd(
-                              onAdDismissed: navigateToGame,
-                            );
-                          } else {
-                            navigateToGame();
-                          }
+                            ),
+                          );
+                          _loadProgress();
                         }
                       : null,
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     decoration: BoxDecoration(
                       color: isCurrent
-                          ? const Color(0xFF1E261B)
-                          : (isUnlocked
-                              ? const Color(0xFF161920)
-                              : const Color(0xFF101217)),
+                          ? (isMilestone ? const Color(0xFF2A1B38) : const Color(0xFF1E261B))
+                          : const Color(0xFF101217),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isCurrent
-                            ? const Color(0xFF76ED12)
-                            : (isUnlocked
-                                ? const Color(0xFF282C36)
-                                : const Color(0xFF1A1D24)),
+                            ? (isMilestone ? Colors.purpleAccent : const Color(0xFF76ED12))
+                            : const Color(0xFF1A1D24),
                         width: isCurrent ? 2 : 1,
                       ),
+                      boxShadow: isCurrent
+                          ? [
+                              BoxShadow(
+                                color: isMilestone ? Colors.purpleAccent.withOpacity(0.3) : const Color(0xFF76ED12).withOpacity(0.3),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              )
+                            ]
+                          : null,
                     ),
-                    child: isUnlocked
+                    child: isLocked
                         ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '$levelNum',
-                                style: GoogleFonts.bebasNeue(
-                                  fontSize: 24,
-                                  color: isCurrent
-                                      ? const Color(0xFF76ED12)
-                                      : Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(3, (starIdx) {
-                                  return Icon(
-                                    Icons.star_rounded,
-                                    size: 14,
-                                    color: starIdx < stars
-                                        ? const Color(0xFFFFEA00)
-                                        : Colors.white24,
-                                  );
-                                }),
-                              ),
-                            ],
-                          )
-                        : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Icon(
                                 Icons.lock_rounded,
-                                size: 22,
-                                color: Colors.white30,
+                                color: Color(0xFF282C36),
+                                size: 28,
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 8),
                               Text(
-                                '$levelNum',
-                                style: GoogleFonts.bebasNeue(
-                                  fontSize: 16,
-                                  color: Colors.white30,
+                                'Lvl \',
+                                style: GoogleFonts.poppins(
+                                  color: const Color(0xFF282C36),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
                                 ),
                               ),
                             ],
-                          ),
+                          )
+                        : (isMilestone
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.card_giftcard_rounded,
+                                    color: Colors.purpleAccent,
+                                    size: 32,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '\',
+                                    style: GoogleFonts.bebasNeue(
+                                      color: Colors.amber,
+                                      fontSize: 22,
+                                    ),
+                                  ),
+                                  Text(
+                                    'COINS',
+                                    style: GoogleFonts.bebasNeue(
+                                      color: Colors.amberAccent,
+                                      fontSize: 12,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '\',
+                                    style: GoogleFonts.bebasNeue(
+                                      fontSize: 32,
+                                      color: Colors.white,
+                                      height: 1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'PLAY',
+                                    style: GoogleFonts.bebasNeue(
+                                      fontSize: 16,
+                                      color: const Color(0xFF76ED12),
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                ],
+                              )),
                   ),
                 );
               },

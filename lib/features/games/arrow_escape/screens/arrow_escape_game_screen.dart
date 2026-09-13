@@ -251,34 +251,32 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
 
     setState(() {
       _isLevelComplete = true;
-      _isClaiming = true;
+      _isClaiming = true; // Still processing
     });
 
-    final progress = await _service.loadProgress();
-    final int nextMax = _service.max(progress.maxUnlockedLevel, _currentLevelNum + 1);
-    final Map<int, int> newStars = Map<int, int>.from(progress.starsMap);
-    newStars[_currentLevelNum] = 3;
-    await _service.saveLocalProgress(nextMax, newStars);
+    final isMilestone = _currentLevelNum % 5 == 0;
 
-    final result = await _service.claimLevelReward(
-      levelNumber: _currentLevelNum,
-      stars: 3,
-      score: 100,
-      sessionId: _sessionId,
-    );
+    // Normal Level Logic
+    if (!isMilestone) {
+      final result = await _service.claimLevelReward(
+        levelNumber: _currentLevelNum,
+        isMilestoneClaim: false,
+        sessionId: _sessionId,
+      );
+      if (mounted) {
+        setState(() {
+          _earnedCoins = 0;
+          _isClaiming = false;
+        });
+      }
+      return;
+    }
 
-    // Ad logic removed from here — ads now fire ONLY via handleNextLevelTransition
-    // when user taps the "NEXT LEVEL" button, preventing double-ad bug.
-
-    final coins = result['coinsEarned'] ?? (_currentLevelNum * widget.multiplier);
-
+    // Milestone logic happens inside _buildWinModal when they click "Watch Video"
     if (mounted) {
       setState(() {
-        _earnedCoins = coins;
         _isClaiming = false;
       });
-      ref.read(userProvider.notifier).addDirectCoins(_earnedCoins);
-      GameNotifications.showCoinUpdate(context, '+$_earnedCoins Sikka');
     }
   }
 
@@ -524,96 +522,161 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
   }
 
   Widget _buildWinModal() {
-    return Container(
-      color: Colors.black87,
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.all(28),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: const Color(0xFF181B22),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFF76ED12), width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF76ED12).withValues(alpha: 0.3),
-                blurRadius: 20,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'VICTORY! 🎉',
-                style: GoogleFonts.bebasNeue(fontSize: 40, color: const Color(0xFF76ED12)),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(3, (index) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.0),
-                    child: Icon(Icons.star_rounded, color: Color(0xFFFFEA00), size: 36),
-                  );
-                }),
-              ),
-              const SizedBox(height: 16),
+    final isMilestone = _currentLevelNum % 5 == 0;
+    int rewardAmount = 0;
+    if (_currentLevelNum == 5) rewardAmount = 30;
+    if (_currentLevelNum == 10) rewardAmount = 70;
+    if (_currentLevelNum == 15) rewardAmount = 150;
 
-              // COINS REWARD CONTAINER
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF222733),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFFEA00), width: 1.5),
+    if (!isMilestone) {
+      return Container(
+        color: Colors.black87,
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.all(28),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF181B22),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFF76ED12), width: 2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'LEVEL CLEARED! 🚀',
+                  style: GoogleFonts.bebasNeue(fontSize: 36, color: const Color(0xFF76ED12)),
                 ),
-                child: _isClaiming
-                    ? const CircularProgressIndicator(color: Color(0xFFFFEA00))
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.monetization_on_rounded, color: Color(0xFFFFEA00), size: 28),
-                          const SizedBox(width: 10),
-                          Text(
-                            '+$_earnedCoins COINS',
-                            style: GoogleFonts.orbitron(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFFFFEA00),
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-
-              const SizedBox(height: 20),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF76ED12),
-                  foregroundColor: Colors.black,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF76ED12),
+                    foregroundColor: Colors.black,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () {
+                    // Show Interstitial on normal levels
+                    AdService.instance.showInterstitialAd(
+                      onAdDismissed: () {
+                        if (mounted) {
+                          _loadLevel(_currentLevelNum + 1);
+                        }
+                      }
+                    );
+                  },
+                  child: Text(
+                    'NEXT LEVEL ➔',
+                    style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                 ),
-                onPressed: () {
-                  AdService.instance.handleNextLevelTransition(
-                    context: context,
-                    currentLevel: _currentLevelNum,
-                    gameName: 'arrow_escape',
-                    onProceedToNextLevel: () => _loadLevel(_currentLevelNum + 1),
-                  );
-                },
-                child: Text(
-                  'NEXT LEVEL ➔',
-                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
+      );
+    }
+
+    // MILESTONE FULL SCREEN CLAIM UI
+    return Scaffold(
+      backgroundColor: Colors.black87,
+      body: Column(
+        children: [
+          const SizedBox(height: 40),
+          const GameBannerAd(), // Thin Banner at the top
+          Expanded(
+            child: Center(
+              child: Container(
+                margin: const EdgeInsets.all(28),
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A1B38),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.purpleAccent, width: 2),
+                  boxShadow: [
+                    BoxShadow(color: Colors.purpleAccent.withOpacity(0.4), blurRadius: 20)
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'MILESTONE REACHED!',
+                      style: GoogleFonts.bebasNeue(fontSize: 36, color: Colors.white),
+                    ),
+                    const SizedBox(height: 20),
+                    const Icon(Icons.card_giftcard_rounded, color: Colors.amber, size: 60),
+                    const SizedBox(height: 12),
+                    Text(
+                      '+\$rewardAmount COINS',
+                      style: GoogleFonts.orbitron(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.amber),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Watch a short video to claim your reward!',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(fontSize: 16, color: Colors.white70),
+                    ),
+                    const SizedBox(height: 30),
+                    _isClaiming
+                        ? const CircularProgressIndicator(color: Colors.purpleAccent)
+                        : ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purpleAccent,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 56),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            icon: const Icon(Icons.play_circle_fill_rounded, size: 28),
+                            label: Text(
+                              'WATCH VIDEO',
+                              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () {
+                              AdService.instance.showRewardedAd(
+                                context: context,
+                                userId: 'arrow_escape_milestone',
+                                onAdDismissed: () {
+                                  // Ad closed
+                                },
+                                onUserEarnedReward: (reward) async {
+                                  if (mounted) setState(() => _isClaiming = true);
+                                  
+                                  // Call backend to claim
+                                  await _service.claimLevelReward(
+                                    levelNumber: _currentLevelNum,
+                                    isMilestoneClaim: true,
+                                    sessionId: _sessionId,
+                                  );
+
+                                  if (mounted) {
+                                    ref.read(userProvider.notifier).addDirectCoins(rewardAmount);
+                                    GameNotifications.showCoinUpdate(context, '+\$rewardAmount Sikka');
+                                    setState(() => _isClaiming = false);
+                                    
+                                    // Reset to level 1 if 15, else next level
+                                    if (_currentLevelNum == 15) {
+                                       Navigator.pop(context); // Go back to level select since it's a reset
+                                    } else {
+                                       _loadLevel(_currentLevelNum + 1);
+                                    }
+                                  }
+                                }
+                              );
+                            },
+                          ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const GameBannerAd(), // Thin Banner at the bottom
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
+
 
   Widget _buildGameOverModal() {
     return Container(
@@ -688,3 +751,4 @@ class CustomPainterWidget extends StatelessWidget {
     return CustomPaint(painter: painter, child: Container());
   }
 }
+
