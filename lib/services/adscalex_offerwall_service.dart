@@ -3,21 +3,18 @@ import 'package:flutter/services.dart';
 
 class AdScaleXOfferwallService {
   static const MethodChannel _channel = MethodChannel('sikkaplay/adscalex');
+  static const String _appKey = 'psk_NfPTjRGS0a5f6vcljv0ScBZohLYIxOFsdfCRE9kfrtQ';
 
-  static Future<bool> openOfferwall(BuildContext context, String? userId, String? appKey) async {
+  static Future<bool> openOfferwall(BuildContext context, String? userId) async {
     if (userId == null || userId.trim().isEmpty) {
       _showError(context, 'Please login to view offers.');
-      return false;
-    }
-    if (appKey == null || appKey.trim().isEmpty) {
-      _showError(context, 'Offers are currently unavailable.');
       return false;
     }
 
     try {
       final result = await _channel.invokeMethod('openOfferwall', {
         'userId': userId.trim(),
-        'appKey': appKey.trim(),
+        'appKey': _appKey,
       });
       return result['success'] == true;
     } on PlatformException catch (e) {

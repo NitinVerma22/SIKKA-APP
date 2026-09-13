@@ -661,8 +661,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         badgeText: 'HOT',
                         onTap: () {
                           final userId = userState.userData?['id'];
-                          final appKey = configState.config?['adScaleXAppKey'] ?? configState.config?['adscalexAppKey'];
-                          AdScaleXOfferwallService.openOfferwall(context, userId?.toString(), appKey?.toString());
+                          AdScaleXOfferwallService.openOfferwall(context, userId?.toString());
                         },
                       ),
                       _buildGridCard(
