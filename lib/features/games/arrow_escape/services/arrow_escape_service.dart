@@ -96,11 +96,9 @@ class ArrowEscapeService {
 
   Future<Map<String, dynamic>> claimLevelReward({
     required int levelNumber,
-    required int stars,
-    required int score,
+    required bool isMilestoneClaim,
     String? sessionId,
   }) async {
-    final int coinsEarned = levelNumber * 2;
     try {
       final headers = await _getHeaders();
       final res = await http.post(
@@ -108,31 +106,21 @@ class ArrowEscapeService {
         headers: headers,
         body: json.encode({
           'levelNumber': levelNumber,
-          'stars': stars,
-          'score': score,
+          'isMilestoneClaim': isMilestoneClaim,
+          'stars': 3,
+          'score': 0,
         }),
       ).timeout(const Duration(seconds: 4));
 
       if (res.statusCode == 200) {
         return json.decode(res.body) as Map<String, dynamic>;
+      } else {
+        return {'success': false, 'error': 'Server error: ${res.statusCode}'};
       }
     } catch (e) {
       debugPrint('Error claiming arrow escape reward via v1: $e');
+      return {'success': false, 'error': e.toString()};
     }
-
-    try {
-      if (sessionId != null && sessionId.isNotEmpty) {
-        await UserService().endGameSession(sessionId, coinsEarned: coinsEarned);
-      }
-    } catch (e) {
-      debugPrint('Error ending game session fallback: $e');
-    }
-
-    return {
-      'success': true,
-      'coinsEarned': coinsEarned,
-      'newUnlockedLevel': levelNumber + 1,
-    };
   }
 
   int max(int a, int b) => a > b ? a : b;

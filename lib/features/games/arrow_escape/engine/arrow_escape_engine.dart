@@ -114,15 +114,18 @@ class ArrowEscapeEngine {
 
   /// Generate a level and GUARANTEE 100% solvability via forward solver validation
   static ArrowLevelModel generateLevel(int levelNumber) {
+    // Map 1-15 to high difficulty (150+)
+    final actualDifficultyLevel = levelNumber + 150;
+
     for (int seedOffset = 0; seedOffset < 150; seedOffset++) {
-      final candidate = _generateCandidate(levelNumber, seedOffset);
+      final candidate = _generateCandidate(actualDifficultyLevel, seedOffset);
       if (candidate != null && isLevelSolvable(candidate)) {
         return candidate; // 100% Solvable Level Guaranteed with NO Lock-Key deadlocks!
       }
     }
 
     // Fallback: Solvable candidate with relaxed density so it NEVER fails
-    return _generateCandidate(levelNumber, 999, relaxed: true)!;
+    return _generateCandidate(actualDifficultyLevel, 999, relaxed: true)!;
   }
 
   static ArrowLevelModel? _generateCandidate(int levelNumber, int seedOffset, {bool relaxed = false}) {
