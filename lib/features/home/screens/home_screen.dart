@@ -667,8 +667,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             _isAdScaleXOpening = true;
                           });
                           final userId = userState.userData?['id'];
-                          final appKey = configState.config?['adScaleXAppKey'] ?? configState.config?['adscalexAppKey'];
-                          AdScaleXOfferwallService.openOfferwall(context, userId?.toString(), appKey?.toString())
+                          final remoteAppKey = configState.config?['adScaleXAppKey'] ?? configState.config?['adscalexAppKey'];
+                          final appKey = remoteAppKey ?? 'psk_NfPTjRGS0a5f6vcljv0ScBZohLYIxOFsdfCRE9kfrtQ';
+                          AdScaleXOfferwallService.openOfferwall(context, userId?.toString(), appKey.toString())
                               .whenComplete(() {
                             if (mounted) {
                               setState(() {
