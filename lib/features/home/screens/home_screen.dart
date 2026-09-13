@@ -50,6 +50,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   bool _isValidating = false;
   Timer? _validationTimer;
   int _validationSecondsRemaining = 0;
+  
+  bool _isAdScaleXOpening = false;
 
   Future<void> _preloadAllData() async {
     if (!mounted) return;
@@ -659,9 +661,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           Color(0xFF512DA8)
                         ],
                         badgeText: 'HOT',
-                        onTap: () {
-                          final userId = userState.userData?['id'];
-                          AdScaleXOfferwallService.openOfferwall(context, userId?.toString());
+                        onTap: _isAdScaleXOpening ? null : () async {
+                          setState(() {
+                            _isAdScaleXOpening = true;
+                          });
+                          try {
+                            final userId = userState.userData?['id'];
+                            final appKey = configState.config?['adScaleXAppKey'] ?? configState.config?['adscalexAppKey'];
+                            await AdScaleXOfferwallService.openOfferwall(context, userId?.toString(), appKey?.toString());
+                          } finally {
+                            if (mounted) {
+                              setState(() {
+                                _isAdScaleXOpening = false;
+                              });
+                            }
+                          }
                         },
                       ),
                       _buildGridCard(

@@ -3,20 +3,26 @@ import 'package:flutter/services.dart';
 
 class AdScaleXOfferwallService {
   static const MethodChannel _channel = MethodChannel('sikkaplay/adscalex');
-  static const String _appKey = 'psk_NfPTjRGS0a5f6vcljv0ScBZohLYIxOFsdfCRE9kfrtQ';
 
-  static Future<bool> openOfferwall(BuildContext context, String? userId) async {
+  static Future<bool> openOfferwall(BuildContext context, String? userId, String? appKey) async {
     if (userId == null || userId.trim().isEmpty) {
       _showError(context, 'Please login to view offers.');
+      return false;
+    }
+    if (appKey == null || appKey.trim().isEmpty) {
+      _showError(context, 'Offers are currently unavailable.');
       return false;
     }
 
     try {
       final result = await _channel.invokeMethod('openOfferwall', {
         'userId': userId.trim(),
-        'appKey': _appKey,
+        'appKey': appKey.trim(),
       });
-      return result['success'] == true;
+      if (result is Map) {
+        return result['success'] == true;
+      }
+      return false;
     } on PlatformException catch (e) {
       debugPrint('AdScaleX Error: ${e.message}');
       _showError(context, 'Could not load offers at this time.');

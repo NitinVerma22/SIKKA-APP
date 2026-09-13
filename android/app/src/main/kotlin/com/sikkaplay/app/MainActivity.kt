@@ -9,6 +9,9 @@ import com.adscalex.sdk.AdScaleX
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.sikkaplay.app/device_info"
     private val ADSCALEX_CHANNEL = "sikkaplay/adscalex"
+    
+    private var adScaleXInitialized = false
+    private var initializedUserId: String? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -33,11 +36,23 @@ class MainActivity: FlutterActivity() {
                 }
                 
                 try {
-                    AdScaleX.init(
-                        context = applicationContext,
-                        appKey = appKey,
-                        userId = userId
-                    )
+                    if (!adScaleXInitialized) {
+                        AdScaleX.init(
+                            context = applicationContext,
+                            appKey = appKey,
+                            userId = userId
+                        )
+                        adScaleXInitialized = true
+                        initializedUserId = userId
+                    } else if (initializedUserId != userId) {
+                        result.error(
+                            "ADSCALEX_USER_CHANGED",
+                            "AdScaleX must be reinitialized after user change",
+                            null
+                        )
+                        return@setMethodCallHandler
+                    }
+
                     AdScaleX.showOfferwall(this)
                     result.success(mapOf("success" to true))
                 } catch (e: Exception) {
