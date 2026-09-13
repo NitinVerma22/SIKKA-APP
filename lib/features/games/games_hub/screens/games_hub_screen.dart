@@ -356,7 +356,7 @@ class GamesHubScreen extends ConsumerWidget {
                     colors: [const Color(0xFF0D9488), const Color(0xFF2DD4BF)],
                     leftImagePath: 'assets/images/games_hub/arrow left.png',
                     rightImagePath: 'assets/images/games_hub/arrow_right.png',
-                    isComingSoon: true,
+                    isComingSoon: false,
                     onTap: () {
                       context.push('/games/arrow_escape');
                     },
