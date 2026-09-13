@@ -29,6 +29,7 @@ import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sikkaplay/core/navigation/app_navigator.dart';
 import 'package:sikkaplay/services/adgem_offerwall_service.dart';
+import 'package:sikkaplay/services/adscalex_offerwall_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -646,6 +647,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           final userId = userState.userData?['id'];
                           AdGemOfferwallService.openForUser(
                               context, userId?.toString());
+                        },
+                      ),
+                      _buildGridCard(
+                        title: 'AdScaleX Offers',
+                        description: 'Complete offers & earn Sikka',
+                        icon: Icons.local_activity_rounded,
+                        color: Colors.deepPurple.shade600,
+                        gradientColors: const [
+                          Color(0xFF673AB7),
+                          Color(0xFF512DA8)
+                        ],
+                        badgeText: 'HOT',
+                        onTap: () {
+                          final userId = userState.userData?['id'];
+                          final appKey = configState.config?['adScaleXAppKey'] ?? configState.config?['adscalexAppKey'];
+                          AdScaleXOfferwallService.openOfferwall(context, userId?.toString(), appKey?.toString());
                         },
                       ),
                       _buildGridCard(
