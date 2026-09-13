@@ -608,7 +608,7 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
                     const Icon(Icons.card_giftcard_rounded, color: Colors.amber, size: 60),
                     const SizedBox(height: 12),
                     Text(
-                      '+\$rewardAmount COINS',
+                      '+$rewardAmount COINS',
                       style: GoogleFonts.orbitron(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.amber),
                     ),
                     const SizedBox(height: 8),
@@ -651,7 +651,7 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
 
                                   if (mounted) {
                                     ref.read(userProvider.notifier).addDirectCoins(rewardAmount);
-                                    GameNotifications.showCoinUpdate(context, '+\$rewardAmount Sikka');
+                                    GameNotifications.showCoinUpdate(context, '+$rewardAmount Sikka');
                                     setState(() => _isClaiming = false);
                                     
                                     // Reset to level 1 if 15, else next level
