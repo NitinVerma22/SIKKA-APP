@@ -1,485 +1,175 @@
-import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sikkaplay/core/animations/custom_animations.dart';
-import 'package:sikkaplay/core/constants/app_colors.dart';
-import 'package:sikkaplay/features/games/shared/widgets/game_banner_ad.dart';
-import 'package:sikkaplay/features/games/shared/screens/game_rules_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
-import 'package:sikkaplay/features/home/controllers/home_controller.dart';
-import 'package:sikkaplay/core/localization/app_translations.dart';
-import 'package:sikkaplay/core/localization/translation_provider.dart';
-import 'package:sikkaplay/shared/widgets/native_ad_widget.dart';
-import 'package:sikkaplay/core/navigation/app_navigator.dart';
 
 class GamesHubScreen extends ConsumerWidget {
   const GamesHubScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userState = ref.watch(userProvider);
-    final homeState = ref.watch(homeProvider);
-    final selectedLanguage = ref.watch(languageProvider);
-    final userData = userState.userData ?? {};
-    final referralEarning = userData['referralBalance'] ?? homeState.referralEarning;
-    final walletBalance = (userData['balance'] ?? homeState.balance) + referralEarning;
-
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFF8FAFC), // Muted light slate top
-              Color(0xFFF1F5F9), // Soft slate bottom
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Header Section
+              _buildHeader(),
+              const SizedBox(height: 16),
+              
+              // 2. Purple Banner
+              _buildPurpleBanner(),
+              const SizedBox(height: 16),
+              
+              // 3. Grid of Cards
+              _buildGridCards(context),
+              const SizedBox(height: 16),
+              
+              // 4. Bottom Banner (Friends / Gifts)
+              _buildBottomBanner(context),
+              const SizedBox(height: 24),
             ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title and Wallet Pill Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.tr('play_games', selectedLanguage),
-                            style: GoogleFonts.inter(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              color: const Color(0xFF0F172A), // Slate-900
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            selectedLanguage == 'Hindi' ? 'खेलें और सिक्के कमाएं' : 'Play & Earn Coins',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF64748B), // Slate-500
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Mockup wallet style pill
-                    GestureDetector(
-                      onTap: () => AppNavigator.go(context, ref, '/wallet'),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            )
-                          ]
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF7C3AED), // Purple wallet container
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.account_balance_wallet_rounded,
-                                color: Colors.white,
-                                size: 14,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '$walletBalance',
-                              style: const TextStyle(
-                                color: Color(0xFF0F172A),
-                                fontWeight: FontWeight.w900,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(
-                              Icons.monetization_on,
-                              color: AppColors.yellowGlow, // Gold Star-Coin Icon
-                              size: 18,
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.chevron_right_rounded,
-                              color: Color(0xFF94A3B8), // Slate-400
-                              size: 14,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Live Dynamic Stats Row
-                const LiveStatsGrid(),
-                const SizedBox(height: 28),
-
-                // Top Games Header Row
-                Row(
-                  children: [
-                    Text(
-                      context.tr('top_games', selectedLanguage),
-                      style: GoogleFonts.inter(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(
-                      Icons.auto_awesome,
-                      color: Color(0xFFC084FC), // soft purple sparkle matching mockup
-                      size: 16,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Game Card 1: Spin & Earn
-                FadeInSlideWidget(
-                  slideOffset: 20,
-                  duration: const Duration(milliseconds: 500),
-                  child: _buildGameCard(
-                    context: context,
-                    selectedLanguage: selectedLanguage,
-                    title: context.tr('spin_earn', selectedLanguage),
-                    description: context.tr('spin_earn_desc', selectedLanguage),
-                    icon: Icons.casino_rounded,
-                    colors: [const Color(0xFF7C3AED), const Color(0xFFC084FC)],
-                    leftImagePath: 'assets/images/games_hub/spin_earn_left.webp',
-                    rightImagePath: 'assets/images/games_hub/spin_earn_right.webp',
-                    onTap: () {
-                      context.push('/games/rules',
-                          extra: GameRulesArgs(
-                            title: context.tr('spin_earn', selectedLanguage),
-                            description: context.tr('spin_earn_desc', selectedLanguage),
-                            icon: Icons.casino_rounded,
-                            colors: [const Color(0xFF7C3AED), const Color(0xFFC084FC)],
-                            routePath: '/games/spin_earn',
-                            imagePath: 'assets/images/games_hub/spin_earn_right.webp',
-                            rules: [
-                              context.tr('spin_rule1', selectedLanguage),
-                              context.tr('spin_rule2', selectedLanguage),
-                              context.tr('spin_rule3', selectedLanguage),
-                            ],
-                          ));
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Game Card 2: Treasure Grid
-                FadeInSlideWidget(
-                  slideOffset: 30,
-                  duration: const Duration(milliseconds: 600),
-                  child: _buildGameCard(
-                    context: context,
-                    selectedLanguage: selectedLanguage,
-                    title: context.tr('treasure_grid', selectedLanguage),
-                    description: context.tr('treasure_grid_desc', selectedLanguage),
-                    icon: Icons.apps_rounded,
-                    colors: [const Color(0xFFEF4444), const Color(0xFFFCA5A5)],
-                    leftImagePath: 'assets/images/games_hub/treasure_grid_left.webp',
-                    rightImagePath: 'assets/images/games_hub/treasure_grid_right.webp',
-                    badgeText: 'Get 50 / 1 min',
-                    onTap: () {
-                      context.push('/games/rules',
-                          extra: GameRulesArgs(
-                            title: context.tr('treasure_grid', selectedLanguage),
-                            description: context.tr('treasure_grid_desc', selectedLanguage),
-                            icon: Icons.apps_rounded,
-                            colors: [const Color(0xFFEF4444), const Color(0xFFFCA5A5)],
-                            routePath: '/games/treasure_grid',
-                            imagePath: 'assets/images/games_hub/treasure_grid_right.webp',
-                            rules: [
-                              context.tr('treasure_rule1', selectedLanguage),
-                              context.tr('treasure_rule2', selectedLanguage),
-                              context.tr('treasure_rule3', selectedLanguage),
-                            ],
-                          ));
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Game Card 3: Emoji Memory
-                FadeInSlideWidget(
-                  slideOffset: 40,
-                  duration: const Duration(milliseconds: 700),
-                  child: _buildGameCard(
-                    context: context,
-                    selectedLanguage: selectedLanguage,
-                    title: context.tr('emoji_memory', selectedLanguage),
-                    description: context.tr('emoji_memory_desc', selectedLanguage),
-                    icon: Icons.sentiment_satisfied_alt_rounded,
-                    colors: [const Color(0xFF3B82F6), const Color(0xFF93C5FD)],
-                    leftImagePath: 'assets/images/games_hub/emoji_memory_left.webp',
-                    rightImagePath: 'assets/images/games_hub/emoji_memory_right.webp',
-                    onTap: () {
-                      context.push('/games/rules',
-                          extra: GameRulesArgs(
-                            title: context.tr('emoji_memory', selectedLanguage),
-                            description: context.tr('emoji_memory_desc', selectedLanguage),
-                            icon: Icons.sentiment_satisfied_alt_rounded,
-                            colors: [const Color(0xFF3B82F6), const Color(0xFF93C5FD)],
-                            routePath: '/games/emoji_memory',
-                            imagePath: 'assets/images/games_hub/emoji_memory_right.webp',
-                            rules: [
-                              context.tr('emoji_rule1', selectedLanguage),
-                              context.tr('emoji_rule2', selectedLanguage),
-                              context.tr('emoji_rule3', selectedLanguage),
-                            ],
-                          ));
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Game Card 4: Math Rush
-                FadeInSlideWidget(
-                  slideOffset: 50,
-                  duration: const Duration(milliseconds: 800),
-                  child: _buildGameCard(
-                    context: context,
-                    selectedLanguage: selectedLanguage,
-                    title: context.tr('math_rush', selectedLanguage),
-                    description: context.tr('math_rush_desc', selectedLanguage),
-                    icon: Icons.calculate_rounded,
-                    colors: [const Color(0xFF10B981), const Color(0xFF6EE7B7)],
-                    leftImagePath: 'assets/images/games_hub/math_rush_left.webp',
-                    rightImagePath: 'assets/images/games_hub/math_rush_right.webp',
-                    onTap: () {
-                      context.push('/games/rules',
-                          extra: GameRulesArgs(
-                            title: context.tr('math_rush', selectedLanguage),
-                            description: context.tr('math_rush_desc', selectedLanguage),
-                            icon: Icons.calculate_rounded,
-                            colors: [const Color(0xFF10B981), const Color(0xFF6EE7B7)],
-                            routePath: '/games/math_rush',
-                            imagePath: 'assets/images/games_hub/math_rush_right.webp',
-                            rules: [
-                              context.tr('math_rule1', selectedLanguage),
-                              context.tr('math_rule2', selectedLanguage),
-                              context.tr('math_rule3', selectedLanguage),
-                              context.tr('math_rule4', selectedLanguage),
-                            ],
-                          ));
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Native Ad in the middle of games list
-                const NativeAdWidget(),
-                const SizedBox(height: 16),
-
-                // Game Card 5: Water Sort Puzzle
-                FadeInSlideWidget(
-                  slideOffset: 50,
-                  duration: const Duration(milliseconds: 900),
-                  child: _buildGameCard(
-                    context: context,
-                    selectedLanguage: selectedLanguage,
-                    title: 'Water Sort Puzzle',
-                    description: selectedLanguage == 'Hindi' ? 'जितने लेवल पार करेंगे, 20000 तक सिक्के कमाएं' : 'Earn upto 20000 coins as much level you clear',
-                    icon: Icons.science_rounded,
-                    colors: [const Color(0xFF8B5CF6), const Color(0xFFC084FC)],
-                    leftImagePath: 'assets/images/games_hub/water_left.png',
-                    rightImagePath: 'assets/images/games_hub/water_right.png',
-                    onTap: () {
-                      context.push('/games/water_sort');
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Game Card 6: Bubble Shooter 2D
-                FadeInSlideWidget(
-                  slideOffset: 50,
-                  duration: const Duration(milliseconds: 1000),
-                  child: _buildGameCard(
-                    context: context,
-                    selectedLanguage: selectedLanguage,
-                    title: 'Bubble Shooter 2D',
-                    description: selectedLanguage == 'Hindi' ? 'जितने लेवल पार करेंगे, 20000 तक सिक्के कमाएं' : 'Earn upto 20000 coins as much level you clear',
-                    icon: Icons.bubble_chart_rounded,
-                    colors: [const Color(0xFF0284C7), const Color(0xFF38BDF8)],
-                    leftImagePath: 'assets/images/games_hub/buble_left.png',
-                    rightImagePath: 'assets/images/games_hub/buble_right.png',
-                    onTap: () {
-                      context.push('/games/bubble_shooter');
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Game Card 7: Arrow Escape
-                FadeInSlideWidget(
-                  slideOffset: 50,
-                  duration: const Duration(milliseconds: 1100),
-                  child: _buildGameCard(
-                    context: context,
-                    selectedLanguage: selectedLanguage,
-                    title: 'Arrow Escape',
-                    description: selectedLanguage == 'Hindi' ? 'तीरों को रास्ता देकर निकालें' : 'Unblock & clear arrows to escape',
-                    icon: Icons.navigation_rounded,
-                    colors: [const Color(0xFF0D9488), const Color(0xFF2DD4BF)],
-                    leftImagePath: 'assets/images/games_hub/arrow left.png',
-                    rightImagePath: 'assets/images/games_hub/arrow_right.png',
-                    isComingSoon: false,
-                    onTap: () {
-                      context.push('/games/arrow_escape');
-                    },
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const GameBannerAd(),
-                const SizedBox(height: 16),
-              ],
-            ),
           ),
         ),
       ),
     );
   }
 
-  // Simulated 3D pedestal widget supporting float effect
-  Widget _buildPedestalIcon({
-    required IconData icon,
-    required List<Color> colors,
-  }) {
-    final primaryColor = colors.first;
-    return SizedBox(
-      width: 66,
-      height: 80,
-      child: Stack(
-        alignment: Alignment.center,
+  Widget _buildHeader() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Hello!',
+                    style: GoogleFonts.outfit(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('👋', style: TextStyle(fontSize: 28)),
+                ],
+              ),
+              RichText(
+                text: TextSpan(
+                  style: GoogleFonts.outfit(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF111827),
+                  ),
+                  children: const [
+                    TextSpan(text: "Let's "),
+                    TextSpan(text: "Earn ", style: TextStyle(color: Color(0xFF8B5CF6))),
+                    TextSpan(text: "Together!"),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Play Games • Complete Tasks • Earn Unlimited Sikka",
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Right boy image
+        SizedBox(
+          width: 120,
+          height: 120,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Image.asset(
+                'assets/images/games_hub/header-boy.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const SizedBox(
+                  width: 120,
+                  height: 120,
+                  child: Icon(Icons.person, size: 80, color: Color(0xFFE5E7EB)),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: -10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFA78BFA),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(4),
+                    ),
+                  ),
+                  child: const Text(
+                    "Play\nEarn\nRepeat!",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPurpleBanner() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
         children: [
-          // Base Shadow Ellipse
-          Positioned(
-            bottom: 4,
-            child: Container(
-              width: 50,
-              height: 14,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.elliptical(25, 7)),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withValues(alpha: 0.25),
-                    blurRadius: 6,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Lower Pedestal Stage
-          Positioned(
-            bottom: 6,
-            child: Container(
-              width: 54,
-              height: 18,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    primaryColor.withValues(alpha: 0.4),
-                    primaryColor.withValues(alpha: 0.1),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: const BorderRadius.all(Radius.elliptical(27, 9)),
-                border: Border.all(
-                  color: primaryColor.withValues(alpha: 0.3),
-                  width: 1.2,
-                ),
-              ),
-            ),
-          ),
-          // Upper Pedestal Stage
-          Positioned(
-            bottom: 11,
-            child: Container(
-              width: 46,
-              height: 14,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    primaryColor.withValues(alpha: 0.6),
-                    primaryColor.withValues(alpha: 0.2),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: const BorderRadius.all(Radius.elliptical(23, 7)),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  width: 1.0,
-                ),
-              ),
-            ),
-          ),
-          // Floating Icon Card
-          Positioned(
-            top: 4,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: colors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withValues(alpha: 0.35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  width: 1.2,
-                ),
-              ),
-              child: Icon(
-                icon,
+          const Icon(Icons.bolt_rounded, color: Color(0xFFFDE047), size: 28),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              "Upto 20000 Coins Daily in just 80-120 Minutes.",
+              style: TextStyle(
                 color: Colors.white,
-                size: 22,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: Colors.white),
+          const SizedBox(width: 8),
+          Image.asset(
+            'assets/images/games_hub/coins_stack.png',
+            width: 40,
+            errorBuilder: (context, error, stackTrace) => const Icon(
+              Icons.monetization_on,
+              color: Color(0xFFFDE047),
+              size: 32,
             ),
           ),
         ],
@@ -487,523 +177,304 @@ class GamesHubScreen extends ConsumerWidget {
     );
   }
 
-  // Redesigned game card layout
-  Widget _buildGameCard({
-    required BuildContext context,
-    required String selectedLanguage,
-    required String title,
-    required String description,
-    required IconData icon,
-    required List<Color> colors,
-    required String leftImagePath,
-    required String rightImagePath,
-    required VoidCallback onTap,
-    bool isComingSoon = false,
-    String? badgeText,
-  }) {
-    final Color primaryColor = colors.first;
-    return GestureDetector(
-      onTap: isComingSoon ? () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(selectedLanguage == 'Hindi' ? 'जल्द आ रहा है!' : 'Coming Soon!')),
-        );
-      } : onTap,
-      child: Container(
-        height: 124,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              primaryColor.withValues(alpha: 0.08),
-              Colors.white,
-            ],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: primaryColor.withValues(alpha: 0.12),
-            width: 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: primaryColor.withValues(alpha: 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+  Widget _buildGridCards(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 0.82,
+      children: [
+        // Card 1: Win 250 Coins
+        _buildGridCard(
+          titleWidget: RichText(
+            text: TextSpan(
+              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B)),
+              children: const [
+                TextSpan(text: "Win "),
+                TextSpan(text: "250 Coins", style: TextStyle(color: Color(0xFFF43F5E))),
+              ],
             ),
-          ],
+          ),
+          subtitleWidget: const Text(
+            "in just 5 minutes!",
+            style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+          buttonText: "Play Now →",
+          buttonGradient: const [Color(0xFFF43F5E), Color(0xFFE11D48)],
+          backgroundColor: const Color(0xFFFFF1F2), // Light pink
+          iconWidget: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: const Color(0xFFFFE4E6), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.sports_esports_rounded, color: Color(0xFFF43F5E), size: 20),
+          ),
+          imagePath: 'assets/images/games_hub/coins_stack.png',
+          onTap: () => context.push('/games/arrow_escape'),
+          badgeWidget: _buildBadge("HOT", const Color(0xFFF43F5E), const Color(0xFFFFE4E6), Icons.local_fire_department_rounded),
+        ),
+
+        // Card 2: Win 600 Coins
+        _buildGridCard(
+          titleWidget: RichText(
+            text: TextSpan(
+              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B)),
+              children: const [
+                TextSpan(text: "Win "),
+                TextSpan(text: "600 Coins", style: TextStyle(color: Color(0xFF8B5CF6))),
+              ],
+            ),
+          ),
+          subtitleWidget: const Text(
+            "in 10 minutes!",
+            style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+          buttonText: "Start Now →",
+          buttonGradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+          backgroundColor: const Color(0xFFF5F3FF), // Light purple
+          iconWidget: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: const Color(0xFFEDE9FE), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.access_time_filled_rounded, color: Color(0xFF8B5CF6), size: 20),
+          ),
+          imagePath: 'assets/images/games_hub/card_clock.png',
+          onTap: () => context.push('/games/win_600'),
+          badgeWidget: _buildBadge("POPULAR", const Color(0xFF8B5CF6), const Color(0xFFEDE9FE), Icons.star_rounded), // Using star for popular
+        ),
+
+        // Card 3: Colour Sort
+        _buildGridCard(
+          titleWidget: Text(
+            "Colour Sort",
+            style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B)),
+          ),
+          subtitleWidget: RichText(
+            text: const TextSpan(
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500, height: 1.2),
+              children: [
+                TextSpan(text: "Win upto\n"),
+                TextSpan(text: "20000 Coins", style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 13)),
+              ],
+            ),
+          ),
+          buttonText: "Play Now →",
+          buttonGradient: const [Color(0xFF3B82F6), Color(0xFF2563EB)],
+          backgroundColor: const Color(0xFFEFF6FF), // Light blue
+          iconWidget: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: const Color(0xFFDBEAFE), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.grid_view_rounded, color: Color(0xFF3B82F6), size: 20),
+          ),
+          imagePath: 'assets/images/games_hub/card_chips.png',
+          onTap: () => context.push('/games/water_sort'),
+        ),
+
+        // Card 4: Bubble Sort
+        _buildGridCard(
+          titleWidget: Text(
+            "Bubble Sort",
+            style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B)),
+          ),
+          subtitleWidget: RichText(
+            text: const TextSpan(
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500, height: 1.2),
+              children: [
+                TextSpan(text: "Win upto\n"),
+                TextSpan(text: "20000 Coins", style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold, fontSize: 13)),
+              ],
+            ),
+          ),
+          buttonText: "Play Now →",
+          buttonGradient: const [Color(0xFF10B981), Color(0xFF059669)],
+          backgroundColor: const Color(0xFFECFDF5), // Light green
+          iconWidget: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.bubble_chart_rounded, color: Color(0xFF10B981), size: 20),
+          ),
+          imagePath: 'assets/images/games_hub/card_bubbles.png',
+          onTap: () => context.push('/games/bubble_shooter'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBadge(String text, Color textColor, Color bgColor, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: textColor, size: 12),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGridCard({
+    required Widget titleWidget,
+    required Widget subtitleWidget,
+    required String buttonText,
+    required List<Color> buttonGradient,
+    required Color backgroundColor,
+    required Widget iconWidget,
+    required String imagePath,
+    required VoidCallback onTap,
+    Widget? badgeWidget,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Stack(
           children: [
-            // Right-side 3D game illustration
-            Positioned(
-              right: 6,
-              bottom: 4,
-              top: 4,
-              width: 100,
-              child: Image.asset(
-                rightImagePath,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Icon(
-                      icon,
-                      size: 56,
-                      color: primaryColor.withValues(alpha: 0.12),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Card main body content
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Row(
+              padding: const EdgeInsets.all(14.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 66,
-                    height: 80,
-                    child: Image.asset(
-                      leftImagePath,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => _buildPedestalIcon(
-                        icon: icon,
-                        colors: colors,
-                      ),
+                  iconWidget,
+                  const Spacer(),
+                  titleWidget,
+                  const SizedBox(height: 2),
+                  subtitleWidget,
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: buttonGradient),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      buttonText,
+                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFF0F172A),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (isComingSoon)
-                              Container(
-                                margin: const EdgeInsets.only(left: 4),
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.shade100,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  selectedLanguage == 'Hindi' ? 'जल्द' : 'Soon',
-                                  style: GoogleFonts.outfit(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 10,
-                                    color: Colors.orange.shade800,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 90), // Leaves enough room for right-side illustration
-                          child: Text(
-                            description,
-                            style: const TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 10,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Custom Pill click button
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: primaryColor,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: primaryColor.withValues(alpha: 0.2),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                context.tr('click_to_play', selectedLanguage),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 10,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.arrow_forward_rounded,
-                                  color: Colors.white,
-                                  size: 10,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-            // Optional Top Right Corner Badge
-            if (badgeText != null)
+            ),
+            if (badgeWidget != null)
               Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(16),
-                      topRight: Radius.circular(23),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFD97706).withValues(alpha: 0.4),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.flash_on_rounded, color: Colors.white, size: 12),
-                      const SizedBox(width: 2),
-                      Text(
-                        badgeText!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                top: 12,
+                right: 12,
+                child: badgeWidget,
               ),
+            Positioned(
+              bottom: 0,
+              right: -10,
+              width: 80,
+              height: 80,
+              child: Image.asset(
+                imagePath,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const SizedBox(),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
 
-// Stateful Widget to animate stats dynamically
-class LiveStatsGrid extends ConsumerStatefulWidget {
-  const LiveStatsGrid({super.key});
-
-  @override
-  ConsumerState<LiveStatsGrid> createState() => _LiveStatsGridState();
-}
-
-class _LiveStatsGridState extends ConsumerState<LiveStatsGrid> {
-  late int _playingNow;
-  late int _earnedToday;
-  final Random _random = Random();
-  Timer? _simulationTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    // Random realistic starting numbers for players and coins earned
-    _playingNow = 12000 + _random.nextInt(8000);      // 12k to 20k players
-    _earnedToday = 1500000 + _random.nextInt(2000000);  // 1.5M to 3.5M coins
-    _startSimulatingStats();
-  }
-
-  @override
-  void dispose() {
-    _simulationTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startSimulatingStats() {
-    _simulationTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (mounted) {
-        setState(() {
-          // Playing now fluctuates slightly up and down
-          _playingNow += _random.nextInt(7) - 3; // -3 to +3
-          if (_playingNow < 10000) _playingNow = 12000;
-          
-          // Earned today steadily ticks up
-          _earnedToday += _random.nextInt(150) + 20; // increases by 20 to 170 coins
-        });
-      }
-    });
-  }
-
-  String _formatK(int value) {
-    if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(2)}M';
-    } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(1)}K';
-    }
-    return value.toString();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final selectedLanguage = ref.watch(languageProvider);
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: _StatCard(
-              title: context.tr('live_stats_playing', selectedLanguage),
-              subtitle: context.tr('live_stats_players', selectedLanguage),
-              value: _formatK(_playingNow),
-              icon: Icons.groups_rounded,
-              color: const Color(0xFF2563EB), // Premium Blue
-              gradientColors: const [Color(0xFFEFF6FF), Colors.white],
-              imagePath: 'assets/images/games_hub/gamepad_stats.webp',
-              showLiveDot: true,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _StatCard(
-              title: context.tr('live_stats_earned', selectedLanguage),
-              subtitle: context.tr('live_stats_coins', selectedLanguage),
-              value: _formatK(_earnedToday),
-              icon: Icons.monetization_on_rounded,
-              color: const Color(0xFF16A34A), // Premium Green
-              gradientColors: const [Color(0xFFF0FDF4), Colors.white],
-              imagePath: 'assets/images/games_hub/coins_stats.webp',
-              showLiveDot: false,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class LiveGreenDot extends StatefulWidget {
-  const LiveGreenDot({super.key});
-
-  @override
-  State<LiveGreenDot> createState() => _LiveGreenDotState();
-}
-
-class _LiveGreenDotState extends State<LiveGreenDot> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _controller,
+  Widget _buildBottomBanner(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/playground/friends'), // Route to friends page
       child: Container(
-        width: 6,
-        height: 6,
-        decoration: const BoxDecoration(
-          color: Color(0xFF22C55E), // Live Green
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Color(0xFF22C55E),
-              blurRadius: 4,
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String value;
-  final IconData icon;
-  final Color color;
-  final List<Color> gradientColors;
-  final String imagePath;
-  final bool showLiveDot;
-
-  const _StatCard({
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.icon,
-    required this.color,
-    required this.gradientColors,
-    required this.imagePath,
-    this.showLiveDot = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 112),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withValues(alpha: 0.12), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Actual Image Illustration (positioned on the right)
-          Positioned(
-            right: 6,
-            bottom: 4,
-            height: 72,
-            width: 72,
-            child: Image.asset(
-              imagePath,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-            ),
-          ),
-          // Content Block
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(icon, color: color, size: 14),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.8),
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w800,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (showLiveDot) ...[
-                            const SizedBox(width: 4),
-                            const LiveGreenDot(),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.only(right: 52),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Dost bnao", style: TextStyle(color: Color(0xFF8B5CF6), fontSize: 20, fontWeight: FontWeight.w900, height: 1.1)),
+                  const Text("Gifts managao", style: TextStyle(color: Color(0xFFF43F5E), fontSize: 20, fontWeight: FontWeight.w900, height: 1.1)),
+                  const Row(
                     children: [
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (Widget child, Animation<double> animation) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0.0, -0.2),
-                                end: Offset.zero,
-                              ).animate(animation),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            value,
-                            key: ValueKey<String>(value),
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF0F172A),
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ),
+                      Text("Sell kro ", style: TextStyle(color: Color(0xFFF59E0B), fontSize: 20, fontWeight: FontWeight.w900, height: 1.1)),
+                      Text("😉", style: TextStyle(fontSize: 18)),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Trade, collect and earn big rewards\nwith your friends!",
+                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            // Right Side Gift Image + Yellow Card
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 60),
+                  child: Image.asset(
+                    'assets/images/games_hub/banner_gift.png',
+                    width: 85,
+                    height: 85,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.card_giftcard_rounded,
+                      color: Color(0xFFF59E0B),
+                      size: 60,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -10,
+                  bottom: 5,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE066), // Yellow card color
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orange.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Column(
+                      children: [
+                        Text(
+                          "Win Upto",
+                          style: TextStyle(color: Color(0xFFB45309), fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          "100000\nCoins",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Color(0xFFD9480F), fontSize: 14, fontWeight: FontWeight.w900, height: 1.1),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
