@@ -14,7 +14,7 @@ class Win600CoinsScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E1E1E)),
-          onTap: () => context.pop(),
+          onPressed: () => context.pop(),
         ),
         actions: [
           Container(
