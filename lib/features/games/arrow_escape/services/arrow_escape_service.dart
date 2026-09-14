@@ -59,7 +59,7 @@ class ArrowEscapeService {
       if (res.statusCode == 200) {
         final body = json.decode(res.body);
         if (body['success'] == true) {
-          maxLevel = max(maxLevel, (body['maxUnlockedLevel'] ?? 1) as int);
+          maxLevel = (body['maxUnlockedLevel'] ?? 1) as int;
           multiplier = (body['multiplier'] ?? 2) as int;
           if (body['stars'] != null) {
             (body['stars'] as Map<String, dynamic>).forEach((k, v) {
