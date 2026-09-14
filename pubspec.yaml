@@ -74,6 +74,7 @@ flutter:
     - assets/images/games_hub/
     - assets/images/bubble_shooter/
     - assets/images/profile/
+    - assets/images/arrow_escape/
 
   fonts:
     - family: BebasNeue
