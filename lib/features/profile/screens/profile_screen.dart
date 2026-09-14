@@ -1316,6 +1316,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Column(
                     children: [
                       _buildFullWidthMenuCard(
+                        title: selectedLanguage == 'Hindi' ? 'वॉलेट और कमाई' : 'Wallet & Earnings',
+                        subtitle: selectedLanguage == 'Hindi' ? 'अपना बैलेंस, ट्रांज़ैक्शन और कमाई देखें' : 'View your balance, transactions & earnings',
+                        icon: Icons.account_balance_wallet_rounded,
+                        iconColor: const Color(0xFFF59E0B), // Vibrant amber/orange
+                        iconBgColor: const Color(0xFFFEF3C7),
+                        onTap: () => AppNavigator.push(context, ref, '/wallet'),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildFullWidthMenuCard(
                         title: context.tr('my_network', selectedLanguage),
                         subtitle: selectedLanguage == 'Hindi' ? 'अपनी टीम और नेटवर्क की कमाई देखें' : 'View your team & network earnings',
                         icon: Icons.people_outline_rounded,

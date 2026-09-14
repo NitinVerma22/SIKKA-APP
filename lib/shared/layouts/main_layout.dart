@@ -339,17 +339,11 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   int _getSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
-    final isPgMode = _isPlaygroundMode(location);
     
     if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/games')) return 1;
-    
-    if (isPgMode) {
-      if (location.startsWith('/playground/friends') || location.startsWith('/playground/profile')) return 3; // Chats highlighted
-      return 2; // Rocket highlighted for main playground
-    }
-    
-    if (location.startsWith('/wallet')) return 3;
+    if (location.startsWith('/my_network')) return 1;
+    if (location.startsWith('/games')) return 2;
+    if (location.startsWith('/playground/friends')) return 3;
     if (location.startsWith('/profile')) return 4;
     return 0;
   }
@@ -359,9 +353,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     if (index == 0) {
       ref.read(homeProvider.notifier).refresh(silent: true);
       ref.read(userProvider.notifier).refresh(silent: true);
-    } else if (index == 3) {
-      ref.read(walletProvider.notifier).fetchWalletData();
-      ref.read(userProvider.notifier).refresh(silent: true);
     } else if (index == 4) {
       ref.read(userProvider.notifier).refresh(silent: true);
     }
@@ -370,18 +361,11 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   String _routeForIndex(int index) {
-    final location = GoRouterState.of(context).matchedLocation;
-    final isPgMode = _isPlaygroundMode(location);
-
     if (index == 0) return '/home';
-    if (index == 1) return '/games';
-    if (index == 2) return '/playground';
-    if (index == 3) {
-      return isPgMode ? '/playground/friends' : '/wallet';
-    }
-    if (index == 4) {
-      return isPgMode ? '/wallet' : '/profile';
-    }
+    if (index == 1) return '/my_network';
+    if (index == 2) return '/games';
+    if (index == 3) return '/playground/friends';
+    if (index == 4) return '/profile';
     return '/home';
   }
 
@@ -509,16 +493,10 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildNavItem(context, ref, 0, Icons.home_rounded, context.tr('home', selectedLanguage), selectedIndex, false),
-                        _buildNavItem(context, ref, 1, Icons.sports_esports_rounded, context.tr('play_games', selectedLanguage), selectedIndex, false),
-                        _buildNavItem(context, ref, 2, Icons.rocket_launch_rounded, selectedLanguage == 'Hindi' ? 'प्लेग्राउंड' : 'Playground', selectedIndex, false),
-                        
-                        if (_isPlaygroundMode(location)) ...[
-                          _buildNavItem(context, ref, 3, Icons.chat_bubble_rounded, selectedLanguage == 'Hindi' ? 'चैट्स' : 'Chats', selectedIndex, false),
-                          _buildNavItem(context, ref, 4, Icons.account_balance_wallet_rounded, context.tr('wallet', selectedLanguage), selectedIndex, false),
-                        ] else ...[
-                          _buildNavItem(context, ref, 3, Icons.account_balance_wallet_rounded, context.tr('wallet', selectedLanguage), selectedIndex, false),
-                          _buildNavItem(context, ref, 4, Icons.person_rounded, context.tr('profile', selectedLanguage), selectedIndex, false),
-                        ],
+                        _buildNavItem(context, ref, 1, Icons.people_alt_rounded, selectedLanguage == 'Hindi' ? 'फ्रेंड्स' : 'Friends', selectedIndex, false),
+                        _buildNavItem(context, ref, 2, Icons.monetization_on_rounded, selectedLanguage == 'Hindi' ? 'अर्न' : 'Earn', selectedIndex, false),
+                        _buildNavItem(context, ref, 3, Icons.chat_bubble_rounded, selectedLanguage == 'Hindi' ? 'चैट्स' : 'Chats', selectedIndex, false),
+                        _buildNavItem(context, ref, 4, Icons.person_rounded, context.tr('profile', selectedLanguage), selectedIndex, false),
                       ],
                     ),
                   ),
@@ -540,19 +518,19 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     bool isReels,
   ) {
     if (index == 2) {
-      // Big Center Rocket Button
+      // Big Center Earn Button
       return Expanded(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => _onItemTapped(index, ref),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Transform.translate(
-                offset: const Offset(0, -12),
+                offset: const Offset(0, -6),
                 child: Container(
-                  width: 56,
-                  height: 56,
+                  width: 50,
+                  height: 50,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF8A2BE2), Color(0xFF6F5EFA)],
@@ -568,12 +546,23 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                       ),
                     ],
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Icon(
-                      Icons.rocket_launch_rounded,
+                      icon,
                       color: Colors.white,
-                      size: 28,
+                      size: 26,
                     ),
+                  ),
+                ),
+              ),
+              Transform.translate(
+                offset: const Offset(0, -2),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: AppSizes.getResponsiveFontSize(context, 10),
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -606,7 +595,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                 color: isSelected
                     ? (isReels ? Colors.white.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.08))
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(
                 icon,

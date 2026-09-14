@@ -17,6 +17,7 @@ import 'package:sikkaplay/features/playground/screens/playground_studio_screen.d
 import 'package:sikkaplay/features/playground/screens/playground_profile_screen.dart';
 import 'package:sikkaplay/features/playground/screens/playground_search_screen.dart';
 import 'package:sikkaplay/features/games/games_hub/screens/games_hub_screen.dart';
+import 'package:sikkaplay/features/games/games_hub/screens/win_600_coins_screen.dart';
 import 'package:sikkaplay/features/games/spin_earn/screens/spin_screen.dart';
 import 'package:sikkaplay/features/wallet/screens/wallet_screen.dart';
 import 'package:sikkaplay/features/wallet/screens/transaction_history_screen.dart';
@@ -162,6 +163,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final args = state.extra as GameRulesArgs;
           return GameRulesScreen(args: args);
         },
+      ),
+      GoRoute(
+        path: '/games/win_600',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const Win600CoinsScreen(),
       ),
       GoRoute(
         path: '/games/spin_earn',
