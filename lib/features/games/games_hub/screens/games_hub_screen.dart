@@ -19,12 +19,8 @@ class GamesHubScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Header Section
-              _buildHeader(),
-              const SizedBox(height: 4),
-              
-              // 2. Purple Banner
-              _buildPurpleBanner(),
+              // 1. Top Section (Header + Banner)
+              _buildTopSection(),
               const SizedBox(height: 16),
               
               // 3. Grid of Cards
@@ -41,7 +37,7 @@ class GamesHubScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildTopSection() {
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -76,18 +72,53 @@ class GamesHubScreen extends ConsumerWidget {
                 color: const Color(0xFF111827),
               ),
             ),
-            // Adding bottom padding inside the column to push the banner down 
-            // exactly where the boy's image will end.
-            const SizedBox(height: 20),
+            const SizedBox(height: 32), // Move banner down
+            
+            // Purple Banner (with reduced vertical padding)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Reduced vertical padding
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF7B3AF2), Color(0xFF6224DB)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.bolt_rounded, color: Color(0xFFFFD43B), size: 28),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      "Upto 20000 Coins Daily in just 80-120 Minutes.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Image.asset(
+                    'assets/images/games_hub/coins_stack.png',
+                    width: 45,
+                    errorBuilder: (context, error, stackTrace) => const SizedBox(),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        // The boy bleeds out of the right side, top, and bottom
+        
+        // The boy bleeds out of the right side, top, and is drawn OVER the banner
         Positioned(
-          top: -30,
+          top: -45, // Move boy up slightly
           right: -24, 
           child: SizedBox(
-            width: 200, // Even bigger
-            height: 200,
+            width: 230, // Bigger size
+            height: 230,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -96,14 +127,14 @@ class GamesHubScreen extends ConsumerWidget {
                   child: Image.asset(
                     'assets/images/games_hub/header-boy.png',
                     fit: BoxFit.contain,
-                    width: 190,
-                    height: 190,
+                    width: 220, // Bigger image
+                    height: 220,
                     errorBuilder: (context, error, stackTrace) => const SizedBox(),
                   ),
                 ),
                 Positioned(
-                  top: 25,
-                  left: -10, // Play Earn Repeat bubble
+                  top: 75, // Shift bubble down slightly relative to boy
+                  left: -15, // Shift bubble to the side
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: const BoxDecoration(
@@ -132,43 +163,6 @@ class GamesHubScreen extends ConsumerWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildPurpleBanner() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF7B3AF2), Color(0xFF6224DB)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.bolt_rounded, color: Color(0xFFFFD43B), size: 28),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              "Upto 20000 Coins Daily in just 80-120 Minutes.",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          const Icon(Icons.chevron_right_rounded, color: Colors.white),
-          const SizedBox(width: 8),
-          Image.asset(
-            'assets/images/games_hub/coins_stack.png',
-            width: 45,
-            errorBuilder: (context, error, stackTrace) => const SizedBox(),
-          ),
-        ],
-      ),
     );
   }
 
