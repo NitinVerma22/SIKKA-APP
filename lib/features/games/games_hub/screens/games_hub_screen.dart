@@ -19,12 +19,8 @@ class GamesHubScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Header Section
-              _buildHeader(),
-              const SizedBox(height: 24),
-              
-              // 2. Purple Banner
-              _buildPurpleBanner(),
+              // 1. Top Section (Header + Banner)
+              _buildTopSection(),
               const SizedBox(height: 16),
               
               // 3. Grid of Cards
@@ -41,7 +37,7 @@ class GamesHubScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildTopSection() {
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -51,49 +47,78 @@ class GamesHubScreen extends ConsumerWidget {
             Row(
               children: [
                 Text(
-                  'Hello!',
+                  "Hello! 👋 Let's ",
                   style: GoogleFonts.outfit(
-                    fontSize: 34,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
                     color: const Color(0xFF111827),
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Text('👋', style: TextStyle(fontSize: 28)),
+                Text(
+                  "Earn",
+                  style: GoogleFonts.outfit(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF6C42EC),
+                  ),
+                ),
               ],
             ),
-            RichText(
-              text: TextSpan(
-                style: GoogleFonts.outfit(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF111827),
-                ),
-                children: const [
-                  TextSpan(text: "Let's "),
-                  TextSpan(text: "Earn ", style: TextStyle(color: Color(0xFF6C42EC))), // Exact purple from image
-                  TextSpan(text: "Together!"),
-                ],
+            Text(
+              "Together!",
+              style: GoogleFonts.outfit(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF111827),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              "Play Games • Complete Tasks • Earn Unlimited Sikka",
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF6B7280),
+            const SizedBox(height: 80), // Increase space to make room for boy
+            
+            // Purple Banner (with reduced vertical padding)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF7B3AF2), Color(0xFF6224DB)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.bolt_rounded, color: Color(0xFFFFD43B), size: 28),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      "Upto 20000 Coins Daily in just 80-120 Minutes.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Image.asset(
+                    'assets/images/games_hub/coins_stack.png',
+                    width: 45,
+                    errorBuilder: (context, error, stackTrace) => const SizedBox(),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        // The boy bleeds out of the right side and top
+        
+        // Boy sits exactly on top of the banner
         Positioned(
-          top: -20,
-          right: -24, // Break out of the 16px padding
+          bottom: 11.5, // Moved boy 1.5px up
+          right: -20, // Moved 7px left from previous position
           child: SizedBox(
-            width: 170, // Bigger size matching image
-            height: 170,
+            width: 230, 
+            height: 230,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -102,35 +127,9 @@ class GamesHubScreen extends ConsumerWidget {
                   child: Image.asset(
                     'assets/images/games_hub/header-boy.png',
                     fit: BoxFit.contain,
-                    width: 150,
-                    height: 150,
+                    width: 220, 
+                    height: 220,
                     errorBuilder: (context, error, stackTrace) => const SizedBox(),
-                  ),
-                ),
-                Positioned(
-                  top: 15,
-                  left: -15, // Play Earn Repeat bubble
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFA78BFA),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
-                        bottomLeft: Radius.circular(16),
-                        bottomRight: Radius.circular(4),
-                      ),
-                    ),
-                    child: const Text(
-                      "Play\nEarn\nRepeat!",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        height: 1.1,
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -141,43 +140,6 @@ class GamesHubScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPurpleBanner() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF7B3AF2), Color(0xFF6224DB)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.bolt_rounded, color: Color(0xFFFFD43B), size: 28),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              "Upto 20000 Coins Daily in just 80-120 Minutes.",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          const Icon(Icons.chevron_right_rounded, color: Colors.white),
-          const SizedBox(width: 8),
-          Image.asset(
-            'assets/images/games_hub/coins_stack.png',
-            width: 45,
-            errorBuilder: (context, error, stackTrace) => const SizedBox(),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildGridCards(BuildContext context) {
     return GridView.count(
       crossAxisCount: 2,
@@ -185,36 +147,36 @@ class GamesHubScreen extends ConsumerWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 14,
       mainAxisSpacing: 14,
-      childAspectRatio: 0.85, // Closer to image proportions
+      childAspectRatio: 0.95, // Cards are shorter
       children: [
         // Card 1: Win 250 Coins
         _buildGridCard(
           titleWidget: RichText(
             text: TextSpan(
-              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B)),
+              style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B), height: 1.1),
               children: const [
-                TextSpan(text: "Win "),
+                TextSpan(text: "Win\n"),
                 TextSpan(text: "250 Coins", style: TextStyle(color: Color(0xFFF64D67))),
               ],
             ),
           ),
-          subtitleWidget: const Text(
-            "in just 5 minutes!",
-            style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500),
+          middleWidget: RichText(
+            text: const TextSpan(
+              style: TextStyle(color: Color(0xFFF64D67), fontSize: 13, fontWeight: FontWeight.bold, height: 1.1),
+              children: [
+                TextSpan(text: "in just 5\n"),
+                TextSpan(text: "minutes!"),
+              ],
+            ),
           ),
-          buttonText: "Play Now →",
-          buttonColor: const Color(0xFFF64D67), // Solid Pink
-          backgroundColor: const Color(0xFFFEF6F7), // Very Light Pink
-          iconWidget: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: const Color(0xFFFFEBF0), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.sports_esports_rounded, color: Color(0xFFF64D67), size: 20),
-          ),
+          buttonText: "Play →",
+          buttonColor: const Color(0xFFF64D67), 
+          backgroundColor: const Color(0xFFFEF6F7), 
           imagePath: 'assets/images/games_hub/coins_stack.png',
-          imageWidth: 100, // Big image
-          imageHeight: 100,
-          imageRight: -10,
-          imageBottom: -5,
+          imageWidth: 95, 
+          imageHeight: 95,
+          imageRight: -5, 
+          imageTop: 65, // Image further down
           onTap: () => context.push('/games/arrow_escape'),
           badgeWidget: _buildBadge("HOT", const Color(0xFFF64D67), const Color(0xFFFFEBF0), Icons.local_fire_department_rounded),
         ),
@@ -223,30 +185,30 @@ class GamesHubScreen extends ConsumerWidget {
         _buildGridCard(
           titleWidget: RichText(
             text: TextSpan(
-              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B)),
+              style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B), height: 1.1),
               children: const [
-                TextSpan(text: "Win "),
+                TextSpan(text: "Win\n"),
                 TextSpan(text: "600 Coins", style: TextStyle(color: Color(0xFF6C42EC))),
               ],
             ),
           ),
-          subtitleWidget: const Text(
-            "in 10 minutes!",
-            style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500),
+          middleWidget: RichText(
+            text: const TextSpan(
+              style: TextStyle(color: Color(0xFF6C42EC), fontSize: 13, fontWeight: FontWeight.bold, height: 1.1),
+              children: [
+                TextSpan(text: "in 10\n"),
+                TextSpan(text: "minutes!"),
+              ],
+            ),
           ),
-          buttonText: "Start Now →",
-          buttonColor: const Color(0xFF6C42EC), // Solid Purple
-          backgroundColor: const Color(0xFFF6F5FD), // Very Light Purple
-          iconWidget: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: const Color(0xFFE9E5FC), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.access_time_filled_rounded, color: Color(0xFF6C42EC), size: 20),
-          ),
+          buttonText: "Play →",
+          buttonColor: const Color(0xFF6C42EC), 
+          backgroundColor: const Color(0xFFF6F5FD), 
           imagePath: 'assets/images/games_hub/card_clock.png',
           imageWidth: 90,
           imageHeight: 90,
           imageRight: -5,
-          imageBottom: -5,
+          imageTop: 70, // Image further down
           onTap: () => context.push('/games/win_600'),
           badgeWidget: _buildBadge("POPULAR", const Color(0xFF6C42EC), const Color(0xFFE9E5FC), Icons.star_rounded),
         ),
@@ -255,30 +217,26 @@ class GamesHubScreen extends ConsumerWidget {
         _buildGridCard(
           titleWidget: Text(
             "Colour Sort",
-            style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B)),
+            style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B)),
           ),
-          subtitleWidget: RichText(
+          middleWidget: RichText(
             text: const TextSpan(
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500, height: 1.2),
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w600, height: 1.2),
               children: [
                 TextSpan(text: "Win upto\n"),
-                TextSpan(text: "20000 Coins", style: TextStyle(color: Color(0xFF257CE9), fontWeight: FontWeight.bold, fontSize: 13)),
+                TextSpan(text: "1 Lakh\n", style: TextStyle(color: Color(0xFF257CE9), fontWeight: FontWeight.w900, fontSize: 16)),
+                TextSpan(text: "Coins", style: TextStyle(color: Color(0xFF257CE9), fontWeight: FontWeight.bold, fontSize: 14)),
               ],
             ),
           ),
-          buttonText: "Play Now →",
-          buttonColor: const Color(0xFF257CE9), // Solid Blue
-          backgroundColor: const Color(0xFFF2F8FF), // Very Light Blue
-          iconWidget: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: const Color(0xFFDCEAFF), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.grid_view_rounded, color: Color(0xFF257CE9), size: 20),
-          ),
+          buttonText: "Play →",
+          buttonColor: const Color(0xFF257CE9), 
+          backgroundColor: const Color(0xFFF2F8FF), 
           imagePath: 'assets/images/games_hub/card_chips.png',
-          imageWidth: 95,
-          imageHeight: 95,
-          imageRight: -10,
-          imageBottom: -10,
+          imageWidth: 90,
+          imageHeight: 90,
+          imageRight: -5,
+          imageTop: 70, // Image further down
           onTap: () => context.push('/games/water_sort'),
         ),
 
@@ -286,30 +244,26 @@ class GamesHubScreen extends ConsumerWidget {
         _buildGridCard(
           titleWidget: Text(
             "Bubble Sort",
-            style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B)),
+            style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: const Color(0xFF1E293B)),
           ),
-          subtitleWidget: RichText(
+          middleWidget: RichText(
             text: const TextSpan(
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500, height: 1.2),
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w600, height: 1.2),
               children: [
                 TextSpan(text: "Win upto\n"),
-                TextSpan(text: "20000 Coins", style: TextStyle(color: Color(0xFF21B761), fontWeight: FontWeight.bold, fontSize: 13)),
+                TextSpan(text: "1 Lakh\n", style: TextStyle(color: Color(0xFF21B761), fontWeight: FontWeight.w900, fontSize: 16)),
+                TextSpan(text: "Coins", style: TextStyle(color: Color(0xFF21B761), fontWeight: FontWeight.bold, fontSize: 14)),
               ],
             ),
           ),
-          buttonText: "Play Now →",
-          buttonColor: const Color(0xFF21B761), // Solid Green
-          backgroundColor: const Color(0xFFF1FCF5), // Very Light Green
-          iconWidget: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: const Color(0xFFD4F7E1), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.bubble_chart_rounded, color: Color(0xFF21B761), size: 20),
-          ),
+          buttonText: "Play →",
+          buttonColor: const Color(0xFF21B761), 
+          backgroundColor: const Color(0xFFF1FCF5), 
           imagePath: 'assets/images/games_hub/card_bubbles.png',
-          imageWidth: 100,
-          imageHeight: 100,
-          imageRight: -12,
-          imageBottom: -5,
+          imageWidth: 95,
+          imageHeight: 95,
+          imageRight: -5,
+          imageTop: 65, // Image further down
           onTap: () => context.push('/games/bubble_shooter'),
         ),
       ],
@@ -323,11 +277,11 @@ class GamesHubScreen extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: textColor, size: 12),
+          Icon(icon, color: textColor, size: 10),
           const SizedBox(width: 4),
           Text(
             text,
-            style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.bold),
+            style: TextStyle(color: textColor, fontSize: 9, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -336,17 +290,17 @@ class GamesHubScreen extends ConsumerWidget {
 
   Widget _buildGridCard({
     required Widget titleWidget,
-    required Widget subtitleWidget,
+    Widget? middleWidget,
+    Widget? bottomWidget,
     required String buttonText,
     required Color buttonColor,
     required Color backgroundColor,
-    required Widget iconWidget,
     required String imagePath,
     required VoidCallback onTap,
     double imageWidth = 80,
     double imageHeight = 80,
     double imageRight = -10,
-    double imageBottom = 0,
+    double imageTop = 40,
     Widget? badgeWidget,
   }) {
     return GestureDetector(
@@ -365,23 +319,32 @@ class GamesHubScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  iconWidget,
-                  const Spacer(),
                   titleWidget,
-                  const SizedBox(height: 2),
-                  subtitleWidget,
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: buttonColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      buttonText,
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  if (middleWidget != null) ...[
+                    const SizedBox(height: 4),
+                    middleWidget,
+                  ],
+                  const Spacer(),
+                  Transform.translate(
+                    offset: const Offset(-4, 0), // Shift button left
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Restored to 12 as requested
+                      decoration: BoxDecoration(
+                        color: buttonColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        buttonText,
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
+                  if (bottomWidget != null) ...[
+                    const SizedBox(height: 6),
+                    bottomWidget,
+                  ] else ...[
+                    const SizedBox(height: 12), // Moved button up even more
+                  ],
                 ],
               ),
             ),
@@ -392,7 +355,7 @@ class GamesHubScreen extends ConsumerWidget {
                 child: badgeWidget,
               ),
             Positioned(
-              bottom: imageBottom,
+              top: imageTop, 
               right: imageRight,
               width: imageWidth,
               height: imageHeight,
@@ -412,7 +375,7 @@ class GamesHubScreen extends ConsumerWidget {
     return GestureDetector(
       onTap: () => context.push('/playground/friends'), // Route to friends page
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
@@ -436,59 +399,19 @@ class GamesHubScreen extends ConsumerWidget {
                       Text("😉", style: TextStyle(fontSize: 18)),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Trade, collect and earn big rewards\nwith your friends!",
-                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.w500),
-                  ),
                 ],
               ),
             ),
-            // Right Side Gift Image + Yellow Card
-            Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
+            // Right Side Gift Image + Text Below
+            Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 60),
-                  child: Image.asset(
-                    'assets/images/games_hub/banner_gift.png',
-                    width: 85,
-                    height: 85,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const SizedBox(),
-                  ),
-                ),
-                Positioned(
-                  right: -10,
-                  bottom: 5,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFE066), // Yellow card color
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.orange.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Column(
-                      children: [
-                        Text(
-                          "Win Upto",
-                          style: TextStyle(color: Color(0xFFB45309), fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          "100000\nCoins",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Color(0xFFD9480F), fontSize: 14, fontWeight: FontWeight.w900, height: 1.1),
-                        ),
-                      ],
-                    ),
-                  ),
+                Image.asset(
+                  'assets/images/games_hub/banner_gift.png',
+                  width: 100, // Slightly reduced to fit thinner banner
+                  height: 100,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const SizedBox(),
                 ),
               ],
             ),

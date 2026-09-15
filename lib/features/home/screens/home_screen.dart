@@ -28,7 +28,6 @@ import 'package:sikkaplay/core/config/config_service.dart';
 import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sikkaplay/core/navigation/app_navigator.dart';
-import 'package:sikkaplay/services/adgem_offerwall_service.dart';
 import 'package:sikkaplay/services/adscalex_offerwall_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -551,20 +550,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         1.25, // Adjusted for slightly wider layout to fit title/description/arrow beautifully
                     children: [
                       _buildGridCard(
-                        title: context.tr('today_tasks', selectedLanguage),
-                        description:
-                            context.tr('today_tasks_desc', selectedLanguage),
-                        icon: Icons.today_rounded,
-                        color: Colors.orange.shade600,
-                        gradientColors: const [
-                          Color(0xFFFF7E40),
-                          Color(0xFFFF9E00)
-                        ],
-                        badgeText: context.tr('daily_badge', selectedLanguage),
-                        onTap: () => context.push('/home/today_tasks'),
-                        showAnimatedBorder: true,
-                      ),
-                      _buildGridCard(
                         title: context.tr('complete_surveys', selectedLanguage),
                         description: context.tr(
                             'complete_surveys_desc', selectedLanguage),
@@ -592,108 +577,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           badgeText: 'EARN BIG',
                           onTap: () => context.push('/home/app_install'),
                         ),
-                      _buildGridCard(
-                        title: selectedLanguage == 'Hindi'
-                            ? 'और सिक्के कमाएं'
-                            : 'Earn More Sikka',
-                        description: selectedLanguage == 'Hindi'
-                            ? 'ऑफर पूरे करें और इनाम जीतें'
-                            : 'Complete offers & earn rewards',
-                        icon: Icons.local_offer_rounded,
-                        color: Colors.amber.shade700,
-                        gradientColors: const [
-                          Color(0xFFF59E0B),
-                          Color(0xFFD97706)
-                        ],
-                        badgeText: selectedLanguage == 'Hindi' ? 'नया' : 'NEW',
-                        onTap: () {
-                          final userId = userState.userData?['id'];
-                          if (userId == null || userId.toString().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(selectedLanguage == 'Hindi'
-                                    ? 'कृपया लॉग इन करें'
-                                    : 'Please login to view offers.'),
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
-                            return;
-                          }
-                          final url =
-                              "https://www.cdndn.com/wall/f4a8?subid=${Uri.encodeComponent(userId.toString())}";
-                          final uri = Uri.parse(url);
-                          launchUrl(uri, mode: LaunchMode.inAppBrowserView)
-                              .catchError((e) {
-                            debugPrint('Error launching offerwall: $e');
-                            return false;
-                          });
-                        },
-                      ),
-                      _buildGridCard(
-                        title: selectedLanguage == 'Hindi'
-                            ? 'एडजेम ऑफर्स'
-                            : 'AdGem Offers',
-                        description: selectedLanguage == 'Hindi'
-                            ? 'टॉप गेम्स खेलें और कमाएं'
-                            : 'Play top games & earn',
-                        icon: Icons.gamepad_rounded,
-                        color: Colors.teal.shade600,
-                        gradientColors: const [
-                          Color(0xFF0D9488),
-                          Color(0xFF0F766E)
-                        ],
-                        badgeText: selectedLanguage == 'Hindi'
-                            ? 'बड़ा इनाम'
-                            : 'BIG REWARDS',
-                        onTap: () {
-                          final userId = userState.userData?['id'];
-                          AdGemOfferwallService.openForUser(
-                              context, userId?.toString());
-                        },
-                      ),
-                      _buildGridCard(
-                        title: 'AdScaleX Offers',
-                        description: 'Complete offers & earn Sikka',
-                        icon: Icons.local_activity_rounded,
-                        color: Colors.deepPurple.shade600,
-                        gradientColors: const [
-                          Color(0xFF673AB7),
-                          Color(0xFF512DA8)
-                        ],
-                        badgeText: 'HOT',
-                        onTap: () {
-                          if (_isAdScaleXOpening) return;
-                          setState(() {
-                            _isAdScaleXOpening = true;
-                          });
-                          final userId = userState.userData?['id'];
-                          final remoteAppKey = configState.config?['adScaleXAppKey'] ?? configState.config?['adscalexAppKey'];
-                          final appKey = remoteAppKey ?? 'psk_NfPTjRGS0a5f6vcljv0ScBZohLYIxOFsdfCRE9kfrtQ';
-                          AdScaleXOfferwallService.openOfferwall(context, userId?.toString(), appKey.toString())
-                              .whenComplete(() {
-                            if (mounted) {
-                              setState(() {
-                                _isAdScaleXOpening = false;
-                              });
-                            }
-                          });
-                        },
-                      ),
-                      _buildGridCard(
-                        title: context.tr('visit_earn', selectedLanguage),
-                        description:
-                            context.tr('visit_earn_desc', selectedLanguage),
-                        icon: Icons.link_rounded,
-                        color: Colors.pink.shade600,
-                        gradientColors: const [
-                          Color(0xFFF15BB5),
-                          Color(0xFFD62246)
-                        ],
-                        badgeText: selectedLanguage == 'Hindi'
-                            ? '+5 सिक्के'
-                            : '+5 COINS',
-                        onTap: () => context.push('/home/visit_earn'),
-                      ),
                       _buildGridCard(
                         title: selectedLanguage == 'Hindi'
                             ? 'प्लेग्राउंड'
