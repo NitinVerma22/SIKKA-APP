@@ -21,7 +21,7 @@ class GamesHubScreen extends ConsumerWidget {
             children: [
               // 1. Header Section
               _buildHeader(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 4),
               
               // 2. Purple Banner
               _buildPurpleBanner(),
@@ -51,49 +51,43 @@ class GamesHubScreen extends ConsumerWidget {
             Row(
               children: [
                 Text(
-                  'Hello!',
+                  "Hello! 👋 Let's ",
                   style: GoogleFonts.outfit(
-                    fontSize: 34,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
                     color: const Color(0xFF111827),
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Text('👋', style: TextStyle(fontSize: 28)),
+                Text(
+                  "Earn",
+                  style: GoogleFonts.outfit(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF6C42EC),
+                  ),
+                ),
               ],
             ),
-            RichText(
-              text: TextSpan(
-                style: GoogleFonts.outfit(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF111827),
-                ),
-                children: const [
-                  TextSpan(text: "Let's "),
-                  TextSpan(text: "Earn ", style: TextStyle(color: Color(0xFF6C42EC))), // Exact purple from image
-                  TextSpan(text: "Together!"),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
             Text(
-              "Play Games • Complete Tasks • Earn Unlimited Sikka",
+              "Together!",
               style: GoogleFonts.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF6B7280),
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF111827),
               ),
             ),
+            // Adding bottom padding inside the column to push the banner down 
+            // exactly where the boy's image will end.
+            const SizedBox(height: 20),
           ],
         ),
-        // The boy bleeds out of the right side and top
+        // The boy bleeds out of the right side, top, and bottom
         Positioned(
-          top: -20,
-          right: -24, // Break out of the 16px padding
+          top: -30,
+          right: -24, 
           child: SizedBox(
-            width: 170, // Bigger size matching image
-            height: 170,
+            width: 200, // Even bigger
+            height: 200,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -102,14 +96,14 @@ class GamesHubScreen extends ConsumerWidget {
                   child: Image.asset(
                     'assets/images/games_hub/header-boy.png',
                     fit: BoxFit.contain,
-                    width: 150,
-                    height: 150,
+                    width: 190,
+                    height: 190,
                     errorBuilder: (context, error, stackTrace) => const SizedBox(),
                   ),
                 ),
                 Positioned(
-                  top: 15,
-                  left: -15, // Play Earn Repeat bubble
+                  top: 25,
+                  left: -10, // Play Earn Repeat bubble
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: const BoxDecoration(
@@ -126,7 +120,7 @@ class GamesHubScreen extends ConsumerWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w900,
                         height: 1.1,
                       ),
