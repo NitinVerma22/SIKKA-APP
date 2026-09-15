@@ -75,6 +75,7 @@ flutter:
     - assets/images/bubble_shooter/
     - assets/images/profile/
     - assets/images/arrow_escape/
+    - assets/images/home_cards/
 
   fonts:
     - family: BebasNeue

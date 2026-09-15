@@ -546,64 +546,130 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    childAspectRatio:
-                        1.25, // Adjusted for slightly wider layout to fit title/description/arrow beautifully
+                    childAspectRatio: 0.85, 
                     children: [
-                      _buildGridCard(
-                        title: context.tr('complete_surveys', selectedLanguage),
-                        description: context.tr(
-                            'complete_surveys_desc', selectedLanguage),
-                        icon: Icons.analytics_rounded,
-                        color: Colors.indigo.shade600,
-                        gradientColors: const [
-                          Color(0xFF6E5DE7),
-                          Color(0xFF8F00FF)
-                        ],
-                        badgeText: context.tr('hot_badge', selectedLanguage),
-                        onTap: () => context.push('/home/surveys'),
-                      ),
-                      if (configState.config?['isTapjoyOfferwallEnabled'] ==
-                          true)
-                        _buildGridCard(
-                          title: context.tr('app_install', selectedLanguage),
-                          description:
-                              context.tr('app_install_desc', selectedLanguage),
-                          icon: Icons.install_mobile_rounded,
-                          color: Colors.indigo.shade600,
-                          gradientColors: const [
-                            Color(0xFF4361EE),
-                            Color(0xFF3F37C9)
-                          ],
-                          badgeText: 'EARN BIG',
-                          onTap: () => context.push('/home/app_install'),
+                      _buildNewGridCard(
+                        title: 'Spin Wheel',
+                        subtitleWidget: RichText(
+                          maxLines: 2,
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
+                            children: [
+                              TextSpan(text: 'Win upto\n'),
+                              TextSpan(text: '90 Coins', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.w800, fontSize: 15)),
+                            ],
+                          ),
                         ),
-                      _buildGridCard(
-                        title: selectedLanguage == 'Hindi'
-                            ? 'प्लेग्राउंड'
-                            : 'Playground',
-                        description: selectedLanguage == 'Hindi'
-                            ? 'दोस्तों से बात करें और गेम खेलें'
-                            : 'Chat with friends & play games',
-                        icon: Icons.rocket_launch_rounded,
-                        color: AppColors.primary,
-                        gradientColors: const [
-                          Color(0xFF7209B7),
-                          Color(0xFFB5179E)
-                        ],
-                        onTap: () =>
-                            AppNavigator.go(context, ref, '/playground'),
+                        badgeText: 'EASY & FUN',
+                        badgeColor: const Color(0xFFFFCDD2).withOpacity(0.6),
+                        badgeTextColor: const Color(0xFFC62828),
+                        bgColor: const Color(0xFFFFF0F5),
+                        buttonGradient: const [Color(0xFFFF4081), Color(0xFFE91E63)],
+                        buttonText: 'Spin Now',
+                        imageWidget: Image.asset('assets/images/home_cards/spin_wheel.png'),
+                        onTap: () {},
                       ),
-                      _buildGridCard(
-                        title: context.tr('play_games', selectedLanguage),
-                        description:
-                            context.tr('play_games_desc', selectedLanguage),
-                        icon: Icons.sports_esports_rounded,
-                        color: Colors.blue.shade700,
-                        gradientColors: const [
-                          Color(0xFF4361EE),
-                          Color(0xFF4CC9F0)
-                        ],
-                        onTap: () => AppNavigator.go(context, ref, '/games'),
+                      _buildNewGridCard(
+                        title: 'Daily Code',
+                        subtitleWidget: RichText(
+                          maxLines: 2,
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
+                            children: [
+                              TextSpan(text: 'Dalo aur jeeto\n'),
+                              TextSpan(text: '50 - 2000 Coins', style: TextStyle(color: Color(0xFF1976D2), fontWeight: FontWeight.w800, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                        badgeText: 'DAILY',
+                        badgeColor: const Color(0xFFBBDEFB).withOpacity(0.6),
+                        badgeTextColor: const Color(0xFF1565C0),
+                        bgColor: const Color(0xFFF0F8FF),
+                        buttonGradient: const [Color(0xFF42A5F5), Color(0xFF1E88E5)],
+                        buttonText: 'Enter Code',
+                        imageWidget: Image.asset('assets/images/home_cards/daily_code.png'),
+                        onTap: () {},
+                      ),
+                      _buildNewGridCard(
+                        title: 'Complete Offers',
+                        subtitleWidget: RichText(
+                          maxLines: 3,
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500, height: 1.1),
+                            children: [
+                              TextSpan(text: 'Earn '),
+                              TextSpan(text: '30 Coins\n', style: TextStyle(color: Color(0xFFF57C00), fontWeight: FontWeight.w800, fontSize: 14)),
+                              TextSpan(text: 'per minute'),
+                            ],
+                          ),
+                        ),
+                        badgeText: 'HIGH REWARDS',
+                        badgeColor: const Color(0xFFFFE0B2).withOpacity(0.6),
+                        badgeTextColor: const Color(0xFFE65100),
+                        bgColor: const Color(0xFFFFF8E1),
+                        buttonGradient: const [Color(0xFFFFA726), Color(0xFFF57C00)],
+                        buttonText: 'View Offers',
+                        imageWidget: Image.asset('assets/images/home_cards/offers.png'),
+                        onTap: () {},
+                      ),
+                      _buildNewGridCard(
+                        title: 'Complete Surveys',
+                        subtitleWidget: RichText(
+                          maxLines: 2,
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
+                            children: [
+                              TextSpan(text: 'Earn upto\n'),
+                              TextSpan(text: '5000 Coins', style: TextStyle(color: Color(0xFF7B1FA2), fontWeight: FontWeight.w800, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                        badgeText: 'POPULAR',
+                        badgeColor: const Color(0xFFE1BEE7).withOpacity(0.6),
+                        badgeTextColor: const Color(0xFF6A1B9A),
+                        bgColor: const Color(0xFFF3E5F5),
+                        buttonGradient: const [Color(0xFFAB47BC), Color(0xFF8E24AA)],
+                        buttonText: 'Start Survey',
+                        imageWidget: Image.asset('assets/images/home_cards/surveys.png'),
+                        onTap: () {},
+                      ),
+                      _buildNewGridCard(
+                        title: 'Join Our Networks',
+                        subtitleWidget: RichText(
+                          maxLines: 3,
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500, height: 1.1),
+                            children: [
+                              TextSpan(text: 'Earn upto '),
+                              TextSpan(text: '250 Coins\n', style: TextStyle(color: Color(0xFF388E3C), fontWeight: FontWeight.w800, fontSize: 14)),
+                              TextSpan(text: 'in 2 Minutes'),
+                            ],
+                          ),
+                        ),
+                        badgeText: 'QUICK EARN',
+                        badgeColor: const Color(0xFFC8E6C9).withOpacity(0.6),
+                        badgeTextColor: const Color(0xFF2E7D32),
+                        bgColor: const Color(0xFFE8F5E9),
+                        buttonGradient: const [Color(0xFF66BB6A), Color(0xFF43A047)],
+                        buttonText: 'Join Now',
+                        imageWidget: Image.asset('assets/images/home_cards/networks.png'),
+                        onTap: () {},
+                      ),
+                      _buildNewGridCard(
+                        title: 'Make Friends\nTake Gifts',
+                        subtitleWidget: const Text(
+                          'Connect, chat and get exciting gifts!',
+                          maxLines: 2,
+                          style: TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500, height: 1.1),
+                        ),
+                        badgeText: 'SOCIAL',
+                        badgeColor: const Color(0xFFF8BBD0).withOpacity(0.6),
+                        badgeTextColor: const Color(0xFFC2185B),
+                        bgColor: const Color(0xFFFCE4EC),
+                        buttonGradient: const [Color(0xFFEC407A), Color(0xFFD81B60)],
+                        buttonText: 'Find Friends',
+                        imageWidget: Image.asset('assets/images/home_cards/friends.png'),
+                        onTap: () {},
                       ),
                     ],
                   ),
@@ -646,153 +712,109 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildGridCard({
+  Widget _buildNewGridCard({
     required String title,
-    required String description,
-    required IconData icon,
-    required Color color,
-    required List<Color> gradientColors,
-    String? badgeText,
+    required Widget subtitleWidget,
+    required String badgeText,
+    required Color badgeColor,
+    required Color badgeTextColor,
+    required Color bgColor,
+    required List<Color> buttonGradient,
+    required String buttonText,
+    required Widget imageWidget,
     required VoidCallback onTap,
-    bool showAnimatedBorder = false,
   }) {
-    final cardContent = Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: showAnimatedBorder
-            ? null
-            : Border.all(color: AppColors.borderLight, width: 1.2),
-        gradient: LinearGradient(
-          colors: [
-            gradientColors[0].withValues(alpha: 0.08),
-            gradientColors[1].withValues(alpha: 0.02),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
         ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
+        padding: const EdgeInsets.only(left: 10, top: 12, bottom: 12, right: 6),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Right side image
+            Positioned(
+              right: -10,
+              bottom: 0,
+              child: SizedBox(
+                width: 70,
+                height: 70,
+                child: imageWidget,
+              ),
+            ),
+            
+            // Left side content
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Icon Squircle & Badge
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: gradientColors,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withValues(alpha: 0.15),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Icon(icon, color: Colors.white, size: 20),
+                // Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: badgeColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    badgeText,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: badgeTextColor,
+                      letterSpacing: 0.2,
                     ),
-                    if (badgeText != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          badgeText,
-                          style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 8.5,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 6),
-                // Title & Subtitle + Arrow (Row at bottom)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12.5,
-                              color: AppColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            description,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 9.5,
-                              height: 1.1,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: gradientColors,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                
+                // Title
+                Text(
+                  title,
+                  maxLines: 2,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                    height: 1.1,
+                  ),
+                ),
+                
+                // Subtitle
+                subtitleWidget,
+                
+                const Spacer(),
+                
+                // Button
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: buttonGradient),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        buttonText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
-                        shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Colors.white,
-                        size: 14,
-                      ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 14),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );
-
-    if (showAnimatedBorder) {
-      return GlowingBorderCard(
-        gradientColors: gradientColors,
-        child: cardContent,
-      );
-    }
-    return cardContent;
   }
 
   Widget _buildDailyCodeBanner(BuildContext context, String selectedLanguage) {
