@@ -362,7 +362,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   String _routeForIndex(int index) {
     if (index == 0) return '/home';
-    if (index == 1) return '/my_network';
+    if (index == 1) return '/playground';
     if (index == 2) return '/games';
     if (index == 3) return '/playground/friends';
     if (index == 4) return '/profile';
@@ -527,45 +527,38 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Transform.translate(
-                offset: const Offset(0, -6),
+                offset: const Offset(0, -18), // moved up
                 child: Container(
-                  width: 50,
-                  height: 50,
+                  width: 58,
+                  height: 58,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF8A2BE2), Color(0xFF6F5EFA)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: Colors.white,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF6F5EFA).withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
                   child: Center(
-                    child: Icon(
-                      icon,
-                      color: Colors.white,
-                      size: 26,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Image.asset(
+                        'assets/images/home_cards/earn.png', // coins stack image
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.monetization_on_rounded,
+                          color: Color(0xFFE91E63),
+                          size: 32,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-              Transform.translate(
-                offset: const Offset(0, -2),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: AppSizes.getResponsiveFontSize(context, 10),
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
+              // Removed text below the circle
             ],
           ),
         ),
