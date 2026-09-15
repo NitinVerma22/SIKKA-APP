@@ -57,7 +57,7 @@ class _NativeArrowEscapeLevelSelectScreenState
     const Offset(0.52, 0.62), // 12
     const Offset(0.69, 0.63), // 13
     const Offset(0.83, 0.64), // 14
-    const Offset(0.85, 0.77), // 15
+    const Offset(0.50, 0.77), // 15 - Moved to center
   ];
 
   @override
@@ -145,9 +145,13 @@ class _NativeArrowEscapeLevelSelectScreenState
                               // 2. Draw nodes
                               ...List.generate(16, (index) {
                                 final pos = _relativePositions[index];
+                                final isMilestone = index % 5 == 0 && index > 0;
+                                final double leftOffset = isMilestone ? 50 : 30; // Milestone width is 100
+                                final double topOffset = isMilestone ? 85 : 30; // Milestone circle center is at 85px from top
+                                
                                 return Positioned(
-                                  left: pos.dx * w - 30, // center node (width 60)
-                                  top: pos.dy * h - 30,  // center node (height 60)
+                                  left: pos.dx * w - leftOffset,
+                                  top: pos.dy * h - topOffset,
                                   child: _buildNode(index),
                                 );
                               }),
@@ -326,15 +330,10 @@ class _NativeArrowEscapeLevelSelectScreenState
           alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
-            // Reward Bubble
+            // Reward Bubble (Pulsing and Centered at top)
             Positioned(
-              top: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.3))),
-                child: Text(rewardText, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
-              ),
+              top: -8,
+              child: _PulsingReward(text: rewardText, color: color),
             ),
             // The Image
             Positioned(
@@ -473,4 +472,60 @@ class _PathPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PathPainter oldDelegate) => false;
+}
+
+class _PulsingReward extends StatefulWidget {
+  final String text;
+  final Color color;
+  const _PulsingReward({required this.text, required this.color});
+
+  @override
+  State<_PulsingReward> createState() => _PulsingRewardState();
+}
+
+class _PulsingRewardState extends State<_PulsingReward> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..repeat(reverse: true);
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: widget.color.withOpacity(0.5), width: 1.5),
+          boxShadow: [
+            BoxShadow(color: widget.color.withOpacity(0.4), blurRadius: 8, spreadRadius: 1),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.toll_rounded, color: Color(0xFFF59E0B), size: 14), // Coin icon
+            const SizedBox(width: 4),
+            Text(
+              widget.text,
+              style: TextStyle(color: widget.color, fontSize: 11, fontWeight: FontWeight.w900),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
