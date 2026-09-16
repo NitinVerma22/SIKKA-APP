@@ -9,6 +9,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sikkaplay/core/animations/custom_animations.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/constants/app_sizes.dart';
+import 'package:sikkaplay/core/navigation/app_navigator.dart';
+import 'package:sikkaplay/services/adscalex_offerwall_service.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
@@ -567,7 +569,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         buttonGradient: const [Color(0xFFFF4081), Color(0xFFE91E63)],
                         buttonText: 'Spin Now',
                         imageWidget: Image.asset('assets/images/home_cards/spin_wheel.png'),
-                        onTap: () {},
+                        onTap: () => AppNavigator.go(context, ref, '/games/spin_earn'),
                       ),
                       _buildNewGridCard(
                         title: 'Daily Code',
@@ -588,7 +590,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         buttonGradient: const [Color(0xFF42A5F5), Color(0xFF1E88E5)],
                         buttonText: 'Enter Code',
                         imageWidget: Image.asset('assets/images/home_cards/daily_code.png'),
-                        onTap: () {},
+                        onTap: () => AppNavigator.go(context, ref, '/home/daily_code'),
                       ),
                       _buildNewGridCard(
                         title: 'Complete Offers',
@@ -610,7 +612,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         buttonGradient: const [Color(0xFFFFA726), Color(0xFFF57C00)],
                         buttonText: 'View Offers',
                         imageWidget: Image.asset('assets/images/home_cards/offers.png'),
-                        onTap: () {},
+                        onTap: () => AdScaleXOfferwallService.instance.showOfferwall(context, ref),
                       ),
                       _buildNewGridCard(
                         title: 'Complete Surveys',
@@ -631,18 +633,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         buttonGradient: const [Color(0xFFAB47BC), Color(0xFF8E24AA)],
                         buttonText: 'Start Survey',
                         imageWidget: Image.asset('assets/images/home_cards/surveys.png'),
-                        onTap: () {},
+                        onTap: () => AppNavigator.go(context, ref, '/home/surveys'),
                       ),
                       _buildNewGridCard(
-                        title: 'Join Our Networks',
+                        title: 'Make Team',
                         subtitleWidget: RichText(
                           maxLines: 3,
                           text: const TextSpan(
                             style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500, height: 1.1),
                             children: [
-                              TextSpan(text: 'Earn upto '),
-                              TextSpan(text: '250 Coins\n', style: TextStyle(color: Color(0xFF388E3C), fontWeight: FontWeight.w800, fontSize: 14)),
-                              TextSpan(text: 'in 2 Minutes'),
+                              TextSpan(text: 'Earn upto\n'),
+                              TextSpan(text: '10000 Coins\n', style: TextStyle(color: Color(0xFF388E3C), fontWeight: FontWeight.w800, fontSize: 14)),
+                              TextSpan(text: 'per person'),
                             ],
                           ),
                         ),
@@ -653,7 +655,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         buttonGradient: const [Color(0xFF66BB6A), Color(0xFF43A047)],
                         buttonText: 'Join Now',
                         imageWidget: Image.asset('assets/images/home_cards/networks.png'),
-                        onTap: () {},
+                        onTap: () => AppNavigator.go(context, ref, '/my_network'),
                       ),
                       _buildNewGridCard(
                         title: 'Make Friends\nTake Gifts',
@@ -669,7 +671,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         buttonGradient: const [Color(0xFFEC407A), Color(0xFFD81B60)],
                         buttonText: 'Find Friends',
                         imageWidget: Image.asset('assets/images/home_cards/friends.png'),
-                        onTap: () {},
+                        onTap: () => AppNavigator.go(context, ref, '/playground/friends'),
                       ),
                     ],
                   ),
