@@ -213,18 +213,10 @@ class _Win600CoinsScreenState extends ConsumerState<Win600CoinsScreen> {
                                   : (isUnlocked ? const Color(0xFFEDE9FE) : Colors.grey.shade200),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Image.asset(
-                              isLast ? 'assets/images/games_hub/banner_gift.png' : 'assets/images/claim_gullak.webp',
-                              width: 45,
-                              height: 45,
-                              fit: BoxFit.contain,
-                              color: (!isLast && !isUnlocked) ? Colors.grey : null,
-                              colorBlendMode: (!isLast && !isUnlocked) ? BlendMode.saturation : null,
-                              errorBuilder: (context, error, stackTrace) => Icon(
-                                isLast ? Icons.card_giftcard : Icons.savings_rounded,
-                                color: isLast ? const Color(0xFFB45309) : const Color(0xFFF472B6),
-                                size: 30,
-                              ),
+                            child: Icon(
+                              isLast ? Icons.card_giftcard : Icons.savings_rounded,
+                              color: (!isLast && !isUnlocked) ? Colors.grey : (isLast ? const Color(0xFFB45309) : const Color(0xFFF472B6)),
+                              size: 30,
                             ),
                           ),
                           // Number Bubble or 150 text
