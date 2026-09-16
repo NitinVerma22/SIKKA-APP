@@ -342,9 +342,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     final location = GoRouterState.of(context).matchedLocation;
     
     if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/my_network')) return 1;
-    if (location.startsWith('/games')) return 2;
     if (location.startsWith('/playground/friends')) return 3;
+    if (location.startsWith('/playground')) return 1;
+    if (location.startsWith('/games')) return 2;
     if (location.startsWith('/profile')) return 4;
     return 0;
   }
