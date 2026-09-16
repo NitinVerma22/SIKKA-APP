@@ -10,6 +10,7 @@ import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/core/sync/sync_coordinator.dart';
+import 'package:sikkaplay/features/games/games_hub/providers/win_600_provider.dart';
 
 class GameClaimDialog {
   static void show({
@@ -53,6 +54,7 @@ class GameClaimDialog {
       if (result != null && result['success'] == true) {
         final int coinsWon = result['coinsEarned'] ?? 0;
         ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
+        ref.read(win600Provider.notifier).incrementGullak();
         onClaimCompleted();
         if (context.mounted) {
           _showPostClaimDialog(context, coinsWon, onContinue, onExit, selectedLanguage);
@@ -121,6 +123,7 @@ class GameClaimDialog {
         if (result != null && result['success'] == true) {
           final int coinsWon = result['coinsEarned'] ?? 0;
           ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
+          ref.read(win600Provider.notifier).incrementGullak();
           onClaimCompleted();
           if (context.mounted) {
             _showPostClaimDialog(context, coinsWon, onContinue, onExit, selectedLanguage);
@@ -590,6 +593,7 @@ class GameClaimDialog {
                             if (result != null && result['success'] == true) {
                               final int coinsWon = result['coinsEarned'] ?? 0;
                               ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
+                              ref.read(win600Provider.notifier).incrementGullak();
                               onClaimCompleted();
                               if (context.mounted) {
                                 _showPostClaimDialog(context, coinsWon - 25, onContinue, onExit, selectedLanguage);
