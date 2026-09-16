@@ -70,6 +70,7 @@ flutter:
     - assets/audio/treasure_grid/
     - assets/audio/emoji_memory/
     - assets/audio/math_rush/
+    - assets/audio/arrow_escape/
     - assets/images/
     - assets/images/games_hub/
     - assets/images/bubble_shooter/

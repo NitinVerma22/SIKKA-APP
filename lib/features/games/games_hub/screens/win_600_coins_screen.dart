@@ -214,7 +214,7 @@ class _Win600CoinsScreenState extends ConsumerState<Win600CoinsScreen> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Image.asset(
-                              isLast ? 'assets/images/games_hub/banner_gift.png' : 'assets/images/games_hub/gullak.png',
+                              isLast ? 'assets/images/games_hub/banner_gift.png' : 'assets/images/claim_gullak.webp',
                               width: 45,
                               height: 45,
                               fit: BoxFit.contain,

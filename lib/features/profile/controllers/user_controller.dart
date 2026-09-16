@@ -186,6 +186,14 @@ class UserNotifier extends StateNotifier<UserState> {
     _ref.read(syncCoordinatorProvider).triggerSync([SyncEvent.balanceChanged]);
   }
 
+  void updateLocalGullakCount(int newCount) {
+    if (state.userData != null) {
+      final currentData = Map<String, dynamic>.from(state.userData!);
+      currentData['win600UnlockedGullaks'] = newCount;
+      state = state.copyWith(userData: currentData);
+    }
+  }
+
   void addDirectCoins(int coinsEarned) {
     if (state.userData != null) {
       final currentData = Map<String, dynamic>.from(state.userData!);
