@@ -20,17 +20,13 @@ class Win600State {
 class Win600Notifier extends Notifier<Win600State> {
   @override
   Win600State build() {
-    final userData = ref.read(userProvider).userData;
+    final userData = ref.watch(userProvider).userData;
     int unlockedCount = userData?['win600UnlockedGullaks'] ?? 0;
     
-    ref.listen(userProvider, (previous, next) {
-      final newCount = next.userData?['win600UnlockedGullaks'] ?? 0;
-      if (newCount != state.unlockedGullaks) {
-        state = state.copyWith(unlockedGullaks: newCount);
-      }
-    });
+    // Preserve isClaimed if this is a rebuild due to userProvider update
+    bool isClaimed = stateOrNull?.isClaimed ?? false;
 
-    return Win600State(unlockedGullaks: unlockedCount, isClaimed: false);
+    return Win600State(unlockedGullaks: unlockedCount, isClaimed: isClaimed);
   }
 
   Future<void> incrementGullak() async {
