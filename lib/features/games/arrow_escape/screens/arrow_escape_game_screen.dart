@@ -7,12 +7,14 @@ import '../models/arrow_escape_models.dart';
 import '../engine/arrow_escape_engine.dart';
 import '../widgets/arrow_escape_painter.dart';
 import '../services/arrow_escape_service.dart';
+import '../services/arrow_escape_audio_service.dart';
 import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
 import '../core/audio_haptic_helper.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
 import '../../../../core/user/user_service.dart';
 import '../../shared/utils/game_notifications.dart';
+import 'package:sikkaplay/features/games/games_hub/providers/win_600_provider.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_audio_toggle.dart';
 
 class NativeArrowEscapeGameScreen extends ConsumerStatefulWidget {
@@ -208,6 +210,7 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
     );
 
     if (canEscape) {
+      ArrowEscapeAudioService.instance.playEscapeSfx();
       tappedArrow.isEscaping = true;
       tappedArrow.escapeProgress = 0.0;
 
@@ -247,7 +250,11 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
 
   Future<void> _onLevelComplete() async {
     // Play level complete victory sound
+    ArrowEscapeAudioService.instance.playLevelCompleteSfx();
     AudioHapticHelper.playLevelComplete();
+    
+    // Increment Gullak progress for completing a level
+    ref.read(win600Provider.notifier).incrementGullak();
 
     setState(() {
       _isLevelComplete = true;
