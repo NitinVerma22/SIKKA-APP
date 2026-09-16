@@ -286,6 +286,9 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
   }
 
   Future<void> _onLevelComplete() async {
+    // Increment Gullak progress for completing a level
+    ref.read(win600Provider.notifier).incrementGullak();
+    
     setState(() {
       _isLevelWon = true;
       _isClaiming = true;

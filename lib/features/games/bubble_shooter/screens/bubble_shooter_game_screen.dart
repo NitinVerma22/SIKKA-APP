@@ -455,6 +455,9 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
   }
 
   Future<void> _onLevelComplete() async {
+    // Increment Gullak progress for completing a level
+    ref.read(win600Provider.notifier).incrementGullak();
+    
     setState(() {
       gameWon = true;
       _isClaiming = true;
