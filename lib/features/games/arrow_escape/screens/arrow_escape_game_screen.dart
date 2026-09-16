@@ -14,7 +14,6 @@ import '../core/audio_haptic_helper.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
 import '../../../../core/user/user_service.dart';
 import '../../shared/utils/game_notifications.dart';
-import 'package:sikkaplay/features/games/games_hub/providers/win_600_provider.dart';
 import 'package:sikkaplay/features/games/shared/widgets/game_audio_toggle.dart';
 
 class NativeArrowEscapeGameScreen extends ConsumerStatefulWidget {
@@ -257,8 +256,6 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
     ArrowEscapeAudioService.instance.playLevelCompleteSfx();
     AudioHapticHelper.playLevelComplete();
     
-    // Increment Gullak progress for completing a level
-    ref.read(win600Provider.notifier).incrementGullak();
 
     setState(() {
       _isLevelComplete = true;
