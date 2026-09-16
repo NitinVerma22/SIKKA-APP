@@ -194,6 +194,8 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
 
     // Check if tappedArrow is locked or path is blocked
     if (tappedArrow.isLocked) {
+      ArrowEscapeAudioService.instance.playCollisionSfx();
+      AudioHapticHelper.playCollision();
       tappedArrow.isBlockedShaking = true;
       tappedArrow.shakeProgress = -1.0;
       _lives--;
@@ -217,6 +219,8 @@ class _NativeArrowEscapeGameScreenState extends ConsumerState<NativeArrowEscapeG
       _spawnParticleBurst((tappedPt.x + 0.5) * cellSize, (tappedPt.y + 0.5) * cellSize, tappedArrow.color);
       _highlightedArrowId = null;
     } else {
+      ArrowEscapeAudioService.instance.playCollisionSfx();
+      AudioHapticHelper.playCollision();
       tappedArrow.isBlockedShaking = true;
       tappedArrow.shakeProgress = -1.0;
 
