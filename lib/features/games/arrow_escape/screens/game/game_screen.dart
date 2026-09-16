@@ -322,6 +322,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 
   Future<void> _showLevelCompleteDialog(int stars) async {
+    ArrowEscapeAudioService.instance.playLevelCompleteSfx();
     await showDialog(
       context: context,
       barrierDismissible: false,

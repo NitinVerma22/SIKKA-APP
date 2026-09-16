@@ -532,5 +532,30 @@ class UserService {
       return false;
     }
   }
-}
 
+  Future<Map<String, dynamic>?> incrementGullak() async {
+    try {
+      final response = await _sendRequest('POST', '/gullak/increment');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print('Error incrementing gullak: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> claimGullakReward() async {
+    try {
+      final response = await _sendRequest('POST', '/gullak/claim');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print('Error claiming gullak reward: $e');
+      return null;
+    }
+  }
+}

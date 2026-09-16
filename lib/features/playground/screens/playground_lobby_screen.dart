@@ -632,6 +632,20 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
     );
   }
 
+  Widget _buildMeetNewPeopleBanner() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Image.asset(
+          'assets/images/meet_new.png',
+          width: double.infinity,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
+
   Widget _buildConnectButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -641,13 +655,13 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: const LinearGradient(
-            colors: [Color(0xFF8A2BE2), Color(0xFF6F5EFA)],
+            colors: [Color(0xFFF2338A), Color(0xFF7948F8)],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6F5EFA).withValues(alpha: 0.4),
+              color: const Color(0xFF7948F8).withValues(alpha: 0.4),
               blurRadius: 15,
               offset: const Offset(0, 8),
             )
@@ -721,7 +735,7 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
                       _buildTopAppBar(),
                       _buildProfileCard(),
                       _buildStatsRow(),
-                      _buildPlaytimeCrates(),
+                      _buildMeetNewPeopleBanner(),
                       _buildConnectButton(), // Replaces Friends Online & Activity Feed
                       const SizedBox(height: 80), // Space for bottom nav
                     ],

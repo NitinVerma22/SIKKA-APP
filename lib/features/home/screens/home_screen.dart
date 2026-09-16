@@ -9,8 +9,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sikkaplay/core/animations/custom_animations.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/constants/app_sizes.dart';
-import 'package:sikkaplay/core/navigation/app_navigator.dart';
-import 'package:sikkaplay/services/adscalex_offerwall_service.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
@@ -553,12 +551,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       _buildNewGridCard(
                         title: 'Spin Wheel',
                         subtitleWidget: RichText(
-                          maxLines: 2,
+                          maxLines: 4,
                           text: const TextSpan(
                             style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
                             children: [
                               TextSpan(text: 'Win upto\n'),
-                              TextSpan(text: '90 Coins', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.w800, fontSize: 15)),
+                              TextSpan(text: '90\nCoins', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.w900, fontSize: 22)),
                             ],
                           ),
                         ),
@@ -567,19 +565,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         badgeTextColor: const Color(0xFFC62828),
                         bgColor: const Color(0xFFFFF0F5),
                         buttonGradient: const [Color(0xFFFF4081), Color(0xFFE91E63)],
-                        buttonText: 'Spin Now',
+                        buttonText: 'Lets Go',
                         imageWidget: Image.asset('assets/images/home_cards/spin_wheel.png'),
-                        onTap: () => AppNavigator.go(context, ref, '/games/spin_earn'),
+                          onTap: () => AppNavigator.push(context, ref, '/games/spin_earn'),
                       ),
                       _buildNewGridCard(
                         title: 'Daily Code',
                         subtitleWidget: RichText(
-                          maxLines: 2,
+                          maxLines: 4,
                           text: const TextSpan(
                             style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
                             children: [
-                              TextSpan(text: 'Dalo aur jeeto\n'),
-                              TextSpan(text: '50 - 2000 Coins', style: TextStyle(color: Color(0xFF1976D2), fontWeight: FontWeight.w800, fontSize: 14)),
+                              TextSpan(text: 'Win upto\n'),
+                              TextSpan(text: '2000\nCoins', style: TextStyle(color: Color(0xFF1976D2), fontWeight: FontWeight.w900, fontSize: 22)),
                             ],
                           ),
                         ),
@@ -588,20 +586,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         badgeTextColor: const Color(0xFF1565C0),
                         bgColor: const Color(0xFFF0F8FF),
                         buttonGradient: const [Color(0xFF42A5F5), Color(0xFF1E88E5)],
-                        buttonText: 'Enter Code',
+                        buttonText: 'Lets Go',
                         imageWidget: Image.asset('assets/images/home_cards/daily_code.png'),
-                        onTap: () => AppNavigator.go(context, ref, '/home/daily_code'),
+                          onTap: () => AppNavigator.push(context, ref, '/home/daily_code'),
                       ),
                       _buildNewGridCard(
                         title: 'Complete Offers',
                         subtitleWidget: RichText(
-                          maxLines: 3,
+                          maxLines: 4,
                           text: const TextSpan(
                             style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500, height: 1.1),
                             children: [
-                              TextSpan(text: 'Earn '),
-                              TextSpan(text: '30 Coins\n', style: TextStyle(color: Color(0xFFF57C00), fontWeight: FontWeight.w800, fontSize: 14)),
-                              TextSpan(text: 'per minute'),
+                              TextSpan(text: 'Win upto\n'),
+                              TextSpan(text: '50000\nCoins\n', style: TextStyle(color: Color(0xFFF57C00), fontWeight: FontWeight.w900, fontSize: 22)),
+                              TextSpan(text: 'per day', style: TextStyle(fontSize: 11)),
                             ],
                           ),
                         ),
@@ -610,19 +608,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         badgeTextColor: const Color(0xFFE65100),
                         bgColor: const Color(0xFFFFF8E1),
                         buttonGradient: const [Color(0xFFFFA726), Color(0xFFF57C00)],
-                        buttonText: 'View Offers',
+                        buttonText: 'Lets Go',
                         imageWidget: Image.asset('assets/images/home_cards/offers.png'),
-                        onTap: () => AdScaleXOfferwallService.instance.showOfferwall(context, ref),
+                          onTap: () {
+                          if (_isAdScaleXOpening) return;
+                          setState(() {
+                            _isAdScaleXOpening = true;
+                          });
+                          final userState = ref.read(userProvider);
+                          final configState = ref.read(configProvider);
+                          final userId = userState.userData?['id']?.toString() ?? userState.userData?['_id']?.toString() ?? '';
+                          final remoteAppKey = configState.config?['adScaleXAppKey'] ?? configState.config?['adscalexAppKey'];
+                          final appKey = remoteAppKey?.toString() ?? 'psk_NfPTjRGS0a5f6vcljv0ScBZohLYIxOFsdfCRE9kfrtQ';
+                          
+                          AdScaleXOfferwallService.openOfferwall(context, userId, appKey)
+                              .whenComplete(() {
+                            if (mounted) {
+                              setState(() {
+                                _isAdScaleXOpening = false;
+                              });
+                            }
+                          });
+                        },
                       ),
                       _buildNewGridCard(
                         title: 'Complete Surveys',
                         subtitleWidget: RichText(
-                          maxLines: 2,
+                          maxLines: 4,
                           text: const TextSpan(
                             style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
                             children: [
                               TextSpan(text: 'Earn upto\n'),
-                              TextSpan(text: '5000 Coins', style: TextStyle(color: Color(0xFF7B1FA2), fontWeight: FontWeight.w800, fontSize: 14)),
+                              TextSpan(text: '5000\nCoins', style: TextStyle(color: Color(0xFF7B1FA2), fontWeight: FontWeight.w900, fontSize: 22)),
                             ],
                           ),
                         ),
@@ -631,20 +648,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         badgeTextColor: const Color(0xFF6A1B9A),
                         bgColor: const Color(0xFFF3E5F5),
                         buttonGradient: const [Color(0xFFAB47BC), Color(0xFF8E24AA)],
-                        buttonText: 'Start Survey',
+                        buttonText: 'Lets Go',
                         imageWidget: Image.asset('assets/images/home_cards/surveys.png'),
-                        onTap: () => AppNavigator.go(context, ref, '/home/surveys'),
+                          onTap: () => AppNavigator.push(context, ref, '/home/surveys'),
                       ),
                       _buildNewGridCard(
                         title: 'Make Team',
                         subtitleWidget: RichText(
-                          maxLines: 3,
+                          maxLines: 4,
                           text: const TextSpan(
                             style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500, height: 1.1),
                             children: [
                               TextSpan(text: 'Earn upto\n'),
-                              TextSpan(text: '10000 Coins\n', style: TextStyle(color: Color(0xFF388E3C), fontWeight: FontWeight.w800, fontSize: 14)),
-                              TextSpan(text: 'per person'),
+                                TextSpan(text: '10000\nCoins\n', style: TextStyle(color: Color(0xFF388E3C), fontWeight: FontWeight.w900, fontSize: 22)),
+                                TextSpan(text: 'per person'),
                             ],
                           ),
                         ),
@@ -653,25 +670,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         badgeTextColor: const Color(0xFF2E7D32),
                         bgColor: const Color(0xFFE8F5E9),
                         buttonGradient: const [Color(0xFF66BB6A), Color(0xFF43A047)],
-                        buttonText: 'Join Now',
+                        buttonText: 'Lets Go',
                         imageWidget: Image.asset('assets/images/home_cards/networks.png'),
-                        onTap: () => AppNavigator.go(context, ref, '/my_network'),
+                          onTap: () => AppNavigator.push(context, ref, '/my_network'),
                       ),
                       _buildNewGridCard(
                         title: 'Make Friends\nTake Gifts',
                         subtitleWidget: const Text(
-                          'Connect, chat and get exciting gifts!',
-                          maxLines: 2,
-                          style: TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500, height: 1.1),
-                        ),
+                            'Connect,\nchat and\nget gifts!',
+                            maxLines: 3,
+                            style: TextStyle(fontSize: 14, color: Color(0xFFC2185B), fontWeight: FontWeight.w800, height: 1.1),
+                          ),
                         badgeText: 'SOCIAL',
                         badgeColor: const Color(0xFFF8BBD0).withOpacity(0.6),
                         badgeTextColor: const Color(0xFFC2185B),
                         bgColor: const Color(0xFFFCE4EC),
                         buttonGradient: const [Color(0xFFEC407A), Color(0xFFD81B60)],
-                        buttonText: 'Find Friends',
+                        buttonText: 'Lets Go',
                         imageWidget: Image.asset('assets/images/home_cards/friends.png'),
-                        onTap: () => AppNavigator.go(context, ref, '/playground/friends'),
+                          onTap: () => AppNavigator.push(context, ref, '/playground/friends'),
                       ),
                     ],
                   ),
@@ -739,11 +756,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           children: [
             // Right side image
             Positioned(
-              right: -10,
-              bottom: 0,
-              child: SizedBox(
-                width: 70,
-                height: 70,
+                right: -15,
+                bottom: 15,
+                child: SizedBox(
+                  width: 95,
+                  height: 95,
                 child: imageWidget,
               ),
             ),
@@ -790,7 +807,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 
                 // Button
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(colors: buttonGradient),
                     borderRadius: BorderRadius.circular(16),
@@ -995,7 +1012,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   Widget _buildReferralBanner(BuildContext context) {
     return GestureDetector(
-      onTap: () => AppNavigator.goWithContainer(
+      onTap: () => AppNavigator.pushWithContainer(
           context, '/my_network'), // Clicking the banner opens the network page
       child: AspectRatio(
         aspectRatio: 3 / 2,
@@ -1166,7 +1183,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
         // Compact Wallet matching the image design exactly
         GestureDetector(
-          onTap: () => AppNavigator.go(context, ref, '/wallet'),
+          onTap: () => AppNavigator.push(context, ref, '/wallet'),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
@@ -1497,3 +1514,6 @@ class _SocialBenefitsDialogState extends State<_SocialBenefitsDialog> {
     );
   }
 }
+
+
+

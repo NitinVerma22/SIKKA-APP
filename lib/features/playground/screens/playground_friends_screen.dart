@@ -491,14 +491,18 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
           children: [
             Icon(icon, color: isSelected ? Colors.white : Colors.black54, size: 14),
             const SizedBox(width: 4),
-            Text(
-              title,
-              style: GoogleFonts.outfit(
-                color: isSelected ? Colors.white : Colors.black54,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+            Flexible(
+                child: Text(
+                  title,
+                  style: GoogleFonts.outfit(
+                    color: isSelected ? Colors.white : Colors.black54,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
             if (badgeCount != null) ...[
               const SizedBox(width: 4),
               Container(
@@ -638,9 +642,9 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Center(
         child: SizedBox(
-          width: 140,
-          height: 40,
-          child: ElevatedButton(
+          width: 160,
+            height: 40,
+            child: ElevatedButton(
             onPressed: isLoading ? null : onTap,
             style: ElevatedButton.styleFrom(
               elevation: 0,
@@ -1167,12 +1171,16 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
                   children: [
                     Row(
                       children: [
-                        Text(
-                          displayName,
-                          style: GoogleFonts.outfit(color: const Color(0xFF1F2937), fontWeight: FontWeight.bold, fontSize: 15),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        Flexible(
+                            child: Flexible(
+                            child: Text(
+                              displayName,
+                              style: GoogleFonts.outfit(color: const Color(0xFF1F2937), fontWeight: FontWeight.bold, fontSize: 15),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          ),
                         const SizedBox(width: 8),
                         if (isOnline)
                           Container(
@@ -1512,3 +1520,4 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
     );
   }
 }
+

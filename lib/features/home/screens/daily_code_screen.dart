@@ -649,7 +649,7 @@ class _DailyCodeScreenState extends ConsumerState<DailyCodeScreen> {
                     child: AspectRatio(
                       aspectRatio: 343 / 164,
                       child: Image.asset(
-                        'assets/images/daily_code.webp',
+                        'assets/images/promo_banner_5.webp',
                         fit: BoxFit.cover,
                       ),
                     ),

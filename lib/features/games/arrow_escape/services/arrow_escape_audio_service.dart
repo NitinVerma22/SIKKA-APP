@@ -28,7 +28,7 @@ class ArrowEscapeAudioService {
     if (isMuted) return;
     try {
       await _sfxPlayer.stop();
-      await _sfxPlayer.play(AssetSource('audio/spin/tick.mp3'), volume: 0.7);
+      await _sfxPlayer.play(AssetSource('audio/arrow_escape/arrow_shot.mp3'), volume: 0.7);
     } catch (e) {
       debugPrint('Error playing escape sfx: $e');
     }
@@ -38,9 +38,19 @@ class ArrowEscapeAudioService {
     if (isMuted) return;
     try {
       await _sfxPlayer.stop();
-      await _sfxPlayer.play(AssetSource('audio/spin/tick.mp3'), volume: 0.3);
+      await _sfxPlayer.play(AssetSource('audio/arrow_escape/lifeline_lost.mp3'), volume: 0.7);
     } catch (e) {
       debugPrint('Error playing collision sfx: $e');
+    }
+  }
+
+  Future<void> playLevelCompleteSfx() async {
+    if (isMuted) return;
+    try {
+      await _sfxPlayer.stop();
+      await _sfxPlayer.play(AssetSource('audio/arrow_escape/level_complete.mp3'), volume: 0.7);
+    } catch (e) {
+      debugPrint('Error playing level complete sfx: $e');
     }
   }
 }

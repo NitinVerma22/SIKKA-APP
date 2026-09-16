@@ -23,6 +23,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:sikkaplay/core/services/socket_provider.dart';
 import 'package:sikkaplay/core/navigation/app_navigator.dart';
+import 'package:sikkaplay/features/notifications/providers/notification_provider.dart';
 
 class MainLayout extends ConsumerStatefulWidget {
   final Widget child;
@@ -387,6 +388,12 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                         location.contains('/search');
     final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final selectedLanguage = ref.watch(languageProvider);
+    
+    int profileBadgeCount = ref.watch(notificationProvider).unreadCount;
+    int chatBadgeCount = ref.watch(globalPendingRequestsProvider).length;
+    for (final friend in ref.watch(globalFriendsListProvider)) {
+      chatBadgeCount += (friend['unreadCount'] as int? ?? 0);
+    }
 
     ref.listen<UserState>(userProvider, (previous, next) {
       final myUserId = next.userData?['id']?.toString() ?? '';
@@ -493,10 +500,10 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildNavItem(context, ref, 0, Icons.home_rounded, context.tr('home', selectedLanguage), selectedIndex, false),
-                        _buildNavItem(context, ref, 1, Icons.people_alt_rounded, selectedLanguage == 'Hindi' ? 'फ्रेंड्स' : 'Friends', selectedIndex, false),
+                        _buildNavItem(context, ref, 1, Icons.people_alt_rounded, selectedLanguage == 'Hindi' ? 'फ़्रेंड्स' : 'Friends', selectedIndex, false),
                         _buildNavItem(context, ref, 2, Icons.monetization_on_rounded, selectedLanguage == 'Hindi' ? 'अर्न' : 'Earn', selectedIndex, false),
-                        _buildNavItem(context, ref, 3, Icons.chat_bubble_rounded, selectedLanguage == 'Hindi' ? 'चैट्स' : 'Chats', selectedIndex, false),
-                        _buildNavItem(context, ref, 4, Icons.person_rounded, context.tr('profile', selectedLanguage), selectedIndex, false),
+                        _buildNavItem(context, ref, 3, Icons.chat_bubble_rounded, selectedLanguage == 'Hindi' ? 'चैट्स' : 'Chats', selectedIndex, false, badgeCount: chatBadgeCount),
+                        _buildNavItem(context, ref, 4, Icons.person_rounded, context.tr('profile', selectedLanguage), selectedIndex, false, badgeCount: profileBadgeCount),
                       ],
                     ),
                   ),
@@ -516,6 +523,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     String label,
     int selectedIndex,
     bool isReels,
+    {int badgeCount = 0}
   ) {
     if (index == 2) {
       // Big Center Earn Button
@@ -546,7 +554,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Image.asset(
-                        'assets/images/home_cards/earn.png', // coins stack image
+                        'assets/images/games_hub/coins_stack.png', // coins stack image
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) => const Icon(
                           Icons.monetization_on_rounded,
@@ -590,10 +598,42 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 24,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    icon,
+                    color: color,
+                    size: 24,
+                  ),
+                  if (badgeCount > 0)
+                    Positioned(
+                      top: -4,
+                      right: -6,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE91E63), // Pink badge color
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Center(
+                          child: Text(
+                            badgeCount > 99 ? '99+' : badgeCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 2),
