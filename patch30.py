@@ -1,4 +1,10 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import re
+
+file_path = r'e:\development\SikkaPlay\lib\features\games\games_hub\providers\win_600_provider.dart'
+with open(file_path, 'r', encoding='utf-8') as f:
+    content = f.read()
+
+new_content = """import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/sync/sync_coordinator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -78,3 +84,7 @@ class Win600Notifier extends Notifier<Win600State> {
 final win600Provider = NotifierProvider<Win600Notifier, Win600State>(() {
   return Win600Notifier();
 });
+"""
+
+with open(file_path, 'w', encoding='utf-8') as f:
+    f.write(new_content)
