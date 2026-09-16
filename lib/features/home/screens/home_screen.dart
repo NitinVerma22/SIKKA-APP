@@ -617,7 +617,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             _isAdScaleXOpening = true;
                           });
                           final userState = ref.read(userProvider);
-                          final configState = ref.read(configProvider);
+                          final configState = ref.read(appConfigProvider);
                           final userId = userState.userData?['id']?.toString() ?? userState.userData?['_id']?.toString() ?? '';
                           final remoteAppKey = configState.config?['adScaleXAppKey'] ?? configState.config?['adscalexAppKey'];
                           final appKey = remoteAppKey?.toString() ?? 'psk_NfPTjRGS0a5f6vcljv0ScBZohLYIxOFsdfCRE9kfrtQ';
