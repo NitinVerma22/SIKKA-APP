@@ -150,6 +150,7 @@ class _Win600CoinsScreenState extends ConsumerState<Win600CoinsScreen> {
         Consumer(
           builder: (context, ref, child) {
             final win600State = ref.watch(win600Provider);
+              final unlockedGullaks = ref.watch(userProvider).userData?['win600UnlockedGullaks'] ?? 0;
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -162,8 +163,8 @@ class _Win600CoinsScreenState extends ConsumerState<Win600CoinsScreen> {
               itemCount: 10,
               itemBuilder: (context, index) {
                 bool isLast = index == 9;
-                bool isUnlocked = index < win600State.unlockedGullaks;
-                bool canClaimFinal = win600State.unlockedGullaks >= 9;
+                bool isUnlocked = index < unlockedGullaks;
+                bool canClaimFinal = unlockedGullaks >= 9;
                 bool isFinalClaimed = win600State.isClaimed;
 
                 return GestureDetector(

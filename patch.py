@@ -1,53 +1,13 @@
-import re
-import sys
+﻿import re
 
-file_path = 'lib/features/home/screens/home_screen.dart'
+file_path = r'e:\development\SikkaPlay\lib\features\games\games_hub\screens\win_600_coins_screen.dart'
 with open(file_path, 'r', encoding='utf-8') as f:
     content = f.read()
 
-content = re.sub(
-    r"imageWidget: Image\.asset\('assets/images/home_cards/spin_wheel\.png'\),\s*onTap: \(\) \{[^\}]*\},",
-    r"imageWidget: Image.asset('assets/images/home_cards/spin_wheel.png'),\n                          onTap: () => AppNavigator.go(context, ref, '/games/spin_earn'),",
-    content
-)
-
-content = re.sub(
-    r"imageWidget: Image\.asset\('assets/images/home_cards/daily_code\.png'\),\s*onTap: \(\) \{[^\}]*\},",
-    r"imageWidget: Image.asset('assets/images/home_cards/daily_code.png'),\n                          onTap: () => AppNavigator.go(context, ref, '/home/daily_code'),",
-    content
-)
-
-content = re.sub(
-    r"imageWidget: Image\.asset\('assets/images/home_cards/offers\.png'\),\s*onTap: \(\) \{[^\}]*\},",
-    r"imageWidget: Image.asset('assets/images/home_cards/offers.png'),\n                          onTap: () => AdScaleXOfferwallService.instance.showOfferwall(context, ref),",
-    content
-)
-
-content = re.sub(
-    r"imageWidget: Image\.asset\('assets/images/home_cards/surveys\.png'\),\s*onTap: \(\) \{[^\}]*\},",
-    r"imageWidget: Image.asset('assets/images/home_cards/surveys.png'),\n                          onTap: () => AppNavigator.go(context, ref, '/home/surveys'),",
-    content
-)
-
-content = re.sub(
-    r"imageWidget: Image\.asset\('assets/images/home_cards/networks\.png'\),\s*onTap: \(\) \{[^\}]*\},",
-    r"imageWidget: Image.asset('assets/images/home_cards/networks.png'),\n                          onTap: () => AppNavigator.go(context, ref, '/my_network'),",
-    content
-)
-
-content = re.sub(
-    r"imageWidget: Image\.asset\('assets/images/home_cards/friends\.png'\),\s*onTap: \(\) \{[^\}]*\},",
-    r"imageWidget: Image.asset('assets/images/home_cards/friends.png'),\n                          onTap: () => AppNavigator.go(context, ref, '/playground/friends'),",
-    content
-)
-
-content = content.replace("'Join Our Networks'", "'Make Team'")
-
-content = re.sub(
-    r"TextSpan\(text: 'Earn upto '\),\s*TextSpan\(text: '250 Coins\\n', style: TextStyle\(color: Color\(0xFF388E3C\), fontWeight: FontWeight\.w800, fontSize: 14\)\),\s*TextSpan\(text: 'in 2 Minutes'\),",
-    r"TextSpan(text: 'Earn upto\\n'),\n                                TextSpan(text: '10000 Coins\\n', style: TextStyle(color: Color(0xFF388E3C), fontWeight: FontWeight.w800, fontSize: 14)),\n                                TextSpan(text: 'per person'),",
-    content
-)
+content = content.replace('final win600State = ref.watch(win600Provider);', 'final win600State = ref.watch(win600Provider);\n              final unlockedGullaks = ref.watch(userProvider).userData?[\'win600UnlockedGullaks\'] ?? 0;')
+content = content.replace('bool isUnlocked = index < win600State.unlockedGullaks;', 'bool isUnlocked = index < unlockedGullaks;')
+content = content.replace('bool canClaimFinal = win600State.unlockedGullaks >= 9;', 'bool canClaimFinal = unlockedGullaks >= 9;')
 
 with open(file_path, 'w', encoding='utf-8') as f:
     f.write(content)
+print("Patched screen")
