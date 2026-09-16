@@ -28,6 +28,7 @@ import 'package:sikkaplay/core/config/config_service.dart';
 import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sikkaplay/core/navigation/app_navigator.dart';
+import 'package:sikkaplay/core/config/config_service.dart';
 import 'package:sikkaplay/services/adscalex_offerwall_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
