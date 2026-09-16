@@ -12,6 +12,7 @@ import 'package:sikkaplay/features/games/shared/widgets/game_audio_toggle.dart';
 import '../../shared/widgets/game_banner_ad.dart';
 import '../../../../core/ads/ad_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sikkaplay/features/games/games_hub/providers/win_600_provider.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
 import '../../../../core/user/user_service.dart';
 import '../../shared/utils/game_notifications.dart';
