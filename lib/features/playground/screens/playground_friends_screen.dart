@@ -17,6 +17,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/config/config_service.dart';
+import 'package:sikkaplay/shared/layouts/main_layout.dart';
 
 class PlaygroundFriendsScreen extends ConsumerStatefulWidget {
   const PlaygroundFriendsScreen({super.key});
@@ -31,8 +32,8 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
   Timer? _debounce;
 
   bool _isLoading = true;
-  List<dynamic> _friends = [];
-  List<dynamic> _pendingRequests = [];
+  List<dynamic> get _friends => ref.watch(globalFriendsListProvider);
+  List<dynamic> get _pendingRequests => ref.watch(globalPendingRequestsProvider);
   List<dynamic> _searchResults = [];
   bool _isSearching = false;
   Map<String, String> _chatClearTimes = {};
@@ -56,8 +57,16 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
   @override
   void initState() {
     super.initState();
-    _loadFriendsData();
-    _loadSuggestions(isRefresh: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final isPreloaded = ref.read(globalFriendsListProvider).isNotEmpty;
+      if (isPreloaded) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      _loadFriendsData(silent: isPreloaded);
+      _loadSuggestions(isRefresh: true);
+    });
   }
 
   @override
@@ -91,10 +100,11 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
         }
       }
 
+      ref.read(globalFriendsListProvider.notifier).state = loadedFriends;
+      ref.read(globalPendingRequestsProvider.notifier).state = res['pendingRequests'] ?? [];
+      
       setState(() {
-        _friends = loadedFriends;
         _chatClearTimes = clearTimes;
-        _pendingRequests = res['pendingRequests'] ?? [];
         _isSuspended = res['isSuspended'] == true;
         _suspendedUntil = res['suspendedUntil']?.toString();
         _suspendedReason = res['suspendedReason']?.toString();
@@ -196,7 +206,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
 
     if (res['success'] == true) {
       GameNotifications.showCoinUpdate(context, 'Request accepted!');
-      _loadFriendsData();
+      _loadFriendsData(silent: true);
     } else {
       GameNotifications.showCoinUpdate(context, res['error'] ?? 'Approval failed');
     }
@@ -1121,7 +1131,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
       };
       await GoRouter.of(context).push('/playground/studio', extra: mockMatchResult);
       // Refresh chats after coming back
-      _loadFriendsData();
+      _loadFriendsData(silent: true);
     };
 
     final openProfile = () {
