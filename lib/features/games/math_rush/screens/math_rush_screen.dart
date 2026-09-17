@@ -650,13 +650,13 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
       GameAudio.playMathCorrect();
       GameAudio.playMathCoinDrop();
       
-      int reward = 1;
+      int reward = 2;
       if (_selectedDifficultyMode == 'medium') {
-        reward = 2;
+        reward = 4;
       } else if (_selectedDifficultyMode == 'hard') {
-        reward = 3;
+        reward = 6;
       } else {
-        reward = 1;
+        reward = 2;
       }
 
       if (_gullakCoins >= 35) {

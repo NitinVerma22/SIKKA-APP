@@ -389,7 +389,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
       GameAudio.playEmojiTap();
       GameAudio.playEmojiReward();
       
-      int reward = 3;
+      int reward = 5;
 
       setState(() {
         _sessionCoins = (_sessionCoins + reward > 35) ? 35 : _sessionCoins + reward;

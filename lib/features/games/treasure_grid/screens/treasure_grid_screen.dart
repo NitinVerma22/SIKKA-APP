@@ -331,17 +331,13 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
     }
     
     final positiveBlocksCount = 9 - negativeBlocksCount;
-    bool hasThreeCoinTile = false;
+    
+    // Create a pool of exact distribution requested: three 3s, four 2s, two 1s
+    final pool = [3, 3, 3, 2, 2, 2, 2, 1, 1];
+    pool.shuffle(random);
 
     for (int i = 0; i < positiveBlocksCount; i++) {
-      int coinReward;
-      // Exactly 1 tile in positive tiles gets 3 coins; rest get 1 or 2 coins
-      if (!hasThreeCoinTile && (i == positiveBlocksCount - 1 || random.nextDouble() < 0.30)) {
-        coinReward = 3;
-        hasThreeCoinTile = true;
-      } else {
-        coinReward = random.nextInt(2) + 1; // 1 or 2 coins
-      }
+      int coinReward = pool[i];
       _grid.add(TileData(type: TileType.coin, coins: coinReward));
     }
     _grid.shuffle(random);
