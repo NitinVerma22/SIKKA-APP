@@ -1,9 +1,0 @@
-﻿file_path = r'e:\development\SikkaPlay\lib\features\games\shared\utils\game_claim_dialog.dart'
-with open(file_path, 'r', encoding='utf-8') as f:
-    content = f.read()
-
-content = content.replace("Continue')))]))]));", "Continue')))])]));")
-
-with open(file_path, 'w', encoding='utf-8') as f:
-    f.write(content)
-print("Done")
