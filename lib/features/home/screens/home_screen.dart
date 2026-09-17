@@ -571,27 +571,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           onTap: () => AppNavigator.push(context, ref, '/games/spin_earn'),
                       ),
                       _buildNewGridCard(
-                        title: 'Daily Code',
-                        subtitleWidget: RichText(
-                          maxLines: 4,
-                          text: const TextSpan(
-                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
-                            children: [
-                              TextSpan(text: 'Win upto\n'),
-                              TextSpan(text: '2000\nCoins', style: TextStyle(color: Color(0xFF1976D2), fontWeight: FontWeight.w900, fontSize: 22)),
-                            ],
-                          ),
-                        ),
-                        badgeText: 'DAILY',
-                        badgeColor: const Color(0xFFBBDEFB).withOpacity(0.6),
-                        badgeTextColor: const Color(0xFF1565C0),
-                        bgColor: const Color(0xFFF0F8FF),
-                        buttonGradient: const [Color(0xFF42A5F5), Color(0xFF1E88E5)],
-                        buttonText: 'Lets Go',
-                        imageWidget: Image.asset('assets/images/home_cards/daily_code.png'),
-                          onTap: () => AppNavigator.push(context, ref, '/home/daily_code'),
-                      ),
-                      _buildNewGridCard(
                         title: 'Complete Offers',
                         subtitleWidget: RichText(
                           maxLines: 4,
@@ -631,6 +610,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             }
                           });
                         },
+                      ),
+                      _buildNewGridCard(
+                        title: 'Daily Code',
+                        subtitleWidget: RichText(
+                          maxLines: 4,
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
+                            children: [
+                              TextSpan(text: 'Win upto\n'),
+                              TextSpan(text: '2000\nCoins', style: TextStyle(color: Color(0xFF1976D2), fontWeight: FontWeight.w900, fontSize: 22)),
+                            ],
+                          ),
+                        ),
+                        badgeText: 'DAILY',
+                        badgeColor: const Color(0xFFBBDEFB).withOpacity(0.6),
+                        badgeTextColor: const Color(0xFF1565C0),
+                        bgColor: const Color(0xFFF0F8FF),
+                        buttonGradient: const [Color(0xFF42A5F5), Color(0xFF1E88E5)],
+                        buttonText: 'Lets Go',
+                        imageWidget: Image.asset('assets/images/home_cards/daily_code.png'),
+                          onTap: () => AppNavigator.push(context, ref, '/home/daily_code'),
                       ),
                       _buildNewGridCard(
                         title: 'Complete Surveys',
