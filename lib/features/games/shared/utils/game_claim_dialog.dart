@@ -26,14 +26,8 @@ class GameClaimDialog {
   }) {
     final selectedLanguage = ref.read(languageProvider);
     final configState = ref.read(appConfigProvider);
-    final String sequenceStr = configState.config?['gullakAdSequence'] ??
-        'rewarded_interstitial,rewarded,interstitial';
-    final List<String> sequence =
-        sequenceStr.split(',').map((e) => e.trim().toLowerCase()).toList();
-    if (sequence.isEmpty) sequence.add('rewarded');
-    final int claimsToday =
-        ref.read(userProvider).userData?['gullakClaimsToday'] ?? 0;
-    final String adType = sequence[claimsToday % sequence.length];
+    // User requested to only show 'rewarded' ads for gullak claim
+    final String adType = 'rewarded';
 
     final onCompleteClaim = () async {
       if (sessionId == null) {
