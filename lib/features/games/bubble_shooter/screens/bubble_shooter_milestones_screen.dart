@@ -298,7 +298,7 @@ class _BubbleShooterMilestonesScreenState extends ConsumerState<BubbleShooterMil
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Milestone \',
+                          'Milestone ${milestone.id}',
                           style: GoogleFonts.outfit(
                             color: const Color(0xFF0F172A),
                             fontSize: 18,
@@ -306,7 +306,7 @@ class _BubbleShooterMilestonesScreenState extends ConsumerState<BubbleShooterMil
                           ),
                         ),
                         Text(
-                          'Levels \ to \',
+                          'Levels ${milestone.startLevel} to ${milestone.endLevel}',
                           style: GoogleFonts.outfit(
                             color: const Color(0xFF64748B),
                             fontSize: 13,
@@ -359,7 +359,7 @@ class _BubbleShooterMilestonesScreenState extends ConsumerState<BubbleShooterMil
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '\',
+                              '$totalCoins',
                               style: GoogleFonts.outfit(
                                 color: const Color(0xFF92400E),
                                 fontSize: 20,
