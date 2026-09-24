@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../profile/providers/user_provider.dart';
 import '../../shared/utils/milestone_config.dart';
 import 'bubble_shooter_game_screen.dart';
 
-class BubbleShooterLevelSelectScreen extends StatefulWidget {
+class BubbleShooterLevelSelectScreen extends ConsumerStatefulWidget {
   final int milestoneId;
   final int startLevel;
   final int endLevel;
@@ -21,10 +23,10 @@ class BubbleShooterLevelSelectScreen extends StatefulWidget {
   });
 
   @override
-  State<BubbleShooterLevelSelectScreen> createState() => _BubbleShooterLevelSelectScreenState();
+  ConsumerState<BubbleShooterLevelSelectScreen> createState() => _BubbleShooterLevelSelectScreenState();
 }
 
-class _BubbleShooterLevelSelectScreenState extends State<BubbleShooterLevelSelectScreen> {
+class _BubbleShooterLevelSelectScreenState extends ConsumerState<BubbleShooterLevelSelectScreen> {
   int _currentMilestoneLevel = 1;
   bool _isLoading = true;
   late List<Offset> _relativePositions;
@@ -39,6 +41,7 @@ class _BubbleShooterLevelSelectScreenState extends State<BubbleShooterLevelSelec
   Future<void> _loadProgress() async {
     setState(() => _isLoading = true);
     
+    // Fallback logic, but we will mostly rely on build() real-time value
     if (widget.globalMaxLevel >= widget.startLevel && widget.globalMaxLevel <= widget.endLevel) {
       _currentMilestoneLevel = widget.globalMaxLevel;
     } 
@@ -72,6 +75,15 @@ class _BubbleShooterLevelSelectScreenState extends State<BubbleShooterLevelSelec
 
   @override
   Widget build(BuildContext context) {
+    // Read dynamic global level directly from provider so it updates immediately when popping back from game
+    final userState = ref.watch(userProvider);
+    final dynamicMaxLevel = userState.userData?['bubbleShooterLevel'] as int? ?? widget.globalMaxLevel;
+    
+    // Override current milestone level if within this milestone's range
+    if (dynamicMaxLevel >= widget.startLevel && dynamicMaxLevel <= widget.endLevel) {
+      _currentMilestoneLevel = dynamicMaxLevel;
+    }
+
     final w = MediaQuery.of(context).size.width;
     final totalLevels = widget.endLevel - widget.startLevel + 1;
     final h = totalLevels * 120.0; // 120px spacing per level

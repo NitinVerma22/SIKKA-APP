@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../profile/providers/user_provider.dart';
 import '../../shared/utils/milestone_config.dart';
 import 'water_sort_game_screen.dart';
 
-class WaterSortLevelSelectScreen extends StatefulWidget {
+class WaterSortLevelSelectScreen extends ConsumerStatefulWidget {
   final int milestoneId;
   final int startLevel;
   final int endLevel;
@@ -21,10 +23,10 @@ class WaterSortLevelSelectScreen extends StatefulWidget {
   });
 
   @override
-  State<WaterSortLevelSelectScreen> createState() => _WaterSortLevelSelectScreenState();
+  ConsumerState<WaterSortLevelSelectScreen> createState() => _WaterSortLevelSelectScreenState();
 }
 
-class _WaterSortLevelSelectScreenState extends State<WaterSortLevelSelectScreen> {
+class _WaterSortLevelSelectScreenState extends ConsumerState<WaterSortLevelSelectScreen> {
   int _currentMilestoneLevel = 1;
   bool _isLoading = true;
   late List<Offset> _relativePositions;
@@ -39,6 +41,7 @@ class _WaterSortLevelSelectScreenState extends State<WaterSortLevelSelectScreen>
   Future<void> _loadProgress() async {
     setState(() => _isLoading = true);
     
+    // Fallback logic, but we will mostly rely on build() real-time value
     if (widget.globalMaxLevel >= widget.startLevel && widget.globalMaxLevel <= widget.endLevel) {
       _currentMilestoneLevel = widget.globalMaxLevel;
     } 
@@ -72,6 +75,15 @@ class _WaterSortLevelSelectScreenState extends State<WaterSortLevelSelectScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Read dynamic global level directly from provider so it updates immediately when popping back from game
+    final userState = ref.watch(userProvider);
+    final dynamicMaxLevel = userState.userData?['waterSortLevel'] as int? ?? widget.globalMaxLevel;
+    
+    // Override current milestone level if within this milestone's range
+    if (dynamicMaxLevel >= widget.startLevel && dynamicMaxLevel <= widget.endLevel) {
+      _currentMilestoneLevel = dynamicMaxLevel;
+    }
+
     final w = MediaQuery.of(context).size.width;
     final totalLevels = widget.endLevel - widget.startLevel + 1;
     final h = totalLevels * 120.0; // 120px spacing per level
