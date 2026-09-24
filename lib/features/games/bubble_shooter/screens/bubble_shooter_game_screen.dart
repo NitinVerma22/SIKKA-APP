@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:math';
+import '../../shared/utils/milestone_config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -1081,25 +1083,72 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     if (gameWon) {
-                      AdService.instance.handleNextLevelTransition(
-                        context: context,
-                        currentLevel: widget.levelNumber,
-                        gameName: 'bubble_shooter',
-                        onProceedToNextLevel: () {
-                          if (!mounted) return;
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BubbleShooterGameScreen(
-                                levelNumber: widget.levelNumber + 1,
-                                multiplier: widget.multiplier,
-                              ),
+                      final nextLevel = widget.levelNumber + 1;
+                      final milestone = MilestonesData.getMilestoneForLevel(widget.levelNumber);
+                      
+                      void proceedToNextLevel() {
+                        if (!mounted) return;
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BubbleShooterGameScreen(
+                              levelNumber: nextLevel,
+                              multiplier: widget.multiplier,
                             ),
+                          ),
+                        );
+                      }
+
+                      if (milestone != null && milestone.checkpoints.containsKey(widget.levelNumber)) {
+                        final coins = milestone.checkpoints[widget.levelNumber]!;
+                        await AdService.instance.showMilestoneCheckpointDialog(
+                          context: context,
+                          coins: coins,
+                          userId: 'bs_checkpoint_${widget.levelNumber}',
+                          onEarned: proceedToNextLevel,
+                        );
+                        return;
+                      }
+
+                      // Normal Levels
+                      if (widget.levelNumber < 101) {
+                        if (!AdService.instance.isInterstitialAdLoaded()) {
+                          AdService.instance.loadInterstitialAd();
+                        }
+                        AdService.instance.showInterstitialAd(
+                          onAdDismissed: proceedToNextLevel,
+                        );
+                      } else {
+                        final prefs = await SharedPreferences.getInstance();
+                        final showInterstitial = prefs.getBool('sikkaplay_alternate_ad') ?? true;
+                        await prefs.setBool('sikkaplay_alternate_ad', !showInterstitial);
+
+                        if (showInterstitial) {
+                          if (!AdService.instance.isInterstitialAdLoaded()) {
+                            AdService.instance.loadInterstitialAd();
+                          }
+                          AdService.instance.showInterstitialAd(
+                            onAdDismissed: proceedToNextLevel,
                           );
-                        },
-                      );
+                        } else {
+                          if (!AdService.instance.isRewardedInterstitialAdLoaded()) {
+                            AdService.instance.loadRewardedInterstitialAd();
+                          }
+                          bool rewardEarned = false;
+                          AdService.instance.showRewardedInterstitialAd(
+                            context: context,
+                            userId: 'bs_alternate_${widget.levelNumber}',
+                            onAdDismissed: () {
+                              if (rewardEarned) proceedToNextLevel();
+                            },
+                            onUserEarnedReward: (_) {
+                              rewardEarned = true;
+                            },
+                          );
+                        }
+                      }
                     } else {
                       _initGame();
                     }

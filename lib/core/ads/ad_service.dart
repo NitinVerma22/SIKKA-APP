@@ -254,6 +254,92 @@ class AdService {
     }
   }
 
+  /// Displays Milestone Checkpoint Rewarded Video Dialog
+  Future<void> showMilestoneCheckpointDialog({
+    required BuildContext context,
+    required int coins,
+    required String userId,
+    required VoidCallback onEarned,
+  }) async {
+    final bool? watchAd = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E1E2E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: const BorderSide(color: Colors.amber, width: 2),
+          ),
+          title: Column(
+            children: [
+              const Icon(Icons.stars_rounded, color: Colors.amber, size: 48),
+              const SizedBox(height: 8),
+              Text(
+                'Congratulations! 🎉',
+                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'You hit a milestone checkpoint!',
+                style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Claim $coins Coins',
+                style: GoogleFonts.outfit(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Watch a short video to claim your reward and continue.',
+                style: GoogleFonts.outfit(color: Colors.white70, fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber.shade700,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              onPressed: () => Navigator.pop(dialogCtx, true),
+              child: Text(
+                'WATCH VIDEO TO CLAIM 🎥',
+                style: GoogleFonts.outfit(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (watchAd == true) {
+      bool rewardEarned = false;
+      showRewardedAd(
+        context: context,
+        userId: userId,
+        onAdDismissed: () {
+          if (rewardEarned) {
+            onEarned();
+          }
+        },
+        onUserEarnedReward: (_) {
+          rewardEarned = true;
+        },
+      );
+    }
+  }
+
   /// Initializes the Google Mobile Ads SDK with UMP Consent Flow
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -569,7 +655,7 @@ class AdService {
               final callback = _currentInterstitialDismissCallback;
               _currentInterstitialDismissCallback = null;
 
-              if (_interstitialShowTime != null && DateTime.now().difference(_interstitialShowTime!).inSeconds < 2) {
+              if (_interstitialShowTime != null && DateTime.now().difference(_interstitialShowTime!).inSeconds < 4) {
                 debugPrint('AdService: Interstitial skipped too quickly. Not advancing.');
                 loadInterstitialAd(customAdUnitId: adUnitId);
                 return;

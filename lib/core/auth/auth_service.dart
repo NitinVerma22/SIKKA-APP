@@ -12,7 +12,7 @@ import 'package:sikkaplay/routes/app_router.dart';
 import 'package:flutter/services.dart';
 
 class AuthService {
-  static const bool isDevelopmentMode = false; // Set to false before building for production
+  static const bool isDevelopmentMode = true; // Set to false before building for production
 
   // Centralized Base URLs for the backend API.
   static const String liveBaseUrl = 'https://sikkaplay-backend-834810172223.asia-south1.run.app/api/auth';

@@ -150,7 +150,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       if (config != null) {
         // 1. Check Maintenance Mode
         final maintenanceMode = config['maintenanceMode'] as bool? ?? false;
-        if (maintenanceMode) {
+        
+        final prefs = await SharedPreferences.getInstance();
+        final bypass = prefs.getBool('admin_bypass_maintenance') ?? false;
+
+        if (maintenanceMode && !bypass) {
           context.go('/maintenance');
           return;
         }

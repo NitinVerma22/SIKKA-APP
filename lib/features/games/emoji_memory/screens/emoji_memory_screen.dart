@@ -997,7 +997,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
                                               ],
                                             ),
                                             Text(
-                                              '+3',
+                                              '+5',
                                               style: GoogleFonts.orbitron(
                                                 color: Colors.amber,
                                                 fontSize: 48,

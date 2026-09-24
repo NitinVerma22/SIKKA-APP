@@ -15,6 +15,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/profile/controllers/user_controller.dart';
 import '../../../../core/user/user_service.dart';
 import '../../shared/utils/game_notifications.dart';
+import '../../shared/utils/milestone_config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WaterSortGameScreen extends ConsumerStatefulWidget {
   final int levelNumber;
@@ -588,24 +590,74 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
                         minimumSize: const Size(200, 52),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
-                      onPressed: () {
-                        AdService.instance.handleNextLevelTransition(
-                          context: context,
-                          currentLevel: widget.levelNumber,
-                          gameName: 'water_sort',
-                          onProceedToNextLevel: () {
-                            if (!mounted) return;
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => WaterSortGameScreen(
-                                  levelNumber: widget.levelNumber + 1,
-                                  multiplier: widget.multiplier,
-                                ),
+                      onPressed: () async {
+                        final nextLevel = widget.levelNumber + 1;
+                        final milestone = MilestonesData.getMilestoneForLevel(widget.levelNumber);
+                        
+                        void proceedToNextLevel() {
+                          if (!mounted) return;
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => WaterSortGameScreen(
+                                levelNumber: nextLevel,
+                                multiplier: widget.multiplier,
                               ),
+                            ),
+                          );
+                        }
+
+                        if (milestone != null && milestone.checkpoints.containsKey(widget.levelNumber)) {
+                          final coins = milestone.checkpoints[widget.levelNumber]!;
+                          await AdService.instance.showMilestoneCheckpointDialog(
+                            context: context,
+                            coins: coins,
+                            userId: 'ws_checkpoint_${widget.levelNumber}',
+                            onEarned: proceedToNextLevel,
+                          );
+                          return;
+                        }
+
+                        // Normal Levels
+                        if (widget.levelNumber < 101) {
+                          // M1 to M5: Standard Interstitial Ad
+                          if (!AdService.instance.isInterstitialAdLoaded()) {
+                            AdService.instance.loadInterstitialAd();
+                          }
+                          AdService.instance.showInterstitialAd(
+                            onAdDismissed: proceedToNextLevel,
+                          );
+                        } else {
+                          // M6 to M10: Alternate Interstitial and Rewarded Interstitial
+                          final prefs = await SharedPreferences.getInstance();
+                          final showInterstitial = prefs.getBool('sikkaplay_alternate_ad') ?? true;
+                          await prefs.setBool('sikkaplay_alternate_ad', !showInterstitial);
+
+                          if (showInterstitial) {
+                            if (!AdService.instance.isInterstitialAdLoaded()) {
+                              AdService.instance.loadInterstitialAd();
+                            }
+                            AdService.instance.showInterstitialAd(
+                              onAdDismissed: proceedToNextLevel,
                             );
-                          },
-                        );
+                          } else {
+                            if (!AdService.instance.isRewardedInterstitialAdLoaded()) {
+                              AdService.instance.loadRewardedInterstitialAd();
+                            }
+                            // Direct show without dialog for alternate
+                            bool rewardEarned = false;
+                            AdService.instance.showRewardedInterstitialAd(
+                              context: context,
+                              userId: 'ws_alternate_${widget.levelNumber}',
+                              onAdDismissed: () {
+                                if (rewardEarned) proceedToNextLevel();
+                              },
+                              onUserEarnedReward: (_) {
+                                rewardEarned = true;
+                              },
+                            );
+                          }
+                        }
                       },
                       child: Text(
                         'NEXT LEVEL',

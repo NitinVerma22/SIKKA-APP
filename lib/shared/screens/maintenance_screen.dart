@@ -14,6 +14,63 @@ class MaintenanceScreen extends StatefulWidget {
 class _MaintenanceScreenState extends State<MaintenanceScreen> {
   bool _isChecking = false;
   String _selectedLanguage = 'English';
+  int _tapCount = 0;
+  DateTime? _lastTapTime;
+
+  void _handleIconTap() {
+    final now = DateTime.now();
+    if (_lastTapTime == null || now.difference(_lastTapTime!).inSeconds > 2) {
+      _tapCount = 1;
+    } else {
+      _tapCount++;
+    }
+    _lastTapTime = now;
+
+    if (_tapCount >= 7) {
+      _tapCount = 0;
+      _showBypassDialog();
+    }
+  }
+
+  void _showBypassDialog() {
+    final TextEditingController pinController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E1E38),
+          title: const Text('Admin Bypass', style: TextStyle(color: Colors.white)),
+          content: TextField(
+            controller: pinController,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              hintText: 'Enter PIN',
+              hintStyle: TextStyle(color: Colors.grey),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (pinController.text == '9999') {
+                  SharedPreferences.getInstance().then((prefs) {
+                    prefs.setBool('admin_bypass_maintenance', true);
+                    if (mounted) {
+                      Navigator.pop(context);
+                      context.go('/splash');
+                    }
+                  });
+                } else {
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Unlock', style: TextStyle(color: AppColors.accent)),
+            ),
+          ],
+        );
+      }
+    );
+  }
 
   @override
   void initState() {
@@ -106,24 +163,27 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 children: [
                   const Spacer(),
                   // Glowing Settings/Construction Icon
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.accent.withValues(alpha: 0.15),
-                          blurRadius: 30,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.engineering_rounded,
-                      size: 64,
-                      color: AppColors.accent,
+                  GestureDetector(
+                    onTap: _handleIconTap,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.accent.withValues(alpha: 0.15),
+                            blurRadius: 30,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.engineering_rounded,
+                        size: 64,
+                        color: AppColors.accent,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 40),
