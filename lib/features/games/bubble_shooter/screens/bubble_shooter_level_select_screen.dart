@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../profile/providers/user_provider.dart';
+import '../../../../features/profile/controllers/user_controller.dart';
 import '../../shared/utils/milestone_config.dart';
 import 'bubble_shooter_game_screen.dart';
 
@@ -260,7 +260,7 @@ class _BubbleShooterLevelSelectScreenState extends ConsumerState<BubbleShooterLe
     }
     
     final isCurrent = levelNum == _currentMilestoneLevel;
-    final isLocked = levelNum > _currentMilestoneLevel;
+    final isLocked = levelNum != _currentMilestoneLevel;
     
     final config = MilestonesData.milestones[widget.milestoneId - 1];
     final bool isCheckpoint = config.checkpoints.containsKey(levelNum);
@@ -502,4 +502,5 @@ class _PulsingRewardState extends State<_PulsingReward> with SingleTickerProvide
     );
   }
 }
+
 

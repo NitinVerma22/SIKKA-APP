@@ -1015,7 +1015,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
               if (gameWon) ...[
                 if (_isClaiming)
                   const CircularProgressIndicator(color: Color(0xFF7CFF6B))
-                else
+                else if (_earnedCoins > 0)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
@@ -1106,7 +1106,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
                         await AdService.instance.showMilestoneCheckpointDialog(
                           context: context,
                           coins: coins,
-                          userId: 'bs_checkpoint_${widget.levelNumber}',
+                          userId: (ref.read(userProvider).userData?['_id'] ?? ref.read(userProvider).userData?['id'])?.toString() ?? 'unknown',
                           onEarned: proceedToNextLevel,
                         );
                         return;
@@ -1170,3 +1170,6 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
     );
   }
 }
+
+
+

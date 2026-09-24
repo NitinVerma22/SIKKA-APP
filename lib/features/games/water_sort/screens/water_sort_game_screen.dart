@@ -320,8 +320,10 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
         _earnedCoins = coins;
         _isClaiming = false;
       });
-      ref.read(userProvider.notifier).addDirectCoins(_earnedCoins);
-      GameNotifications.showCoinUpdate(context, '+$_earnedCoins Sikka');
+      if (_earnedCoins > 0) {
+        ref.read(userProvider.notifier).addDirectCoins(_earnedCoins);
+        GameNotifications.showCoinUpdate(context, '+$_earnedCoins Sikka');
+      }
     }
   }
 
@@ -350,13 +352,20 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
         backgroundColor: const Color(0xFF0F172A),
         body: Stack(
           children: [
+            // Alternating Background Image
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/water_sort/game-bg-${((widget.levelNumber - 1) % 5) + 1}.png',
+                fit: BoxFit.cover,
+              ),
+            ),
             SafeArea(
               child: Column(
                 children: [
                   // Top Bar Header
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    color: const Color(0xFF1E293B),
+                    color: Colors.black.withOpacity(0.3),
                     child: Row(
                       children: [
                         IconButton(
@@ -559,7 +568,7 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
                     const SizedBox(height: 12),
                     if (_isClaiming)
                       const CircularProgressIndicator(color: Color(0xFFFACC15))
-                    else
+                    else if (_earnedCoins > 0)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
@@ -612,7 +621,7 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
                           await AdService.instance.showMilestoneCheckpointDialog(
                             context: context,
                             coins: coins,
-                            userId: 'ws_checkpoint_${widget.levelNumber}',
+                            userId: (ref.read(userProvider).userData?['_id'] ?? ref.read(userProvider).userData?['id'])?.toString() ?? 'unknown',
                             onEarned: proceedToNextLevel,
                           );
                           return;
@@ -736,3 +745,5 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
     );
   }
 }
+
+

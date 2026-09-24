@@ -55,6 +55,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^3.0.0
   flutter_launcher_icons: ^0.13.1
+  image: ^4.10.1
 
 flutter_launcher_icons:
   android: "ic_launcher"
@@ -74,9 +75,14 @@ flutter:
     - assets/images/
     - assets/images/games_hub/
     - assets/images/bubble_shooter/
+    - assets/images/buble-milestone/
     - assets/images/profile/
     - assets/images/arrow_escape/
-    - assets/images/home_cards/
+      - assets/images/home_cards/
+      - assets/images/water_sort/
+
+
+    - assets/images/water_sort/
 
   fonts:
     - family: BebasNeue
@@ -87,5 +93,6 @@ flutter:
 dependency_overrides:
   tapjoy_offerwall:
     path: packages/tapjoy_offerwall
+
 
 
