@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -44,7 +44,7 @@ class _BubbleShooterLevelSelectScreenState extends State<BubbleShooterLevelSelec
     } 
     else if (widget.globalMaxLevel > widget.endLevel) {
       final prefs = await SharedPreferences.getInstance();
-      final key = 'sikkaplay_bs_milestone_$($widget.milestoneId)_progress';
+      final key = 'sikkaplay_bs_milestone_${widget.milestoneId}_progress';
       _currentMilestoneLevel = prefs.getInt(key) ?? widget.startLevel;
     }
     else {
@@ -102,7 +102,7 @@ class _BubbleShooterLevelSelectScreenState extends State<BubbleShooterLevelSelec
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text("Milestone", style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 8, fontWeight: FontWeight.bold, height: 1)),
-                    Text("$($widget.milestoneId)", style: GoogleFonts.outfit(color: const Color(0xFFD946EF), fontSize: 12, fontWeight: FontWeight.w900, height: 1)),
+                    Text("${widget.milestoneId}", style: GoogleFonts.outfit(color: const Color(0xFFD946EF), fontSize: 12, fontWeight: FontWeight.w900, height: 1)),
                   ],
                 ),
               ],
@@ -270,7 +270,7 @@ class _BubbleShooterLevelSelectScreenState extends State<BubbleShooterLevelSelec
         levelNum,
         boxColor,
         chestImg,
-        '+\ Coins',
+        '+${coins} Coins',
         isCurrent ? 'Current Goal' : (isLocked ? 'Locked' : 'Completed'),
         isCurrent,
         isLocked,
@@ -490,3 +490,4 @@ class _PulsingRewardState extends State<_PulsingReward> with SingleTickerProvide
     );
   }
 }
+
