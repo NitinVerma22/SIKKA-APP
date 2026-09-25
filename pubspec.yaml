@@ -78,8 +78,8 @@ flutter:
     - assets/images/buble-milestone/
     - assets/images/profile/
     - assets/images/arrow_escape/
-      - assets/images/home_cards/
-      - assets/images/water_sort/
+    - assets/images/home_cards/
+    - assets/images/water_sort/
 
 
     - assets/images/water_sort/

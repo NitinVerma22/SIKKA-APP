@@ -480,7 +480,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
     // Ad logic removed from here — ads now fire ONLY via handleNextLevelTransition
     // when user taps the "NEXT LEVEL" button, preventing double-ad bug.
 
-    final coins = result['coinsEarned'] ?? (widget.levelNumber <= 25 ? widget.levelNumber * widget.multiplier : widget.levelNumber + 25);
+    final coins = result['coinsEarned'] ?? 0;
 
     if (mounted) {
       setState(() {
@@ -1116,6 +1116,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
                                   multiplier: widget.multiplier,
                                   sessionId: _sessionId,
                                 );
+                                await UserService().recordAdImpression('milestone_checkpoint', 'admob', coinsAwarded: coins);
                                 ref.read(userProvider.notifier).addDirectCoins(coins);
                                 GameNotifications.showCoinUpdate(context, "+$coins Sikka");
                                 proceedToNextLevel();

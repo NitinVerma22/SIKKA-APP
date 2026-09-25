@@ -102,7 +102,7 @@ class BubbleShooterService {
     bool isMilestoneClaim = false,
     String? sessionId,
   }) async {
-    final int coinsEarned = levelNumber * multiplier;
+    final int coinsEarned = 0;
     try {
       final headers = await _getHeaders();
       final res = await http.post(

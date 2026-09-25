@@ -313,7 +313,7 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
     // Ad logic removed from here — ads now fire ONLY via handleNextLevelTransition
     // when user taps the "NEXT LEVEL" button, preventing double-ad bug.
 
-    final coins = result['coinsEarned'] ?? (widget.levelNumber <= 25 ? widget.levelNumber * widget.multiplier : widget.levelNumber + 25);
+    final coins = result['coinsEarned'] ?? 0;
 
     if (mounted) {
       setState(() {
@@ -352,11 +352,17 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
         backgroundColor: const Color(0xFF0F172A),
         body: Stack(
           children: [
-            // Alternating Background Image
+            // Single Background Image with Dark Overlay for Visibility
             Positioned.fill(
               child: Image.asset(
-                'assets/images/water_sort/game-bg-${((widget.levelNumber - 1) % 5) + 1}.png',
+                'assets/images/water_sort/game-bg.png',
                 fit: BoxFit.cover,
+              ),
+            ),
+            // Dark Overlay to make game elements pop
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.4),
               ),
             ),
             SafeArea(
@@ -627,10 +633,11 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
                                   levelNumber: widget.levelNumber,
                                   isMilestoneClaim: true,
                                   stars: 3,
-                                  movesCount: _gameState.moveCount,
+                                  movesCount: _gameState.movesCount,
                                   multiplier: widget.multiplier,
                                   sessionId: _sessionId,
                                 );
+                                await UserService().recordAdImpression('milestone_checkpoint', 'admob', coinsAwarded: coins);
                                 ref.read(userProvider.notifier).addDirectCoins(coins);
                                 GameNotifications.showCoinUpdate(context, "+$coins Sikka");
                                 proceedToNextLevel();
