@@ -621,8 +621,20 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
                           await AdService.instance.showMilestoneCheckpointDialog(
                             context: context,
                             coins: coins,
-                            userId: (ref.read(userProvider).userData?['_id'] ?? ref.read(userProvider).userData?['id'])?.toString() ?? 'unknown',
-                            onEarned: proceedToNextLevel,
+                            userId: "bypass_ssv",
+                              onEarned: () async {
+                                await WaterSortService().claimLevelReward(
+                                  levelNumber: widget.levelNumber,
+                                  isMilestoneClaim: true,
+                                  stars: 3,
+                                  movesCount: _gameState.moveCount,
+                                  multiplier: widget.multiplier,
+                                  sessionId: _sessionId,
+                                );
+                                ref.read(userProvider.notifier).addDirectCoins(coins);
+                                GameNotifications.showCoinUpdate(context, "+$coins Sikka");
+                                proceedToNextLevel();
+                              },
                           );
                           return;
                         }
@@ -745,5 +757,7 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
     );
   }
 }
+
+
 
 

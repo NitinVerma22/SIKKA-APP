@@ -138,3 +138,4 @@ class BubbleShooterService {
 
   int max(int a, int b) => a > b ? a : b;
 }
+

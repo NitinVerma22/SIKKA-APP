@@ -1106,8 +1106,20 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
                         await AdService.instance.showMilestoneCheckpointDialog(
                           context: context,
                           coins: coins,
-                          userId: (ref.read(userProvider).userData?['_id'] ?? ref.read(userProvider).userData?['id'])?.toString() ?? 'unknown',
-                          onEarned: proceedToNextLevel,
+                          userId: "bypass_ssv",
+                              onEarned: () async {
+                                await BubbleShooterService().claimLevelReward(
+                                  levelNumber: widget.levelNumber,
+                                  isMilestoneClaim: true,
+                                  stars: 3,
+                                  score: 0,
+                                  multiplier: widget.multiplier,
+                                  sessionId: _sessionId,
+                                );
+                                ref.read(userProvider.notifier).addDirectCoins(coins);
+                                GameNotifications.showCoinUpdate(context, "+$coins Sikka");
+                                proceedToNextLevel();
+                              },
                         );
                         return;
                       }
@@ -1170,6 +1182,7 @@ class _BubbleShooterGameScreenState extends ConsumerState<BubbleShooterGameScree
     );
   }
 }
+
 
 
 
