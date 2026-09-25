@@ -310,6 +310,9 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
       sessionId: _sessionId,
     );
 
+    // Sync level progress to UI
+    await ref.read(userProvider.notifier).fetchProfile(silent: true);
+
     // Ad logic removed from here — ads now fire ONLY via handleNextLevelTransition
     // when user taps the "NEXT LEVEL" button, preventing double-ad bug.
 
@@ -764,6 +767,7 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
     );
   }
 }
+
 
 
 
