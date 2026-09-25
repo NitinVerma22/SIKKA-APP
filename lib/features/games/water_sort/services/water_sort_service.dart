@@ -106,6 +106,7 @@ class WaterSortService {
     required int stars,
     required int movesCount,
     required int multiplier,
+    bool isMilestoneClaim = false,
     String? sessionId,
   }) async {
     final int coinsEarned = levelNumber * multiplier;
@@ -116,6 +117,7 @@ class WaterSortService {
         headers: headers,
         body: json.encode({
           'levelNumber': levelNumber,
+          'isMilestoneClaim': isMilestoneClaim,
           'stars': stars,
           'movesCount': movesCount,
         }),

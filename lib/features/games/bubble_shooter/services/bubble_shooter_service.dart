@@ -99,6 +99,7 @@ class BubbleShooterService {
     required int stars,
     required int score,
     required int multiplier,
+    bool isMilestoneClaim = false,
     String? sessionId,
   }) async {
     final int coinsEarned = levelNumber * multiplier;
@@ -109,6 +110,7 @@ class BubbleShooterService {
         headers: headers,
         body: json.encode({
           'levelNumber': levelNumber,
+          'isMilestoneClaim': isMilestoneClaim,
           'stars': stars,
           'score': score,
         }),
