@@ -137,6 +137,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
     final appConfig = ref.read(appConfigProvider).config;
     final minLimit = appConfig?['minWithdrawalLimit'] as int? ?? 5000;
+    final coinsPerRupee = appConfig?['coinsPerRupee'] as int? ?? 600;
     
     showModalBottomSheet(
       context: context,
@@ -156,6 +157,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             initialName: savedName,
             initialPhone: savedPhone,
             minWithdrawalLimit: minLimit,
+              coinsPerRupee: coinsPerRupee,
             withdrawalNotice: notice,
             showWithdrawalPackages: _showWithdrawalPackages,
             onWithdraw: (coinsAmount, netRupees, cashbackCoins, upiId, name, phone, optionId) async {
@@ -1484,6 +1486,7 @@ class WithdrawalSheetContent extends StatefulWidget {
   final String? initialName;
   final String? initialPhone;
   final int minWithdrawalLimit;
+  final int coinsPerRupee;
   final String withdrawalNotice;
   final bool showWithdrawalPackages;
   final Future<bool> Function(int coinsAmount, int netRupees, int cashbackCoins, String upiId, String name, String phone, String? optionId) onWithdraw;
@@ -1497,6 +1500,7 @@ class WithdrawalSheetContent extends StatefulWidget {
     this.initialName,
     this.initialPhone,
     required this.minWithdrawalLimit,
+    required this.coinsPerRupee,
     required this.withdrawalNotice,
     required this.showWithdrawalPackages,
     required this.onWithdraw,
@@ -1645,14 +1649,14 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
       }
       amountCoins = int.tryParse(manualVal) ?? 0;
       if (amountCoins < widget.minWithdrawalLimit) {
-        final rupeesLimit = widget.minWithdrawalLimit ~/ 1000;
+        final rupeesLimit = widget.minWithdrawalLimit ~/ widget.coinsPerRupee;
         final formattedLimit = widget.minWithdrawalLimit.toString().replaceAllMapped(
             RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},');
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Minimum withdrawal limit is $formattedLimit Coins (₹$rupeesLimit)')));
         return;
       }
-      totalRupees = amountCoins ~/ 1000; // 1,000 Coins = ₹1
+      totalRupees = amountCoins ~/ widget.coinsPerRupee; // 1,000 Coins = ₹1
       final feeRupees = (totalRupees * 0.30).round();
       netRupees = totalRupees - feeRupees;
       cashbackCoins = (amountCoins * 0.15).round();
@@ -1960,7 +1964,7 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            'Minimum Limit: ${widget.minWithdrawalLimit.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]},")} Coins (₹${widget.minWithdrawalLimit ~/ 1000})',
+                            'Minimum Limit: ${widget.minWithdrawalLimit.toString().replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (Match m) => "${m[1]},")} Coins (₹${widget.minWithdrawalLimit ~/ widget.coinsPerRupee})',
                             style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ),
