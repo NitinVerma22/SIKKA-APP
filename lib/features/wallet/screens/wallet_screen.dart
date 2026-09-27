@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sikkaplay/core/user/user_service.dart';
 import 'package:sikkaplay/core/animations/custom_animations.dart';
@@ -1953,7 +1953,7 @@ class _WithdrawalSheetContentState extends State<WithdrawalSheetContent> {
                           style: GoogleFonts.outfit(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
                         ),
                         Text(
-                          '1,000 Coins = ₹1',
+                          '${widget.coinsPerRupee} Coins = ₹1',
                           style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 4),
