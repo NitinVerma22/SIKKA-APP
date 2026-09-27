@@ -302,6 +302,21 @@ class _WaterSortGameScreenState extends ConsumerState<WaterSortGameScreen> with 
     newStars[widget.levelNumber] = stars;
     await _service.saveLocalProgress(nextMax, newStars);
 
+    final milestone = MilestonesData.getMilestoneForLevel(widget.levelNumber);
+    if (milestone != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'sikkaplay_ws_milestone_${milestone.id}_progress';
+      final currentSaved = prefs.getInt(key) ?? milestone.startLevel;
+      if (widget.levelNumber < milestone.endLevel) {
+        if (widget.levelNumber + 1 > currentSaved) {
+          await prefs.setInt(key, widget.levelNumber + 1);
+        }
+      } else if (widget.levelNumber == milestone.endLevel) {
+        // Reset to the beginning of the milestone once fully completed
+        await prefs.setInt(key, milestone.startLevel);
+      }
+    }
+
     final result = await _service.claimLevelReward(
       levelNumber: widget.levelNumber,
       stars: stars,
