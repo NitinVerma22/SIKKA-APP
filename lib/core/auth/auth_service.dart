@@ -15,8 +15,8 @@ class AuthService {
   static const bool isDevelopmentMode = false; // Set to false before building for production
 
   // Centralized Base URLs for the backend API.
-  static const String liveBaseUrl = 'http://66.116.248.133:8080/api/auth';
-  static const String devBaseUrl = 'http://66.116.248.133:8080/api/auth'; 
+  static const String liveBaseUrl = 'https://sikkaplay-backend-setup-269050063187.asia-south2.run.app/api/auth';
+  static const String devBaseUrl = 'https://sikkaplay-backend-setup-269050063187.asia-south2.run.app/api/auth'; 
   
   static const String baseUrl = isDevelopmentMode ? devBaseUrl : liveBaseUrl;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
