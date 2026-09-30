@@ -19,11 +19,11 @@ class UserService {
     final uri = Uri.parse(urlStr);
     late http.Response response;
     if (method == 'POST') {
-      response = await http.post(uri, headers: headers, body: jsonEncode(body)).timeout(const Duration(seconds: 10));
+      response = await http.post(uri, headers: headers, body: jsonEncode(body)).timeout(const Duration(seconds: 25));
     } else if (method == 'PUT') {
-      response = await http.put(uri, headers: headers, body: jsonEncode(body)).timeout(const Duration(seconds: 10));
+      response = await http.put(uri, headers: headers, body: jsonEncode(body)).timeout(const Duration(seconds: 25));
     } else {
-      response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+      response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 25));
     }
     if (response.statusCode == 403) {
       try {

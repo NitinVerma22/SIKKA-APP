@@ -25,7 +25,7 @@ class PlaygroundService {
   Future<http.Response> _get(String path) async {
     final uri = Uri.parse('$_playgroundUrl$path');
     final headers = await _getHeaders();
-    return http.get(uri, headers: headers).timeout(const Duration(seconds: 10));
+    return http.get(uri, headers: headers).timeout(const Duration(seconds: 25));
   }
 
   // POST Request Wrapper
@@ -36,7 +36,7 @@ class PlaygroundService {
       uri,
       headers: headers,
       body: body != null ? jsonEncode(body) : null,
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(const Duration(seconds: 25));
   }
 
   // 1. Fetch Lobby details

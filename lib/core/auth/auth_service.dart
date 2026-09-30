@@ -247,7 +247,7 @@ class AuthService {
           'password': password,
           'deviceId': deviceId,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 25));
 
       _checkVpnBlock(response);
       final data = jsonDecode(response.body);
