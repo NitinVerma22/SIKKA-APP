@@ -49,47 +49,6 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     return '$hours:$minutes:$seconds';
   }
 
-  void _launchGame(BuildContext context, String gameType, Tournament tournament) {
-    if (!tournament.isJoined) {
-      TournamentJoinDialog.show(
-        context: context,
-        ref: ref,
-        tournament: tournament,
-        onJoinSuccess: () {
-          ref.invalidate(tournamentDetailProvider(widget.tournamentId));
-        },
-      );
-      return;
-    }
-
-    // Set active tournament ID so score increment is attributed to this tournament
-    ref.read(activeTournamentIdProvider.notifier).setActive(tournament.id);
-
-    switch (gameType) {
-      case 'arrow_escape':
-        context.push('/games/arrow_escape');
-        break;
-      case 'water_sort':
-        context.push('/games/water_sort');
-        break;
-      case 'bubble_shooter':
-        context.push('/games/bubble_shooter');
-        break;
-      case 'math_rush':
-        context.push('/games/math_rush');
-        break;
-      case 'emoji_memory':
-        context.push('/games/emoji_memory');
-        break;
-      case 'treasure_grid':
-        context.push('/games/treasure_grid');
-        break;
-      default:
-        context.push('/games/arrow_escape');
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(tournamentDetailProvider(widget.tournamentId));
@@ -155,8 +114,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   _buildPrizeStructureSection(tournament),
                   const SizedBox(height: 24),
 
-                  // 4. Tournament Games Grid (2x3)
-                  _buildGamesGrid(tournament),
+                  // 4. Allowed Games Overview Card
+                  _buildAllowedGamesSummary(tournament),
                   const SizedBox(height: 24),
 
                   // 5. Rules & Scoring Card
@@ -197,7 +156,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           onPressed: () => context.push('/tournaments/${tournament.id}/leaderboard'),
                           icon: const Icon(Icons.leaderboard_rounded, size: 18),
                           label: Text(
-                            'View Leaderboard',
+                            'Leaderboard 🏆',
                             style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13),
                           ),
                           style: OutlinedButton.styleFrom(
@@ -215,9 +174,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              if (tournament.allowedGames.isNotEmpty) {
-                                _launchGame(context, tournament.allowedGames.first, tournament);
-                              }
+                              context.push('/tournaments/${tournament.id}/games');
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF10B981),
@@ -440,9 +397,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         const Icon(Icons.emoji_events_rounded, color: Color(0xFFFFD43B), size: 18),
                         const SizedBox(width: 4),
                         Text(
-                          '${tournament.prizePool} Coins',
+                          tournament.prizePoolRupees > 0
+                              ? '${tournament.prizePool} Coins (₹${tournament.prizePoolRupees})'
+                              : '${tournament.prizePool} Coins',
                           style: GoogleFonts.outfit(
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight: FontWeight.w900,
                             color: const Color(0xFFFFD43B),
                           ),
@@ -666,9 +625,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${tier.prize} Coins',
+                      tier.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees) > 0
+                          ? '${tier.prize}c (₹${tier.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees)})'
+                          : '${tier.prize} Coins',
                       style: GoogleFonts.outfit(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w900,
                         color: const Color(0xFF1E293B),
                       ),
@@ -683,177 +644,120 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     );
   }
 
-  Widget _buildGamesGrid(Tournament tournament) {
-    // 6 Core casual games definitions
-    final gameConfigs = [
-      {
-        'id': 'arrow_escape',
-        'title': 'Arrow Escape',
-        'subtitle': 'Directional Puzzle',
-        'color': const Color(0xFFF64D67),
-        'bg': const Color(0xFFFEF6F7),
-        'icon': Icons.navigation_rounded,
-      },
-      {
-        'id': 'water_sort',
-        'title': 'Colour Sort',
-        'subtitle': 'Liquid Tube Sort',
-        'color': const Color(0xFF257CE9),
-        'bg': const Color(0xFFF2F8FF),
-        'icon': Icons.opacity_rounded,
-      },
-      {
-        'id': 'bubble_shooter',
-        'title': 'Bubble Sort',
-        'subtitle': 'Classic Bubble Match',
-        'color': const Color(0xFF21B761),
-        'bg': const Color(0xFFF0FDF4),
-        'icon': Icons.bubble_chart_rounded,
-      },
-      {
-        'id': 'math_rush',
-        'title': 'Math Rush',
-        'subtitle': 'Speed Calculations',
-        'color': const Color(0xFF8B5CF6),
-        'bg': const Color(0xFFF5F3FF),
-        'icon': Icons.calculate_rounded,
-      },
-      {
-        'id': 'emoji_memory',
-        'title': 'Emoji Memory',
-        'subtitle': 'Memory Pair Flip',
-        'color': const Color(0xFFEC4899),
-        'bg': const Color(0xFFFDF2F8),
-        'icon': Icons.sentiment_very_satisfied_rounded,
-      },
-      {
-        'id': 'treasure_grid',
-        'title': 'Treasure Grid',
-        'subtitle': 'Mine & Discover',
-        'color': const Color(0xFFF59E0B),
-        'bg': const Color(0xFFFFFBEB),
-        'icon': Icons.grid_view_rounded,
-      },
-    ];
-
-    // Filter by allowed games in tournament
-    final activeGames = gameConfigs.where((g) => tournament.allowedGames.contains(g['id'])).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Tournament Games 🎮',
-              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
-            ),
-            Text(
-              '1 Coin Earned = 1 Point',
-              style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF10B981)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.15,
-          ),
-          itemCount: activeGames.length,
-          itemBuilder: (context, idx) {
-            final game = activeGames[idx];
-            final Color primaryColor = game['color'] as Color;
-            final Color bgColor = game['bg'] as Color;
-
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: primaryColor.withValues(alpha: 0.2)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildAllowedGamesSummary(Tournament tournament) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(game['icon'] as IconData, color: primaryColor, size: 20),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'POINTS',
-                          style: GoogleFonts.outfit(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: primaryColor,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDE9FE),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.sports_esports_rounded, color: Color(0xFF6E5DE7), size: 20),
                   ),
+                  const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        game['title'] as String,
+                        'Allowed Arena Games 🎮',
                         style: GoogleFonts.outfit(
                           fontSize: 14,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                           color: const Color(0xFF1E293B),
                         ),
                       ),
                       Text(
-                        game['subtitle'] as String,
+                        '${tournament.allowedGames.length} casual games available to score',
                         style: GoogleFonts.outfit(
-                          fontSize: 10,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: const Color(0xFF64748B),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 28,
-                    child: ElevatedButton(
-                      onPressed: () => _launchGame(context, game['id'] as String, tournament),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: Text(
-                        'Play Arena →',
-                        style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w800),
-                      ),
+                ],
+              ),
+              if (tournament.isJoined)
+                TextButton(
+                  onPressed: () => context.push('/tournaments/${tournament.id}/games'),
+                  child: Text(
+                    'Play Games →',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 12, color: const Color(0xFF6E5DE7)),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: tournament.allowedGames.map((gameId) {
+              final gameNames = {
+                'arrow_escape': '🏹 Arrow Escape',
+                'water_sort': '🧪 Colour Sort',
+                'bubble_shooter': '🫧 Bubble Sort',
+                'treasure_grid': '💎 Treasure Grid',
+                'math_rush': '➗ Math Rush',
+                'emoji_memory': '🃏 Emoji Memory',
+              };
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  gameNames[gameId] ?? gameId,
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF334155),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          if (!tournament.isJoined) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Join the tournament using the button below to start playing games and scoring points!',
+                      style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF92400E)),
                     ),
                   ),
                 ],
               ),
-            );
-          },
-        ),
-      ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 

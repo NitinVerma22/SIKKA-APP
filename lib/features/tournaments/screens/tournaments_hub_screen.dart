@@ -112,14 +112,66 @@ class _TournamentsHubScreenState extends ConsumerState<TournamentsHubScreen> wit
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildLiveTab(),
-          _buildUpcomingTab(),
-          _buildMyTournamentsTab(),
-          _buildCompletedTab(),
-          _buildHistoryTab(),
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF4D6),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFFFE3A3)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('🪙', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '500 Coins = ',
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF8A5A12),
+                        ),
+                      ),
+                      TextSpan(
+                        text: '₹1',
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF15803D),
+                        ),
+                      ),
+                      TextSpan(
+                        text: '  •  Coins jeeto, rupees kamao!',
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF8A5A12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildLiveTab(),
+                _buildUpcomingTab(),
+                _buildMyTournamentsTab(),
+                _buildCompletedTab(),
+                _buildHistoryTab(),
+              ],
+            ),
+          ),
         ],
       ),
     );

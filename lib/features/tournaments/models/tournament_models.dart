@@ -63,11 +63,13 @@ class PrizeTier {
   final int rankMin;
   final int rankMax;
   final int prize;
+  final int? prizeRupees;
 
   const PrizeTier({
     required this.rankMin,
     required this.rankMax,
     required this.prize,
+    this.prizeRupees,
   });
 
   factory PrizeTier.fromJson(Map<String, dynamic> json) {
@@ -75,6 +77,7 @@ class PrizeTier {
       rankMin: (json['rankMin'] as num?)?.toInt() ?? 1,
       rankMax: (json['rankMax'] as num?)?.toInt() ?? 1,
       prize: (json['prize'] as num?)?.toInt() ?? 0,
+      prizeRupees: (json['prizeRupees'] as num?)?.toInt(),
     );
   }
 
@@ -82,7 +85,16 @@ class PrizeTier {
     'rankMin': rankMin,
     'rankMax': rankMax,
     'prize': prize,
+    'prizeRupees': prizeRupees,
   };
+
+  int getCalculatedRupees(int totalPoolCoins, int totalPoolRupees) {
+    if (prizeRupees != null && prizeRupees! > 0) return prizeRupees!;
+    if (totalPoolCoins > 0 && totalPoolRupees > 0) {
+      return ((prize / totalPoolCoins) * totalPoolRupees).round();
+    }
+    return 0;
+  }
 
   String get label {
     if (rankMin == rankMax) {
@@ -129,6 +141,7 @@ class Tournament {
   final DateTime endTime;
   final List<String> allowedGames;
   final int prizePool;
+  final int prizePoolRupees;
   final List<PrizeTier> prizeStructure;
   final int minParticipants;
   final int? maxParticipants;
@@ -149,6 +162,7 @@ class Tournament {
     required this.endTime,
     required this.allowedGames,
     required this.prizePool,
+    this.prizePoolRupees = 0,
     required this.prizeStructure,
     required this.minParticipants,
     this.maxParticipants,
@@ -230,6 +244,7 @@ class Tournament {
           : DateTime.now().add(const Duration(hours: 1)),
       allowedGames: games,
       prizePool: (json['prizePool'] as num?)?.toInt() ?? 0,
+      prizePoolRupees: (json['prizePoolRupees'] as num?)?.toInt() ?? 0,
       prizeStructure: prizes,
       minParticipants: (json['minParticipants'] as num?)?.toInt() ?? 2,
       maxParticipants: (json['maxParticipants'] as num?)?.toInt(),
