@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/ads/ad_service.dart';
 import '../../../core/sync/sync_coordinator.dart';
-import '../../../core/providers/wallet_provider.dart';
+import '../../profile/controllers/user_controller.dart';
 import '../models/tournament_models.dart';
 import '../providers/tournament_providers.dart';
 
@@ -206,168 +206,175 @@ class TournamentJoinDialog {
     Tournament tournament,
     VoidCallback onJoinSuccess,
   ) {
-    final userCoins = ref.read(walletProvider);
-    final hasEnoughCoins = userCoins >= tournament.entryFeeCoins;
-
     showDialog(
       context: context,
       builder: (dialogCtx) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFEF3C7),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.monetization_on_rounded, color: Color(0xFFD97706), size: 36),
+        return Consumer(
+          builder: (context, dRef, _) {
+            final userState = dRef.watch(userProvider);
+            final userCoins = (userState.userData?['balance'] as num?)?.toInt() ?? 0;
+            final hasEnoughCoins = userCoins >= tournament.entryFeeCoins;
+
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFEF3C7),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.monetization_on_rounded, color: Color(0xFFD97706), size: 36),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Confirm Entry Fee',
+                    style: GoogleFonts.outfit(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF1E293B),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Confirm Entry Fee',
-                style: GoogleFonts.outfit(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF1E293B),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Joining "${tournament.title}" requires an entry fee of:',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.monetization_on_rounded, color: Color(0xFFD97706), size: 24),
-                    const SizedBox(width: 8),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Joining "${tournament.title}" requires an entry fee of:',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.monetization_on_rounded, color: Color(0xFFD97706), size: 24),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${tournament.entryFeeCoins} Coins',
+                          style: GoogleFonts.outfit(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFFD97706),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Your Balance:',
+                        style: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF64748B)),
+                      ),
+                      Text(
+                        '$userCoins Coins',
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: hasEnoughCoins ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (!hasEnoughCoins) ...[
+                    const SizedBox(height: 10),
                     Text(
-                      '${tournament.entryFeeCoins} Coins',
+                      'You don\'t have enough coins. Earn coins by playing casual games or daily tasks!',
+                      textAlign: TextAlign.center,
                       style: GoogleFonts.outfit(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFFD97706),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFEF4444),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actionsPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(dialogCtx).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF64748B),
+                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text('Cancel', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: hasEnoughCoins
+                            ? () async {
+                                Navigator.of(dialogCtx).pop();
+                                final result = await dRef
+                                    .read(tournamentServiceProvider)
+                                    .joinTournament(tournament.id);
+
+                                if (!context.mounted) return;
+
+                                if (result.success) {
+                                  // Refresh user profile to immediately reflect deducted balance
+                                  dRef.read(userProvider.notifier).refresh(silent: true);
+                                  dRef
+                                      .read(syncCoordinatorProvider)
+                                      .triggerSync([SyncEvent.balanceChanged]);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(result.message),
+                                      backgroundColor: const Color(0xFF10B981),
+                                    ),
+                                  );
+                                  onJoinSuccess();
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(result.message),
+                                      backgroundColor: const Color(0xFFEF4444),
+                                    ),
+                                  );
+                                }
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD97706),
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: const Color(0xFFCBD5E1),
+                          disabledForegroundColor: const Color(0xFF94A3B8),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text('Confirm & Join', style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Your Balance:',
-                    style: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF64748B)),
-                  ),
-                  Text(
-                    '$userCoins Coins',
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: hasEnoughCoins ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                    ),
-                  ),
-                ],
-              ),
-              if (!hasEnoughCoins) ...[
-                const SizedBox(height: 10),
-                Text(
-                  'You don\'t have enough coins. Earn coins by playing casual games or daily tasks!',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFFEF4444),
-                  ),
-                ),
               ],
-            ],
-          ),
-          actionsPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(dialogCtx).pop(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF64748B),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text('Cancel', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: hasEnoughCoins
-                        ? () async {
-                            Navigator.of(dialogCtx).pop();
-                            final result = await ref
-                                .read(tournamentServiceProvider)
-                                .joinTournament(tournament.id);
-
-                            if (!context.mounted) return;
-
-                            if (result.success) {
-                              ref
-                                  .read(syncCoordinatorProvider)
-                                  .triggerSync([SyncEvent.balanceChanged]);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(result.message),
-                                  backgroundColor: const Color(0xFF10B981),
-                                ),
-                              );
-                              onJoinSuccess();
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(result.message),
-                                  backgroundColor: const Color(0xFFEF4444),
-                                ),
-                              );
-                            }
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD97706),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFFCBD5E1),
-                      disabledForegroundColor: const Color(0xFF94A3B8),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text('Confirm & Join', style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            );
+          },
         );
       },
     );
