@@ -238,6 +238,31 @@ class TournamentCard extends StatelessWidget {
                           style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 12),
                         ),
                       ),
+                    ] else if (isUpcoming) ...[
+                      // Upcoming tournaments cannot be joined yet; light colored indicator
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.schedule_rounded, size: 14, color: Color(0xFF64748B)),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Upcoming • ${_formatUpcomingTime(tournament.startTime)}',
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ] else if (isJoined) ...[
                       ElevatedButton(
                         onPressed: onTap,
@@ -254,7 +279,7 @@ class TournamentCard extends StatelessWidget {
                             const Icon(Icons.play_circle_fill_rounded, size: 16),
                             const SizedBox(width: 6),
                             Text(
-                              'Play Arena',
+                              'Play Now',
                               style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 12),
                             ),
                           ],
@@ -428,5 +453,26 @@ class TournamentCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatUpcomingTime(DateTime dt) {
+    final now = DateTime.now();
+    final isToday = dt.year == now.year && dt.month == now.month && dt.day == now.day;
+    final isTomorrow = dt.year == now.year && dt.month == now.month && dt.day == now.day + 1;
+
+    final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    final timeStr = '$hour:$minute $ampm';
+
+    if (isToday) {
+      return 'Today, $timeStr';
+    } else if (isTomorrow) {
+      return 'Tomorrow, $timeStr';
+    } else {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final monthStr = months[dt.month - 1];
+      return '${dt.day} $monthStr, $timeStr';
+    }
   }
 }

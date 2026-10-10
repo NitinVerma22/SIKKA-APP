@@ -658,7 +658,7 @@ class AdService {
               final callback = _currentInterstitialDismissCallback;
               _currentInterstitialDismissCallback = null;
 
-              if (_interstitialShowTime != null && DateTime.now().difference(_interstitialShowTime!).inSeconds < 4) {
+              if (!_allowFastDismiss && _interstitialShowTime != null && DateTime.now().difference(_interstitialShowTime!).inSeconds < 4) {
                 debugPrint('AdService: Interstitial skipped too quickly. Not advancing.');
                 loadInterstitialAd(customAdUnitId: adUnitId);
                 return;
@@ -687,11 +687,15 @@ class AdService {
     );
   }
 
+  bool _allowFastDismiss = false;
+
   /// Plays the loaded Interstitial Ad
   void showInterstitialAd({
     required VoidCallback onAdDismissed,
     String? customAdUnitId,
+    bool allowFastDismiss = false,
   }) {
+    _allowFastDismiss = allowFastDismiss;
     if (_interstitialAd == null) {
       debugPrint('AdService: Interstitial ad not ready. Load requested.');
       onAdDismissed();

@@ -58,13 +58,19 @@ final upcomingTournamentsProvider = FutureProvider.autoDispose<List<Tournament>>
 /// Completed tournaments provider
 final completedTournamentsProvider = FutureProvider.autoDispose<List<Tournament>>((ref) async {
   final service = ref.watch(tournamentServiceProvider);
-  return service.getTournaments(status: TournamentStatus.completed);
+  return service.getCompletedTournaments();
 });
 
-/// User joined tournaments provider
+/// User joined tournaments provider (active live)
 final myTournamentsProvider = FutureProvider.autoDispose<List<Tournament>>((ref) async {
   final service = ref.watch(tournamentServiceProvider);
   return service.getMyTournaments();
+});
+
+/// User's complete tournament history (live & completed)
+final userHistoryTournamentsProvider = FutureProvider.autoDispose<List<Tournament>>((ref) async {
+  final service = ref.watch(tournamentServiceProvider);
+  return service.getUserHistory();
 });
 
 /// Tournament details provider

@@ -40,19 +40,23 @@ class TournamentService {
     return headers;
   }
 
-  /// Fetches tournaments filtered by status
-  Future<List<Tournament>> getTournaments({TournamentStatus? status, int page = 1, int limit = 20}) async {
+  /// Fetches tournaments filtered by tab or status
+  Future<List<Tournament>> getTournaments({String? tab, TournamentStatus? status, int page = 1, int limit = 20}) async {
     try {
       final queryParams = <String, String>{
         'page': page.toString(),
         'limit': limit.toString(),
       };
+      if (tab != null) {
+        queryParams['tab'] = tab;
+      }
       if (status != null) {
         queryParams['status'] = status.toDbString();
+        queryParams['tab'] ??= status.name;
       }
 
       final uri = Uri.parse(_baseUrl).replace(queryParameters: queryParams);
-      final cacheKey = 'list_${status?.name ?? "all"}_$page';
+      final cacheKey = 'list_${tab ?? status?.name ?? "all"}_$page';
       final headers = await _getHeaders(cacheKey: cacheKey);
 
       final res = await http.get(uri, headers: headers).timeout(const Duration(seconds: 8));
@@ -83,30 +87,19 @@ class TournamentService {
     }
   }
 
-  /// Fetches tournaments the current user has joined
+  /// Fetches tournaments the current user has joined that are currently live
   Future<List<Tournament>> getMyTournaments({int page = 1, int limit = 20}) async {
-    try {
-      final uri = Uri.parse('$_baseUrl/my').replace(queryParameters: {
-        'page': page.toString(),
-        'limit': limit.toString(),
-      });
-      final headers = await _getHeaders();
+    return getTournaments(tab: 'my', page: page, limit: limit);
+  }
 
-      final res = await http.get(uri, headers: headers).timeout(const Duration(seconds: 8));
+  /// Fetches all completed tournaments
+  Future<List<Tournament>> getCompletedTournaments({int page = 1, int limit = 20}) async {
+    return getTournaments(tab: 'completed', page: page, limit: limit);
+  }
 
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        if (data['success'] == true && data['tournaments'] is List) {
-          return (data['tournaments'] as List)
-              .map((t) => Tournament.fromJson(t as Map<String, dynamic>))
-              .toList();
-        }
-      }
-      return [];
-    } catch (e) {
-      debugPrint('Error fetching my tournaments: $e');
-      return [];
-    }
+  /// Fetches all tournaments user has joined in their history (both live and completed)
+  Future<List<Tournament>> getUserHistory({int page = 1, int limit = 20}) async {
+    return getTournaments(tab: 'history', page: page, limit: limit);
   }
 
   /// Fetches single tournament details

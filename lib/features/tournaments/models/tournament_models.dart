@@ -39,7 +39,9 @@ enum TournamentEntryType {
 
   static TournamentEntryType fromString(String val) {
     switch (val.toUpperCase()) {
+      case 'COINS':
       case 'PAID_COINS':
+      case 'PAID':
         return TournamentEntryType.paidCoins;
       case 'FREE':
       default:
@@ -50,7 +52,7 @@ enum TournamentEntryType {
   String toDbString() {
     switch (this) {
       case TournamentEntryType.paidCoins:
-        return 'PAID_COINS';
+        return 'COINS';
       case TournamentEntryType.free:
         return 'FREE';
     }
@@ -132,6 +134,7 @@ class Tournament {
   final int? maxParticipants;
   final int currentParticipants;
   final TournamentStatus status;
+  final bool isJoinedExplicit;
   final UserParticipation? userParticipation;
 
   const Tournament({
@@ -151,10 +154,11 @@ class Tournament {
     this.maxParticipants,
     required this.currentParticipants,
     required this.status,
+    this.isJoinedExplicit = false,
     this.userParticipation,
   });
 
-  bool get isJoined => userParticipation != null;
+  bool get isJoined => isJoinedExplicit || userParticipation != null;
 
   bool get isLive => status == TournamentStatus.live;
   bool get isUpcoming => status == TournamentStatus.upcoming;
@@ -186,6 +190,30 @@ class Tournament {
       games = rawGames.map((g) => g.toString()).toList();
     }
 
+    final bool rawIsJoined = json['isJoined'] == true ||
+        (json['userStanding'] is Map && json['userStanding']['isJoined'] == true) ||
+        json['userParticipation'] != null;
+
+    UserParticipation? userPart;
+    if (json['userParticipation'] != null) {
+      userPart = UserParticipation.fromJson(json['userParticipation'] as Map<String, dynamic>);
+    } else if (json['userStanding'] is Map && json['userStanding']['isJoined'] == true) {
+      userPart = UserParticipation(
+        id: json['id']?.toString() ?? '',
+        score: (json['userStanding']['score'] as num?)?.toInt() ?? 0,
+        rank: (json['userStanding']['rank'] as num?)?.toInt(),
+        joinedAt: json['userStanding']['joinedAt'] != null
+            ? DateTime.tryParse(json['userStanding']['joinedAt'].toString()) ?? DateTime.now()
+            : DateTime.now(),
+      );
+    } else if (rawIsJoined) {
+      userPart = UserParticipation(
+        id: json['id']?.toString() ?? '',
+        score: (json['myScore'] as num?)?.toInt() ?? 0,
+        joinedAt: DateTime.now(),
+      );
+    }
+
     return Tournament(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Tournament',
@@ -193,7 +221,7 @@ class Tournament {
       bannerUrl: json['bannerUrl']?.toString(),
       tag: json['tag']?.toString(),
       entryType: TournamentEntryType.fromString(json['entryType']?.toString() ?? 'FREE'),
-      entryFeeCoins: (json['entryFeeCoins'] as num?)?.toInt() ?? 0,
+      entryFeeCoins: ((json['entryFeeCoins'] ?? json['entryFee']) as num?)?.toInt() ?? 0,
       startTime: json['startTime'] != null
           ? DateTime.tryParse(json['startTime'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -205,11 +233,10 @@ class Tournament {
       prizeStructure: prizes,
       minParticipants: (json['minParticipants'] as num?)?.toInt() ?? 2,
       maxParticipants: (json['maxParticipants'] as num?)?.toInt(),
-      currentParticipants: (json['currentParticipants'] as num?)?.toInt() ?? 0,
+      currentParticipants: ((json['currentParticipants'] ?? json['participantCount']) as num?)?.toInt() ?? 0,
       status: TournamentStatus.fromString(json['status']?.toString() ?? 'UPCOMING'),
-      userParticipation: json['userParticipation'] != null
-          ? UserParticipation.fromJson(json['userParticipation'] as Map<String, dynamic>)
-          : null,
+      isJoinedExplicit: rawIsJoined,
+      userParticipation: userPart,
     );
   }
 }

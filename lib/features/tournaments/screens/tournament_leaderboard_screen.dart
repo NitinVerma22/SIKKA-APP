@@ -24,8 +24,23 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
   bool _isExiting = false;
 
   void _handleBackNavigation() {
-    if (_isExiting) return;
+    if (_isExiting) {
+      if (mounted && context.canPop()) {
+        context.pop();
+      }
+      return;
+    }
     _isExiting = true;
+
+    // Safety timeout: Reset and force pop if ad dismissal hangs
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      if (mounted && _isExiting) {
+        _isExiting = false;
+        if (context.canPop()) {
+          context.pop();
+        }
+      }
+    });
 
     final now = DateTime.now();
     final canShowAd = _lastLeaderboardAdTime == null || now.difference(_lastLeaderboardAdTime!) >= _adCooldown;
@@ -33,12 +48,17 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
     if (canShowAd && AdService.instance.isInterstitialAdLoaded()) {
       _lastLeaderboardAdTime = now;
       AdService.instance.showInterstitialAd(
+        allowFastDismiss: true,
         onAdDismissed: () {
-          if (mounted) context.pop();
+          if (mounted && context.canPop()) {
+            context.pop();
+          }
         },
       );
     } else {
-      context.pop();
+      if (mounted && context.canPop()) {
+        context.pop();
+      }
     }
   }
 
@@ -50,7 +70,11 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
-          _handleBackNavigation();
+          if (_isExiting) {
+            if (context.canPop()) context.pop();
+          } else {
+            _handleBackNavigation();
+          }
         }
       },
       child: Scaffold(

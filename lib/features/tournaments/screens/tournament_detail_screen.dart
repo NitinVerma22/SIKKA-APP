@@ -210,8 +210,56 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       ),
                       const SizedBox(width: 12),
 
-                      // Join or Play button
-                      if (!tournament.isJoined) ...[
+                      // Join, Play, or Upcoming button
+                      if (tournament.isJoined) ...[
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (tournament.allowedGames.isNotEmpty) {
+                                _launchGame(context, tournament.allowedGames.first, tournament);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.play_circle_fill_rounded, size: 18),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Play Now 🎮',
+                                  style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ] else if (tournament.isUpcoming) ...[
+                        Expanded(
+                          child: Container(
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Text(
+                              'Upcoming Tournament',
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ] else ...[
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () => TournamentJoinDialog.show(
@@ -220,6 +268,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                               tournament: tournament,
                               onJoinSuccess: () {
                                 ref.invalidate(tournamentDetailProvider(widget.tournamentId));
+                                ref.invalidate(liveTournamentsProvider);
+                                ref.invalidate(myTournamentsProvider);
                               },
                             ),
                             style: ElevatedButton.styleFrom(

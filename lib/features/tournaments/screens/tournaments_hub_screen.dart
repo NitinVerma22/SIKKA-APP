@@ -19,7 +19,7 @@ class _TournamentsHubScreenState extends ConsumerState<TournamentsHubScreen> wit
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         ref.read(tournamentHubTabProvider.notifier).state = _tabController.index;
@@ -41,8 +41,10 @@ class _TournamentsHubScreenState extends ConsumerState<TournamentsHubScreen> wit
       ref.invalidate(upcomingTournamentsProvider);
     } else if (tab == 2) {
       ref.invalidate(myTournamentsProvider);
-    } else {
+    } else if (tab == 3) {
       ref.invalidate(completedTournamentsProvider);
+    } else {
+      ref.invalidate(userHistoryTournamentsProvider);
     }
   }
 
@@ -103,6 +105,7 @@ class _TournamentsHubScreenState extends ConsumerState<TournamentsHubScreen> wit
                 Tab(text: '🔴 Live Now'),
                 Tab(text: '⏰ Upcoming'),
                 Tab(text: '👤 My Tournaments'),
+                Tab(text: '🏆 Completed'),
                 Tab(text: '📜 History'),
               ],
             ),
@@ -115,6 +118,7 @@ class _TournamentsHubScreenState extends ConsumerState<TournamentsHubScreen> wit
           _buildLiveTab(),
           _buildUpcomingTab(),
           _buildMyTournamentsTab(),
+          _buildCompletedTab(),
           _buildHistoryTab(),
         ],
       ),
@@ -244,16 +248,16 @@ class _TournamentsHubScreenState extends ConsumerState<TournamentsHubScreen> wit
     );
   }
 
-  Widget _buildHistoryTab() {
-    final historyAsync = ref.watch(completedTournamentsProvider);
+  Widget _buildCompletedTab() {
+    final completedAsync = ref.watch(completedTournamentsProvider);
     return RefreshIndicator(
       color: const Color(0xFF6E5DE7),
       onRefresh: _refreshData,
-      child: historyAsync.when(
+      child: completedAsync.when(
         data: (tournaments) {
           if (tournaments.isEmpty) {
             return _buildEmptyState(
-              icon: Icons.history_rounded,
+              icon: Icons.emoji_events_outlined,
               title: 'No Completed Tournaments',
               subtitle: 'Finished tournaments and winners will appear here.',
             );
@@ -267,6 +271,53 @@ class _TournamentsHubScreenState extends ConsumerState<TournamentsHubScreen> wit
                 tournament: t,
                 onTap: () => context.push('/tournaments/${t.id}/leaderboard'),
                 onJoinTap: () => context.push('/tournaments/${t.id}/leaderboard'),
+              );
+            },
+          );
+        },
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF6E5DE7)),
+        ),
+        error: (err, stack) => _buildErrorState(err.toString()),
+      ),
+    );
+  }
+
+  Widget _buildHistoryTab() {
+    final historyAsync = ref.watch(userHistoryTournamentsProvider);
+    return RefreshIndicator(
+      color: const Color(0xFF6E5DE7),
+      onRefresh: _refreshData,
+      child: historyAsync.when(
+        data: (tournaments) {
+          if (tournaments.isEmpty) {
+            return _buildEmptyState(
+              icon: Icons.history_rounded,
+              title: 'No Participation History',
+              subtitle: 'Your entered tournaments (live or completed) will appear here.',
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: tournaments.length,
+            itemBuilder: (context, index) {
+              final t = tournaments[index];
+              return TournamentCard(
+                tournament: t,
+                onTap: () {
+                  if (t.isCompleted) {
+                    context.push('/tournaments/${t.id}/leaderboard');
+                  } else {
+                    context.push('/tournaments/${t.id}');
+                  }
+                },
+                onJoinTap: () {
+                  if (t.isCompleted) {
+                    context.push('/tournaments/${t.id}/leaderboard');
+                  } else {
+                    context.push('/tournaments/${t.id}');
+                  }
+                },
               );
             },
           );
