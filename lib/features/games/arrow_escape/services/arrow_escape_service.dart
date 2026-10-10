@@ -37,6 +37,7 @@ class ArrowEscapeService {
     Map<int, int> stars = {};
     int multiplier = 2;
 
+    final effectiveTournamentId = TournamentSessionTracker.activeTournamentId;
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString('sikkaplay_arrow_escape_progress');
@@ -110,6 +111,7 @@ class ArrowEscapeService {
           'isMilestoneClaim': isMilestoneClaim,
           'stars': 3,
           'score': 0,
+          if (effectiveTournamentId != null && effectiveTournamentId.isNotEmpty) 'tournamentId': effectiveTournamentId,
         }),
       ).timeout(const Duration(seconds: 4));
 

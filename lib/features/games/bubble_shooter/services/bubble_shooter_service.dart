@@ -104,6 +104,7 @@ class BubbleShooterService {
     String? sessionId,
   }) async {
     final int coinsEarned = 0;
+    final effectiveTournamentId = TournamentSessionTracker.activeTournamentId;
     try {
       final headers = await _getHeaders();
       final res = await http.post(
@@ -114,6 +115,7 @@ class BubbleShooterService {
           'isMilestoneClaim': isMilestoneClaim,
           'stars': stars,
           'score': score,
+          if (effectiveTournamentId != null && effectiveTournamentId.isNotEmpty) 'tournamentId': effectiveTournamentId,
         }),
       ).timeout(const Duration(seconds: 4));
 
@@ -126,7 +128,7 @@ class BubbleShooterService {
 
     try {
       if (sessionId != null && sessionId.isNotEmpty) {
-        await UserService().endGameSession(sessionId, coinsEarned: coinsEarned, tournamentId: effectiveTournamentId);
+        await UserService().endGameSession(sessionId, coinsEarned: coinsEarned);
       }
     } catch (e) {
       debugPrint('Error ending game session fallback: $e');
