@@ -108,19 +108,27 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
                   // 2. User Status & Participation Bar
                   _buildUserStatusBar(tournament),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 22),
 
-                  // 3. Prize Structure Section
-                  _buildPrizeStructureSection(tournament),
+                  // 3. Rewards Header
+                  _buildRewardsHeader(),
+                  const SizedBox(height: 14),
+
+                  // 4. 3D Podium Stage
+                  _buildPodiumStage(tournament),
+                  const SizedBox(height: 16),
+
+                  // 5. Prize Distribution Card
+                  _buildPrizeDistributionCard(tournament),
                   const SizedBox(height: 24),
 
-                  // 4. Allowed Games Overview Card
+                  // 6. Allowed Games Overview Card
                   _buildAllowedGamesSummary(tournament),
                   const SizedBox(height: 24),
 
-                  // 5. Rules & Scoring Card
+                  // 7. Rules & Scoring Card
                   _buildRulesCard(),
-                  const SizedBox(height: 80), // Padding for bottom sticky bar
+                  const SizedBox(height: 90), // Padding for bottom sticky bar
                 ],
               ),
             ),
@@ -141,8 +149,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 10,
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 16,
                       offset: const Offset(0, -4),
                     ),
                   ],
@@ -150,115 +158,117 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 child: SafeArea(
                   child: Row(
                     children: [
-                      // View Leaderboard CTA
+                      // View Leaderboard CTA (White with purple border)
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => context.push('/tournaments/${tournament.id}/leaderboard'),
-                          icon: const Icon(Icons.leaderboard_rounded, size: 18),
-                          label: Text(
-                            'Leaderboard 🏆',
-                            style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF6E5DE7),
-                            side: const BorderSide(color: Color(0xFF6E5DE7), width: 1.5),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: SizedBox(
+                          height: 50,
+                          child: OutlinedButton(
+                            onPressed: () => context.push('/tournaments/${tournament.id}/leaderboard'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF6D3CF0),
+                              backgroundColor: Colors.white,
+                              side: const BorderSide(color: Color(0xFF6D3CF0), width: 1.8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(26),
+                              ),
+                              padding: EdgeInsets.zero,
+                              elevation: 0,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text('🏆', style: TextStyle(fontSize: 16)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Leaderboard',
+                                  style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14,
+                                    color: const Color(0xFF6D3CF0),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
 
-                      // Join, Play, or Upcoming button
-                      if (tournament.isJoined) ...[
-                        Expanded(
+                      // Play CTA (Vibrant Purple Gradient)
+                      Expanded(
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6D3CF0), Color(0xFF8B5CF6)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(26),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF6D3CF0).withValues(alpha: 0.35),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
                           child: ElevatedButton(
                             onPressed: () {
-                              context.push('/tournaments/${tournament.id}/games');
+                              if (tournament.isJoined) {
+                                context.push('/tournaments/${tournament.id}/games');
+                              } else if (tournament.isUpcoming) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'This tournament starts in ${_formatDuration(_remaining)}! Stay tuned.',
+                                      style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                                    ),
+                                    backgroundColor: const Color(0xFF6D3CF0),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              } else {
+                                TournamentJoinDialog.show(
+                                  context: context,
+                                  ref: ref,
+                                  tournament: tournament,
+                                  onJoinSuccess: () {
+                                    ref.invalidate(tournamentDetailProvider(widget.tournamentId));
+                                    ref.invalidate(liveTournamentsProvider);
+                                    ref.invalidate(myTournamentsProvider);
+                                  },
+                                );
+                              }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
                               foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.play_circle_fill_rounded, size: 18),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Play Now 🎮',
-                                  style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ] else if (tournament.isUpcoming) ...[
-                        Expanded(
-                          child: Container(
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                            ),
-                            child: Text(
-                              'Upcoming Tournament',
-                              style: GoogleFonts.outfit(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                                color: const Color(0xFF64748B),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(26),
                               ),
-                            ),
-                          ),
-                        ),
-                      ] else ...[
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () => TournamentJoinDialog.show(
-                              context: context,
-                              ref: ref,
-                              tournament: tournament,
-                              onJoinSuccess: () {
-                                ref.invalidate(tournamentDetailProvider(widget.tournamentId));
-                                ref.invalidate(liveTournamentsProvider);
-                                ref.invalidate(myTournamentsProvider);
-                              },
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: tournament.entryType == TournamentEntryType.free
-                                  ? const Color(0xFF6E5DE7)
-                                  : const Color(0xFFD97706),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: EdgeInsets.zero,
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  tournament.entryType == TournamentEntryType.free
-                                      ? Icons.ondemand_video_rounded
-                                      : Icons.monetization_on_rounded,
-                                  size: 16,
-                                ),
+                                const Icon(Icons.sports_esports_rounded, color: Colors.white, size: 20),
                                 const SizedBox(width: 6),
                                 Text(
-                                  tournament.entryType == TournamentEntryType.free
-                                      ? 'Join Free'
-                                      : 'Join (${tournament.entryFeeCoins}c)',
-                                  style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13),
+                                  'Play >',
+                                  style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                    letterSpacing: 0.3,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
@@ -549,98 +559,706 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     );
   }
 
-  Widget _buildPrizeStructureSection(Tournament tournament) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  String _formatNumber(num value) {
+    final str = value.toInt().toString();
+    final reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    return str.replaceAllMapped(reg, (Match m) => '${m[1]},');
+  }
+
+  Widget _buildRewardsHeader() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFEF3C7),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFDE68A)),
+          ),
+          child: const Text('👑', style: TextStyle(fontSize: 20)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.3,
+                  ),
+                  children: const [
+                    TextSpan(
+                      text: 'Tournament ',
+                      style: TextStyle(color: Color(0xFF0F172A)),
+                    ),
+                    TextSpan(
+                      text: 'Rewards',
+                      style: TextStyle(color: Color(0xFF6D3CF0)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Top players win bigger rewards!',
+                style: GoogleFonts.outfit(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F3FF),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFDDD6FE)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🏆', style: TextStyle(fontSize: 12)),
+              const SizedBox(width: 4),
+              Text(
+                'Prize Distribution',
+                style: GoogleFonts.outfit(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF6D3CF0),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  PrizeTier? _findTierForRank(Tournament tournament, int rank) {
+    for (final t in tournament.prizeStructure) {
+      if (rank >= t.rankMin && rank <= t.rankMax) return t;
+    }
+    if (tournament.prizeStructure.length >= rank) {
+      return tournament.prizeStructure[rank - 1];
+    }
+    return null;
+  }
+
+  Widget _buildPodiumStage(Tournament tournament) {
+    final t1 = _findTierForRank(tournament, 1);
+    final t2 = _findTierForRank(tournament, 2);
+    final t3 = _findTierForRank(tournament, 3);
+
+    final coins1 = t1?.prize ?? (tournament.prizePool * 0.5).round();
+    final rupees1 = t1?.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees) ??
+        (tournament.prizePoolRupees > 0 ? (tournament.prizePoolRupees * 0.5).round() : 0);
+
+    final coins2 = t2?.prize ?? (tournament.prizePool * 0.3).round();
+    final rupees2 = t2?.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees) ??
+        (tournament.prizePoolRupees > 0 ? (tournament.prizePoolRupees * 0.3).round() : 0);
+
+    final coins3 = t3?.prize ?? (tournament.prizePool * 0.2).round();
+    final rupees3 = t3?.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees) ??
+        (tournament.prizePoolRupees > 0 ? (tournament.prizePoolRupees * 0.2).round() : 0);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(10, 20, 10, 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFFAF5FF),
+            Color(0xFFF3E8FF),
+            Color(0xFFEDE9FE),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFDDD6FE)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6D3CF0).withValues(alpha: 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Decorative background sparkles & confetti
+          const Positioned(top: 6, left: 14, child: Text('✨', style: TextStyle(fontSize: 16))),
+          const Positioned(top: 18, right: 16, child: Text('🪙', style: TextStyle(fontSize: 16))),
+          const Positioned(bottom: 75, left: 12, child: Text('🪙', style: TextStyle(fontSize: 14))),
+          const Positioned(bottom: 85, right: 14, child: Text('✨', style: TextStyle(fontSize: 14))),
+          const Positioned(top: 8, left: 110, child: Text('🎉', style: TextStyle(fontSize: 12))),
+
+          // 3 Podiums Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // 2nd Place (Left)
+              Expanded(
+                flex: 10,
+                child: _buildPodiumColumn(
+                  place: 2,
+                  placeLabel: '2nd Place',
+                  coins: coins2,
+                  rupees: rupees2,
+                  pedestalHeight: 88,
+                  gradientColors: const [Color(0xFFF1F5F9), Color(0xFFCBD5E1), Color(0xFF94A3B8)],
+                  topFaceColor: const Color(0xFFF8FAFC),
+                  badgeColor: const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // 1st Place (Center - Tallest)
+              Expanded(
+                flex: 12,
+                child: _buildPodiumColumn(
+                  place: 1,
+                  placeLabel: '1st Place',
+                  coins: coins1,
+                  rupees: rupees1,
+                  pedestalHeight: 124,
+                  gradientColors: const [Color(0xFFFDE68A), Color(0xFFF59E0B), Color(0xFFD97706)],
+                  topFaceColor: const Color(0xFFFEF3C7),
+                  badgeColor: const Color(0xFFD97706),
+                  isFirst: true,
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // 3rd Place (Right - Shortest)
+              Expanded(
+                flex: 10,
+                child: _buildPodiumColumn(
+                  place: 3,
+                  placeLabel: '3rd Place',
+                  coins: coins3,
+                  rupees: rupees3,
+                  pedestalHeight: 64,
+                  gradientColors: const [Color(0xFFFFEDD5), Color(0xFFFB923C), Color(0xFFC2410C)],
+                  topFaceColor: const Color(0xFFFFF7ED),
+                  badgeColor: const Color(0xFFC2410C),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPodiumColumn({
+    required int place,
+    required String placeLabel,
+    required int coins,
+    required int rupees,
+    required double pedestalHeight,
+    required List<Color> gradientColors,
+    required Color topFaceColor,
+    required Color badgeColor,
+    bool isFirst = false,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Trophy & Crown
+        _buildTrophyWidget(place: place, isFirst: isFirst),
+        const SizedBox(height: 6),
+
+        // 3D Pedestal
+        Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Prize Distribution 🏆',
-              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
+            // Top Face (3D bevel)
+            Container(
+              height: 12,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: topFaceColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
             ),
-            Text(
-              'Total: ${tournament.prizePool}c',
-              style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFFD97706)),
+            // Front Face
+            Container(
+              height: pedestalHeight,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: gradientColors,
+                ),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: badgeColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      placeLabel,
+                      style: GoogleFonts.outfit(
+                        fontSize: isFirst ? 11 : 10,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Base shadow
+            Container(
+              height: 4,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 80,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: tournament.prizeStructure.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, idx) {
-              final tier = tournament.prizeStructure[idx];
-              final isFirst = idx == 0;
-              final isSecond = idx == 1;
-              final isThird = idx == 2;
 
-              Color bg = Colors.white;
-              Color border = const Color(0xFFE2E8F0);
-              Color iconColor = const Color(0xFF64748B);
+        const SizedBox(height: 10),
 
-              if (isFirst) {
-                bg = const Color(0xFFFEF3C7);
-                border = const Color(0xFFFDE68A);
-                iconColor = const Color(0xFFD97706);
-              } else if (isSecond) {
-                bg = const Color(0xFFF1F5F9);
-                border = const Color(0xFFCBD5E1);
-                iconColor = const Color(0xFF475569);
-              } else if (isThird) {
-                bg = const Color(0xFFFFEDD5);
-                border = const Color(0xFFFED7AA);
-                iconColor = const Color(0xFFC2410C);
-              }
-
-              return Container(
-                width: 130,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: border),
+        // Coin Amount Pill
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🪙', style: TextStyle(fontSize: 12)),
+              const SizedBox(width: 3),
+              Text(
+                '${_formatNumber(coins)} Coins',
+                style: GoogleFonts.outfit(
+                  fontSize: isFirst ? 12 : 11,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF1E293B),
                 ),
+              ),
+            ],
+          ),
+        ),
+
+        // Rupees Badge
+        if (rupees > 0) ...[
+          const SizedBox(height: 3),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFDCFCE7),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFF86EFAC)),
+            ),
+            child: Text(
+              '₹$rupees',
+              style: GoogleFonts.outfit(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF15803D),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTrophyWidget({required int place, required bool isFirst}) {
+    if (isFirst) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('👑', style: TextStyle(fontSize: 22)),
+          const SizedBox(height: 2),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFE082), Color(0xFFFFB300), Color(0xFFFF8F00)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(6),
+                topRight: Radius.circular(6),
+                bottomLeft: Radius.circular(18),
+                bottomRight: Radius.circular(18),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.45),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '1',
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFFB45309),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Container(
+            width: 22,
+            height: 5,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD97706),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+        ],
+      );
+    } else if (place == 2) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 14),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFF8FAFC), Color(0xFFCBD5E1), Color(0xFF94A3B8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(5),
+                topRight: Radius.circular(5),
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF64748B).withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '2',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF475569),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Container(
+            width: 20,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF64748B),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ],
+      );
+    } else {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 18),
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFEDD5), Color(0xFFFB923C), Color(0xFFC2410C)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(5),
+                topRight: Radius.circular(5),
+                bottomLeft: Radius.circular(14),
+                bottomRight: Radius.circular(14),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFEA580C).withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '3',
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF9A3412),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Container(
+            width: 18,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF9A3412),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ],
+      );
+    }
+  }
+
+  Widget _buildPrizeDistributionCard(Tournament tournament) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDE9FE),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Text('🎁', style: TextStyle(fontSize: 20)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.emoji_events_rounded, color: iconColor, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          tier.label,
-                          style: GoogleFonts.outfit(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: iconColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
                     Text(
-                      tier.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees) > 0
-                          ? '${tier.prize}c (₹${tier.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees)})'
-                          : '${tier.prize} Coins',
+                      'Prize Distribution',
                       style: GoogleFonts.outfit(
-                        fontSize: 13,
+                        fontSize: 16,
                         fontWeight: FontWeight.w900,
                         color: const Color(0xFF1E293B),
                       ),
                     ),
+                    Text(
+                      'Rank higher and win exciting coin rewards!',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
                   ],
                 ),
-              );
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Tiers
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: tournament.prizeStructure.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, idx) {
+              final tier = tournament.prizeStructure[idx];
+              return _buildPrizeTierRow(tournament, tier);
             },
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPrizeTierRow(Tournament tournament, PrizeTier tier) {
+    final isRank1 = tier.rankMin == 1 && tier.rankMax == 1;
+    final isRank2 = tier.rankMin == 2 && tier.rankMax == 2;
+    final isRank3 = tier.rankMin == 3 && tier.rankMax == 3;
+
+    Color bg;
+    Color border;
+    Color labelColor;
+    Color amountColor;
+    String iconEmoji;
+
+    if (isRank1) {
+      bg = const Color(0xFFFFFBEB);
+      border = const Color(0xFFFDE68A);
+      labelColor = const Color(0xFFB45309);
+      amountColor = const Color(0xFF92400E);
+      iconEmoji = '👑';
+    } else if (isRank2) {
+      bg = const Color(0xFFF5F3FF);
+      border = const Color(0xFFDDD6FE);
+      labelColor = const Color(0xFF6D28D9);
+      amountColor = const Color(0xFF5B21B6);
+      iconEmoji = '👑';
+    } else if (isRank3) {
+      bg = const Color(0xFFFFF7ED);
+      border = const Color(0xFFFED7AA);
+      labelColor = const Color(0xFFC2410C);
+      amountColor = const Color(0xFF9A3412);
+      iconEmoji = '👑';
+    } else {
+      bg = const Color(0xFFF8FAFC);
+      border = const Color(0xFFE2E8F0);
+      labelColor = const Color(0xFF334155);
+      amountColor = const Color(0xFF1E293B);
+      iconEmoji = '🎖️';
+    }
+
+    final rupees = tier.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border, width: isRank1 || isRank2 || isRank3 ? 1.5 : 1),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Text(iconEmoji, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 8),
+              Text(
+                'Rank ${tier.label}',
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: labelColor,
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              const Text('🪙', style: TextStyle(fontSize: 13)),
+              const SizedBox(width: 4),
+              Text(
+                '${_formatNumber(tier.prize)} Coins',
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: amountColor,
+                ),
+              ),
+              if (rupees > 0) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFF86EFAC)),
+                  ),
+                  child: Text(
+                    '₹$rupees',
+                    style: GoogleFonts.outfit(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF15803D),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 

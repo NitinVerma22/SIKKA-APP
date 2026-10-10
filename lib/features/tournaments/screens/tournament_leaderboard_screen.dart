@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/ads/ad_service.dart';
 import '../models/tournament_models.dart';
 import '../providers/tournament_providers.dart';
 
@@ -19,74 +18,26 @@ class TournamentLeaderboardScreen extends ConsumerStatefulWidget {
 }
 
 class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderboardScreen> {
-  static DateTime? _lastLeaderboardAdTime;
-  static const Duration _adCooldown = Duration(seconds: 35);
-  bool _isExiting = false;
-
-  void _handleBackNavigation() {
-    if (_isExiting) {
-      if (mounted && context.canPop()) {
-        context.pop();
-      }
-      return;
-    }
-    _isExiting = true;
-
-    // Safety timeout: Reset and force pop if ad dismissal hangs
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted && _isExiting) {
-        _isExiting = false;
-        if (context.canPop()) {
-          context.pop();
-        }
-      }
-    });
-
-    final now = DateTime.now();
-    final canShowAd = _lastLeaderboardAdTime == null || now.difference(_lastLeaderboardAdTime!) >= _adCooldown;
-
-    if (canShowAd && AdService.instance.isInterstitialAdLoaded()) {
-      _lastLeaderboardAdTime = now;
-      AdService.instance.showInterstitialAd(
-        allowFastDismiss: true,
-        onAdDismissed: () {
-          if (mounted && context.canPop()) {
-            context.pop();
-          }
-        },
-      );
-    } else {
-      if (mounted && context.canPop()) {
-        context.pop();
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final lbAsync = ref.watch(tournamentLeaderboardProvider(widget.tournamentId));
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          if (_isExiting) {
-            if (context.canPop()) context.pop();
-          } else {
-            _handleBackNavigation();
-          }
-        }
-      },
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20),
-            onPressed: _handleBackNavigation,
-          ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/tournaments/${widget.tournamentId}');
+            }
+          },
+        ),
           title: Text(
             'Leaderboard 🏆',
             style: GoogleFonts.outfit(
@@ -195,8 +146,7 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
             child: Text('Error: $err', style: GoogleFonts.outfit(color: Colors.red)),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildStatusHeader(TournamentLeaderboardData data) {
