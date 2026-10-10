@@ -37,7 +37,6 @@ class ArrowEscapeService {
     Map<int, int> stars = {};
     int multiplier = 2;
 
-    final effectiveTournamentId = TournamentSessionTracker.activeTournamentId;
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString('sikkaplay_arrow_escape_progress');
@@ -101,6 +100,7 @@ class ArrowEscapeService {
     required bool isMilestoneClaim,
     String? sessionId,
   }) async {
+    final effectiveTournamentId = TournamentSessionTracker.activeTournamentId;
     try {
       final headers = await _getHeaders();
       final res = await http.post(
