@@ -116,7 +116,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     // Read token to check if we can prefetch user data in parallel
     const secureStorage = FlutterSecureStorage();
-    final token = await secureStorage.read(key: 'jwt_token');
+    String? token;
+    try {
+      token = await secureStorage.read(key: 'jwt_token');
+    } catch (e) {
+      debugPrint('Error reading secure storage: $e');
+      try {
+        await secureStorage.deleteAll();
+      } catch (_) {}
+    }
 
     List<Future<dynamic>> prefetchFutures = [configFuture];
     Future<void>? preloadFuture;
@@ -129,6 +137,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         ref.read(networkProvider.notifier).fetchNetwork(),
       ]).timeout(const Duration(seconds: 30)).catchError((e) {
         debugPrint('Preloading dashboard data failed or timed out: $e');
+        return <void>[];
       });
       prefetchFutures.add(preloadFuture);
     }

@@ -347,6 +347,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
 
     final onCompleteClaim = () async {
+      if (!mounted) return;
       final success = await ref
           .read(userProvider.notifier)
           .claimDynamicSocialTask(task.id, coinsEarned);
@@ -1325,6 +1326,7 @@ class MarqueeWidget extends StatefulWidget {
 
 class _MarqueeWidgetState extends State<MarqueeWidget> {
   late ScrollController _scrollController;
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -1335,30 +1337,33 @@ class _MarqueeWidgetState extends State<MarqueeWidget> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _scrollController.dispose();
     super.dispose();
   }
 
   void _scroll() async {
-    while (_scrollController.hasClients) {
+    while (!_isDisposed && mounted && _scrollController.hasClients) {
       await Future.delayed(widget.pauseDuration);
-      if (_scrollController.hasClients) {
-        final maxExtent = _scrollController.position.maxScrollExtent;
-        if (maxExtent > 0) {
+      if (_isDisposed || !mounted || !_scrollController.hasClients) break;
+      try {
+        final position = _scrollController.positions.isNotEmpty ? _scrollController.position : null;
+        if (position != null && position.maxScrollExtent > 0) {
           await _scrollController.animateTo(
-            maxExtent,
+            position.maxScrollExtent,
             duration: widget.animationDuration,
             curve: Curves.linear,
           );
           await Future.delayed(widget.pauseDuration);
         }
-      }
-      if (_scrollController.hasClients) {
+        if (_isDisposed || !mounted || !_scrollController.hasClients) break;
         await _scrollController.animateTo(
           0.0,
           duration: widget.backDuration,
           curve: Curves.easeOut,
         );
+      } catch (_) {
+        break;
       }
     }
   }

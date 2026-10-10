@@ -116,11 +116,18 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    if (_selectedGender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('please_fill_all', selectedLanguage))),
+      );
+      return;
+    }
+
+    if (mounted) setState(() => _isLoading = true);
 
     final result = await _authService.completeGoogleSignup(
-      firebaseUid: widget.userData['firebaseUid'],
-      email: widget.userData['email'],
+      firebaseUid: widget.userData['firebaseUid'] ?? '',
+      email: widget.userData['email'] ?? '',
       name: widget.userData['name'] ?? '',
       city: _cityController.text.trim(),
       gender: _selectedGender!,
@@ -129,13 +136,13 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
       phoneNumber: phone,
     );
 
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
 
-    if (result['success']) {
+    if (result != null && result['success'] == true) {
       if (mounted) context.go('/home');
     } else {
       if (mounted) {
-        final errorMsg = result['error'] ?? context.tr('registration_failed_msg', selectedLanguage);
+        final errorMsg = (result != null ? result['error'] : null) ?? context.tr('registration_failed_msg', selectedLanguage);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMsg), backgroundColor: Colors.redAccent),
         );

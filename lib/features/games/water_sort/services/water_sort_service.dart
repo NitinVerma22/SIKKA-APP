@@ -1,3 +1,4 @@
+import '../../../../features/tournaments/providers/tournament_providers.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -132,7 +133,7 @@ class WaterSortService {
 
     try {
       if (sessionId != null && sessionId.isNotEmpty) {
-        await UserService().endGameSession(sessionId, coinsEarned: coinsEarned);
+        await UserService().endGameSession(sessionId, coinsEarned: coinsEarned, tournamentId: effectiveTournamentId);
       }
     } catch (e) {
       debugPrint('Error ending game session fallback: $e');

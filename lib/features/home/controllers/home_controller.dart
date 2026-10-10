@@ -250,11 +250,9 @@ class HomeNotifier extends StateNotifier<HomeState> {
         state = HomeState.fromJson(data).copyWith(isLoading: false);
       } else {
         state = state.copyWith(isLoading: false);
-        throw Exception('Failed to load home state');
       }
     } catch (e) {
       state = state.copyWith(isLoading: false);
-      rethrow;
     }
   }
 
@@ -265,7 +263,9 @@ class HomeNotifier extends StateNotifier<HomeState> {
     }
     await _loadState();
     if (!silent) {
-      await _ref.read(userProvider.notifier).refresh(silent: true).catchError((_) {});
+      try {
+        await _ref.read(userProvider.notifier).refresh(silent: true);
+      } catch (_) {}
     }
   }
 

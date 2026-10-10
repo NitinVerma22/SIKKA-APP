@@ -32,12 +32,51 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
   String? _sessionId;
   bool _isSessionLoading = true;
   int _spinsLeft = 3;
+  int _cooldownRemainingSeconds = 0;
+  Timer? _cooldownTimer;
   bool _isSpinning = false;
   double _currentAngle = 0;
   int _lastTickIndex = -1;
   Timer? _gameTimer;
   int _elapsedSeconds = 0;
   int? _lastWonBalance;
+
+  String _formatCooldown(int totalSeconds) {
+    final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  void _updateCooldownState(Map<String, dynamic> response) {
+    if (!mounted) return;
+    setState(() {
+      _spinsLeft = response['spinsLeft'] as int? ?? _spinsLeft;
+      _cooldownRemainingSeconds = response['cooldownRemainingSeconds'] as int? ?? 0;
+    });
+    _startCooldownTimer();
+  }
+
+  void _startCooldownTimer() {
+    _cooldownTimer?.cancel();
+    if (_cooldownRemainingSeconds <= 0) return;
+
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_cooldownRemainingSeconds > 1) {
+        setState(() {
+          _cooldownRemainingSeconds--;
+        });
+      } else {
+        setState(() {
+          _cooldownRemainingSeconds = 0;
+        });
+        timer.cancel();
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -66,9 +105,9 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
       final response = await ref.read(userServiceProvider).startSpinSession();
       if (response != null && response['success'] == true) {
         if (mounted) {
+          _sessionId = response['sessionId'] as String?;
+          _updateCooldownState(response);
           setState(() {
-            _sessionId = response['sessionId'] as String?;
-            _spinsLeft = response['spinsLeft'] as int? ?? 3;
             _isSessionLoading = false;
           });
         }
@@ -168,11 +207,9 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
       _lastWonReward = reward;
       _lastWonBalance = response['balance'] as int?;
 
-      // Sync remaining spins immediately
+      // Sync remaining spins & cooldown status immediately
       if (mounted) {
-        setState(() {
-          _spinsLeft = response['spinsLeft'] as int? ?? _spinsLeft;
-        });
+        _updateCooldownState(response);
       }
 
       // Enforce minimum spin duration of 1.5 seconds for smooth acceleration
@@ -238,8 +275,37 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
   }
 
   void _showGetSpinsAd() {
+    if (_cooldownRemainingSeconds > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Next spins available in ${_formatCooldown(_cooldownRemainingSeconds)}. Please wait!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     final userState = ref.read(userProvider);
     final userId = userState.userData?['id'] ?? '';
+
+    final onAdSuccess = () async {
+      if (_sessionId != null) {
+        final response = await ref.read(userServiceProvider).recordSpinAd(_sessionId!);
+        if (response != null && response['success'] == true) {
+          if (mounted) {
+            _updateCooldownState(response);
+            GameNotifications.showCoinUpdate(context, '3 Spins Added!');
+          }
+        } else if (response != null && response['error'] != null) {
+          if (mounted) {
+            _updateCooldownState(response);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(response['error'].toString())),
+            );
+          }
+        }
+      }
+    };
 
     if (!AdService.instance.isInterstitialAdLoaded() || userId.isEmpty) {
       showDialog(
@@ -248,18 +314,7 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
         builder: (_) => FakeAdDialog(
           title: 'Playing Video Ad...',
           message: 'Watch video to get 3 Free Spins',
-          onComplete: () async {
-            if (_sessionId != null) {
-              final response = await ref.read(userServiceProvider).recordSpinAd(_sessionId!);
-              if (response != null && response['success'] == true) {
-                if (mounted) {
-                  setState(() {
-                    _spinsLeft = response['spinsLeft'] as int? ?? 3;
-                  });
-                }
-              }
-            }
-          },
+          onComplete: onAdSuccess,
         ),
       );
       if (userId.isNotEmpty) {
@@ -269,23 +324,32 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
     }
 
     AdService.instance.showInterstitialAd(
-      onAdDismissed: () async {
-        if (_sessionId != null) {
-          final response = await ref.read(userServiceProvider).recordSpinAd(_sessionId!);
-          if (response != null && response['success'] == true) {
-            if (mounted) {
-              setState(() {
-                _spinsLeft = response['spinsLeft'] as int? ?? 3;
-              });
-              GameNotifications.showCoinUpdate(context, '3 Spins Added!');
-            }
-          }
-        }
-      },
+      onAdDismissed: onAdSuccess,
     );
   }
 
   void _showNoSpinsPopup() {
+    if (_cooldownRemainingSeconds > 0) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1A24),
+          title: const Text('Spins Cooldown', style: TextStyle(color: Colors.white)),
+          content: Text(
+            'You have used your spins for this round. Next spins will be available in ${_formatCooldown(_cooldownRemainingSeconds)}.',
+            style: const TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK', style: TextStyle(color: AppColors.primary)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -313,6 +377,7 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
   void dispose() {
     GameAudio.stopAll();
     _gameTimer?.cancel();
+    _cooldownTimer?.cancel();
     _spinController.dispose();
     super.dispose();
   }
@@ -426,6 +491,39 @@ class _SpinScreenState extends ConsumerState<SpinScreen>
                                       ),
                                     ),
                                   ],
+                                ),
+                              )
+                            else if (_cooldownRemainingSeconds > 0)
+                              GestureDetector(
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Next spins available in ${_formatCooldown(_cooldownRemainingSeconds)}. Please wait!'),
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.orange),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.timer_outlined, color: Colors.orange, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _formatCooldown(_cooldownRemainingSeconds),
+                                        style: GoogleFonts.orbitron(
+                                          color: Colors.orange,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               )
                             else

@@ -1,0 +1,307 @@
+
+enum TournamentStatus {
+  upcoming,
+  live,
+  completed,
+  cancelled;
+
+  static TournamentStatus fromString(String val) {
+    switch (val.toUpperCase()) {
+      case 'LIVE':
+        return TournamentStatus.live;
+      case 'COMPLETED':
+        return TournamentStatus.completed;
+      case 'CANCELLED':
+        return TournamentStatus.cancelled;
+      case 'UPCOMING':
+      default:
+        return TournamentStatus.upcoming;
+    }
+  }
+
+  String toDbString() {
+    switch (this) {
+      case TournamentStatus.live:
+        return 'LIVE';
+      case TournamentStatus.completed:
+        return 'COMPLETED';
+      case TournamentStatus.cancelled:
+        return 'CANCELLED';
+      case TournamentStatus.upcoming:
+        return 'UPCOMING';
+    }
+  }
+}
+
+enum TournamentEntryType {
+  free,
+  paidCoins;
+
+  static TournamentEntryType fromString(String val) {
+    switch (val.toUpperCase()) {
+      case 'PAID_COINS':
+        return TournamentEntryType.paidCoins;
+      case 'FREE':
+      default:
+        return TournamentEntryType.free;
+    }
+  }
+
+  String toDbString() {
+    switch (this) {
+      case TournamentEntryType.paidCoins:
+        return 'PAID_COINS';
+      case TournamentEntryType.free:
+        return 'FREE';
+    }
+  }
+}
+
+class PrizeTier {
+  final int rankMin;
+  final int rankMax;
+  final int prize;
+
+  const PrizeTier({
+    required this.rankMin,
+    required this.rankMax,
+    required this.prize,
+  });
+
+  factory PrizeTier.fromJson(Map<String, dynamic> json) {
+    return PrizeTier(
+      rankMin: (json['rankMin'] as num?)?.toInt() ?? 1,
+      rankMax: (json['rankMax'] as num?)?.toInt() ?? 1,
+      prize: (json['prize'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'rankMin': rankMin,
+    'rankMax': rankMax,
+    'prize': prize,
+  };
+
+  String get label {
+    if (rankMin == rankMax) {
+      return 'Rank #$rankMin';
+    }
+    return 'Rank #$rankMin - #$rankMax';
+  }
+}
+
+class UserParticipation {
+  final String id;
+  final int score;
+  final int? rank;
+  final DateTime joinedAt;
+
+  const UserParticipation({
+    required this.id,
+    required this.score,
+    this.rank,
+    required this.joinedAt,
+  });
+
+  factory UserParticipation.fromJson(Map<String, dynamic> json) {
+    return UserParticipation(
+      id: json['id']?.toString() ?? '',
+      score: (json['score'] as num?)?.toInt() ?? 0,
+      rank: (json['rank'] as num?)?.toInt(),
+      joinedAt: json['joinedAt'] != null
+          ? DateTime.tryParse(json['joinedAt'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+}
+
+class Tournament {
+  final String id;
+  final String title;
+  final String? description;
+  final String? bannerUrl;
+  final String? tag;
+  final TournamentEntryType entryType;
+  final int entryFeeCoins;
+  final DateTime startTime;
+  final DateTime endTime;
+  final List<String> allowedGames;
+  final int prizePool;
+  final List<PrizeTier> prizeStructure;
+  final int minParticipants;
+  final int? maxParticipants;
+  final int currentParticipants;
+  final TournamentStatus status;
+  final UserParticipation? userParticipation;
+
+  const Tournament({
+    required this.id,
+    required this.title,
+    this.description,
+    this.bannerUrl,
+    this.tag,
+    required this.entryType,
+    required this.entryFeeCoins,
+    required this.startTime,
+    required this.endTime,
+    required this.allowedGames,
+    required this.prizePool,
+    required this.prizeStructure,
+    required this.minParticipants,
+    this.maxParticipants,
+    required this.currentParticipants,
+    required this.status,
+    this.userParticipation,
+  });
+
+  bool get isJoined => userParticipation != null;
+
+  bool get isLive => status == TournamentStatus.live;
+  bool get isUpcoming => status == TournamentStatus.upcoming;
+  bool get isCompleted => status == TournamentStatus.completed;
+
+  Duration get timeRemaining {
+    final now = DateTime.now();
+    if (isUpcoming) {
+      return startTime.isAfter(now) ? startTime.difference(now) : Duration.zero;
+    }
+    if (isLive) {
+      return endTime.isAfter(now) ? endTime.difference(now) : Duration.zero;
+    }
+    return Duration.zero;
+  }
+
+  factory Tournament.fromJson(Map<String, dynamic> json) {
+    var rawPrizes = json['prizeStructure'];
+    List<PrizeTier> prizes = [];
+    if (rawPrizes is List) {
+      prizes = rawPrizes
+          .map((p) => PrizeTier.fromJson(p as Map<String, dynamic>))
+          .toList();
+    }
+
+    var rawGames = json['allowedGames'];
+    List<String> games = [];
+    if (rawGames is List) {
+      games = rawGames.map((g) => g.toString()).toList();
+    }
+
+    return Tournament(
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Tournament',
+      description: json['description']?.toString(),
+      bannerUrl: json['bannerUrl']?.toString(),
+      tag: json['tag']?.toString(),
+      entryType: TournamentEntryType.fromString(json['entryType']?.toString() ?? 'FREE'),
+      entryFeeCoins: (json['entryFeeCoins'] as num?)?.toInt() ?? 0,
+      startTime: json['startTime'] != null
+          ? DateTime.tryParse(json['startTime'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      endTime: json['endTime'] != null
+          ? DateTime.tryParse(json['endTime'].toString()) ?? DateTime.now().add(const Duration(hours: 1))
+          : DateTime.now().add(const Duration(hours: 1)),
+      allowedGames: games,
+      prizePool: (json['prizePool'] as num?)?.toInt() ?? 0,
+      prizeStructure: prizes,
+      minParticipants: (json['minParticipants'] as num?)?.toInt() ?? 2,
+      maxParticipants: (json['maxParticipants'] as num?)?.toInt(),
+      currentParticipants: (json['currentParticipants'] as num?)?.toInt() ?? 0,
+      status: TournamentStatus.fromString(json['status']?.toString() ?? 'UPCOMING'),
+      userParticipation: json['userParticipation'] != null
+          ? UserParticipation.fromJson(json['userParticipation'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+class LeaderboardEntry {
+  final int rank;
+  final String userId;
+  final String userName;
+  final String? userAvatar;
+  final int score;
+  final int prize;
+
+  const LeaderboardEntry({
+    required this.rank,
+    required this.userId,
+    required this.userName,
+    this.userAvatar,
+    required this.score,
+    required this.prize,
+  });
+
+  factory LeaderboardEntry.fromJson(Map<String, dynamic> json) {
+    return LeaderboardEntry(
+      rank: (json['rank'] as num?)?.toInt() ?? 0,
+      userId: json['userId']?.toString() ?? '',
+      userName: json['userName']?.toString() ?? 'Player',
+      userAvatar: json['userAvatar']?.toString(),
+      score: (json['score'] as num?)?.toInt() ?? 0,
+      prize: (json['prize'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class TournamentLeaderboardData {
+  final String tournamentId;
+  final String title;
+  final int prizePool;
+  final TournamentStatus status;
+  final DateTime endTime;
+  final List<String> allowedGames;
+  final List<LeaderboardEntry> leaderboard;
+  final LeaderboardEntry? userRank;
+  final int totalParticipants;
+  final bool isLive;
+
+  const TournamentLeaderboardData({
+    required this.tournamentId,
+    required this.title,
+    required this.prizePool,
+    required this.status,
+    required this.endTime,
+    required this.allowedGames,
+    required this.leaderboard,
+    this.userRank,
+    required this.totalParticipants,
+    required this.isLive,
+  });
+
+  factory TournamentLeaderboardData.fromJson(Map<String, dynamic> json) {
+    final tMap = (json['tournament'] as Map<String, dynamic>?) ?? {};
+    final rawLb = json['leaderboard'];
+    List<LeaderboardEntry> lbList = [];
+    if (rawLb is List) {
+      lbList = rawLb
+          .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+
+    LeaderboardEntry? uRank;
+    if (json['userRank'] != null) {
+      uRank = LeaderboardEntry.fromJson(json['userRank'] as Map<String, dynamic>);
+    }
+
+    var rawGames = tMap['allowedGames'];
+    List<String> games = [];
+    if (rawGames is List) {
+      games = rawGames.map((g) => g.toString()).toList();
+    }
+
+    return TournamentLeaderboardData(
+      tournamentId: tMap['id']?.toString() ?? '',
+      title: tMap['title']?.toString() ?? 'Tournament Leaderboard',
+      prizePool: (tMap['prizePool'] as num?)?.toInt() ?? 0,
+      status: TournamentStatus.fromString(tMap['status']?.toString() ?? 'LIVE'),
+      endTime: tMap['endTime'] != null
+          ? DateTime.tryParse(tMap['endTime'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      allowedGames: games,
+      leaderboard: lbList,
+      userRank: uRank,
+      totalParticipants: (json['totalParticipants'] as num?)?.toInt() ?? lbList.length,
+      isLive: json['isLive'] == true,
+    );
+  }
+}

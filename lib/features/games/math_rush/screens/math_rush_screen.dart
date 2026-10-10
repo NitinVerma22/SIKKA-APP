@@ -171,10 +171,8 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
             setState(() {
               _selectedDifficultyMode = savedDifficulty;
             });
-            _startGame(isResume: true);
-          } else {
-            _showDifficultySelectionDialog();
           }
+          _showDifficultySelectionDialog(savedDifficulty: savedDifficulty);
         }
       } else {
         final session = await ref.read(userServiceProvider).startGameSession('math_rush');
@@ -210,13 +208,15 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
     });
   }
 
-  void _showDifficultySelectionDialog() {
+  void _showDifficultySelectionDialog({String? savedDifficulty}) {
     final selectedLanguage = ref.read(languageProvider);
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        String tempSelection = 'default';
+        String tempSelection = (_selectedDifficultyMode.isNotEmpty)
+            ? _selectedDifficultyMode
+            : (savedDifficulty ?? 'default');
         return StatefulBuilder(
           builder: (context, setDialogState) {
             Widget buildDifficultyCard(String value, String title, String subtitle, Color color, IconData icon) {
@@ -346,12 +346,15 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
                     child: ElevatedButton(
                       onPressed: () async {
                         Navigator.of(context).pop();
+                        final bool isSameLevel = (savedDifficulty != null &&
+                            savedDifficulty.isNotEmpty &&
+                            tempSelection == savedDifficulty);
                         setState(() {
                           _selectedDifficultyMode = tempSelection;
                         });
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.setString('saved_difficulty_math_rush', tempSelection);
-                        _startGame();
+                        _startGame(isResume: isSameLevel);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,

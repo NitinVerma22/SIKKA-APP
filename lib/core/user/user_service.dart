@@ -1,3 +1,4 @@
+import 'package:sikkaplay/features/tournaments/providers/tournament_providers.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -72,9 +73,10 @@ class UserService {
     } catch (e) { print('Error updating profile picture: $e'); throw Exception(e.toString()); }
   }
 
-  Future<String?> startGameSession(String gameType) async {
+  Future<String?> startGameSession(String gameType, {String? tournamentId}) async {
+    final effectiveTournamentId = tournamentId ?? TournamentSessionTracker.activeTournamentId;
     try {
-      final response = await _sendRequest('POST', '/start', body: {'gameType': gameType}, overrideUrl: '${AuthService.baseUrl.replaceAll('/auth', '/game')}/start');
+      final response = await _sendRequest('POST', '/start', body: {'gameType': gameType, if (effectiveTournamentId != null && effectiveTournamentId.isNotEmpty) 'tournamentId': effectiveTournamentId}, overrideUrl: '${AuthService.baseUrl.replaceAll('/auth', '/game')}/start');
       if (response.statusCode == 200) return jsonDecode(response.body)['sessionId'] as String?;
       return null;
     } catch (e) { print('Error starting game session: $e'); return null; }
@@ -104,9 +106,10 @@ class UserService {
     } catch (e) { print('Error recording spin ad: $e'); return null; }
   }
 
-  Future<Map<String, dynamic>?> endGameSession(String sessionId, {int coinsEarned = 0, int bypassFee = 0}) async {
+  Future<Map<String, dynamic>?> endGameSession(String sessionId, {int coinsEarned = 0, int bypassFee = 0, String? tournamentId}) async {
+    final effectiveTournamentId = tournamentId ?? TournamentSessionTracker.activeTournamentId;
     try {
-      final response = await _sendRequest('POST', '/end', body: {'sessionId': sessionId, 'coinsEarned': coinsEarned, if (bypassFee > 0) 'bypassFee': bypassFee}, overrideUrl: '${AuthService.baseUrl.replaceAll('/auth', '/game')}/end');
+      final response = await _sendRequest('POST', '/end', body: {'sessionId': sessionId, 'coinsEarned': coinsEarned, if (bypassFee > 0) 'bypassFee': bypassFee, if (effectiveTournamentId != null && effectiveTournamentId.isNotEmpty) 'tournamentId': effectiveTournamentId}, overrideUrl: '${AuthService.baseUrl.replaceAll('/auth', '/game')}/end');
       if (response.statusCode == 200) return jsonDecode(response.body) as Map<String, dynamic>?;
       return null;
     } catch (e) { print('Error ending game session: $e'); return null; }

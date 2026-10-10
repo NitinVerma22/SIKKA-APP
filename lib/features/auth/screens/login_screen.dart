@@ -40,16 +40,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
     
     final result = await _authService.login(
       phoneNumber: _phoneController.text,
       password: _passwordController.text,
     );
 
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
 
-    if (result['success']) {
+    if (result != null && result['success'] == true) {
       if (mounted) {
         // Force refresh providers so new user's data loads fresh
         ref.invalidate(userProvider);
@@ -58,7 +58,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } else {
       if (mounted) {
-        String errorMsg = result['error'] ?? context.tr('login_failed_msg', selectedLanguage);
+        String errorMsg = (result != null ? result['error'] : null) ?? context.tr('login_failed_msg', selectedLanguage);
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -69,7 +69,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: context.tr('register_now_action', selectedLanguage),
                     textColor: Colors.white,
                     onPressed: () {
-                      context.push('/register');
+                      if (context.mounted) {
+                        context.push('/register');
+                      }
                     },
                   )
                 : null,

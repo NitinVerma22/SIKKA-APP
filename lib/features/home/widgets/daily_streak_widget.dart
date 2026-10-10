@@ -231,14 +231,17 @@ class _DailyStreakWidgetState extends ConsumerState<DailyStreakWidget> with Sing
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              setState(() {
-                _isClaiming = true;
-              });
+              if (mounted) {
+                setState(() {
+                  _isClaiming = true;
+                });
+              }
               final success = await ref.read(homeProvider.notifier).resumeDailyStreak();
-              setState(() {
-                _isClaiming = false;
-              });
+              if (mounted) {
+                setState(() {
+                  _isClaiming = false;
+                });
+              }
 
               if (success) {
                 if (mounted) {

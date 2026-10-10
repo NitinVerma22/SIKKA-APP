@@ -394,9 +394,12 @@ class AdService {
   Future<void> _initializeAds() async {
      if (_isInitialized) return;
      try {
-       await MobileAds.instance.initialize();
+       final status = await MobileAds.instance.initialize();
        _isInitialized = true;
        debugPrint('AdService: Google Mobile Ads SDK initialized successfully.');
+       status.adapterStatuses.forEach((adapterName, adapterStatus) {
+         debugPrint('AdService: Adapter $adapterName state: ${adapterStatus.state}, description: ${adapterStatus.description}');
+       });
         
        Future.delayed(const Duration(seconds: 2), () {
           loadRewardedAd();

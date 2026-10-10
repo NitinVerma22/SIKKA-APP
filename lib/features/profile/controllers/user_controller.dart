@@ -63,11 +63,9 @@ class UserNotifier extends StateNotifier<UserState> {
         state = state.copyWith(isLoading: false, userData: data);
       } else {
         state = state.copyWith(isLoading: false, error: 'Failed to load profile');
-        throw Exception('Failed to load profile');
       }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
-      rethrow;
     }
   }
 

@@ -1,3 +1,6 @@
+import 'package:sikkaplay/features/tournaments/screens/tournaments_hub_screen.dart';
+import 'package:sikkaplay/features/tournaments/screens/tournament_detail_screen.dart';
+import 'package:sikkaplay/features/tournaments/screens/tournament_leaderboard_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sikkaplay/features/splash/screens/splash_screen.dart';
@@ -235,6 +238,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/games/arrow_escape',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const ArrowEscapeRootWidget(),
+      ),
+      GoRoute(
+        path: '/tournaments',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const TournamentsHubScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            parentNavigatorKey: rootNavigatorKey,
+            builder: (context, state) => TournamentDetailScreen(
+              tournamentId: state.pathParameters['id'] ?? '',
+            ),
+            routes: [
+              GoRoute(
+                path: 'leaderboard',
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) => TournamentLeaderboardScreen(
+                  tournamentId: state.pathParameters['id'] ?? '',
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       ShellRoute(
         navigatorKey: shellNavigatorKey,

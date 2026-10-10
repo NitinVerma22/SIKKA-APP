@@ -48,21 +48,24 @@ class _PromoCarouselState extends State<PromoCarousel> {
   void _startTimer() {
     // Auto-scroll every 2.5 seconds
     _timer = Timer.periodic(const Duration(milliseconds: 2500), (timer) {
-      if (_pageController.hasClients) {
-        int nextPage = _currentPage + 1;
-        if (nextPage >= _banners.length) {
-          nextPage = 0;
-          _pageController.animateToPage(
-            nextPage,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
-        } else {
-          _pageController.nextPage(
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
-        }
+      if (!mounted || _banners.isEmpty) return;
+      if (_pageController.hasClients && _pageController.positions.isNotEmpty) {
+        try {
+          int nextPage = _currentPage + 1;
+          if (nextPage >= _banners.length) {
+            nextPage = 0;
+            _pageController.animateToPage(
+              nextPage,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
+          } else {
+            _pageController.nextPage(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
+          }
+        } catch (_) {}
       }
     });
   }

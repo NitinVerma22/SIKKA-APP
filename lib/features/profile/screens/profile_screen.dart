@@ -2281,22 +2281,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
               onPressed: () async {
-                Navigator.pop(ctx);
+                if (Navigator.of(ctx).canPop()) {
+                  Navigator.pop(ctx);
+                }
                 final result = await AuthService().deleteAccount();
-                if (result['success'] == true) {
-                  ref.invalidate(userProvider);
-                  ref.invalidate(homeProvider);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(selectedLanguage == 'Hindi' ? 'खाता सफलतापूर्वक हटा दिया गया' : 'Account deleted successfully')),
-                    );
-                    context.go('/login');
-                  }
-                } else {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(result['error'] ?? 'Failed to delete account')),
-                    );
+                if (mounted) {
+                  if (result['success'] == true) {
+                    ref.invalidate(userProvider);
+                    ref.invalidate(homeProvider);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(selectedLanguage == 'Hindi' ? 'खाता सफलतापूर्वक हटा दिया गया' : 'Account deleted successfully')),
+                      );
+                      context.go('/login');
+                    }
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(result['error'] ?? 'Failed to delete account')),
+                      );
+                    }
                   }
                 }
               },

@@ -22,6 +22,10 @@ class GamesHubScreen extends ConsumerWidget {
               // 1. Top Section (Header + Banner)
               _buildTopSection(),
               const SizedBox(height: 16),
+
+              // 2. Tournaments Arena Banner
+              _buildTournamentsBanner(context),
+              const SizedBox(height: 16),
               
               // 3. Grid of Cards
               _buildGridCards(context),
@@ -414,6 +418,106 @@ class GamesHubScreen extends ConsumerWidget {
                   errorBuilder: (context, error, stackTrace) => const SizedBox(),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTournamentsBanner(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/tournaments'),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4338CA), Color(0xFF6E5DE7), Color(0xFF9333EA)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6E5DE7).withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFD43B),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '⚡ FLASH CUPS & DAILY TOURNAMENTS',
+                      style: GoogleFonts.outfit(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF1E1B4B),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tournaments Arena 🏆',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Win massive coin prize pools in casual games!',
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Enter',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF6E5DE7),
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward_rounded, color: Color(0xFF6E5DE7), size: 16),
+                ],
+              ),
             ),
           ],
         ),

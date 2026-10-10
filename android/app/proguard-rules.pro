@@ -32,3 +32,8 @@
 -keep class com.google.android.gms.ads.identifier.** { *; }
 -keep class com.google.android.gms.common.** { *; }
 -dontwarn com.google.android.gms.**
+
+# Meta Audience Network Mediation Rules
+-keep class com.facebook.ads.** { *; }
+-dontwarn com.facebook.ads.**
+
