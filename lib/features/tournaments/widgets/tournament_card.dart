@@ -103,7 +103,7 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
     final isLive = t.isLive;
     final isUpcoming = t.isUpcoming;
     final isCompleted = t.isCompleted;
-    final isOptimisticallyJoined = ref.watch(joinedTournamentIdsProvider).contains(t.id);
+    final isOptimisticallyJoined = ref.watch(joinedTournamentIdsProvider).any((id) => id.trim().toLowerCase() == t.id.trim().toLowerCase());
     final isJoined = t.isJoined || isOptimisticallyJoined;
 
     final maxCap = t.maxParticipants;

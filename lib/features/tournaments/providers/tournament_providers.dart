@@ -51,11 +51,13 @@ class JoinedTournamentsNotifier extends StateNotifier<Set<String>> {
   JoinedTournamentsNotifier() : super({});
 
   void markJoined(String tournamentId) {
-    state = {...state, tournamentId};
+    final clean = tournamentId.trim().toLowerCase();
+    state = {...state, tournamentId, clean};
   }
 
   bool isJoined(String tournamentId) {
-    return state.contains(tournamentId);
+    final clean = tournamentId.trim().toLowerCase();
+    return state.contains(tournamentId) || state.contains(clean);
   }
 
   void reset() {

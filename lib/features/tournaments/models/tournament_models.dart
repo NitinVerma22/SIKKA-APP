@@ -277,8 +277,8 @@ class LeaderboardEntry {
     return LeaderboardEntry(
       rank: (json['rank'] as num?)?.toInt() ?? 0,
       userId: json['userId']?.toString() ?? '',
-      userName: json['userName']?.toString() ?? 'Player',
-      userAvatar: json['userAvatar']?.toString(),
+      userName: (json['userName'] ?? json['name'] ?? json['username'])?.toString() ?? 'Player',
+      userAvatar: (json['userAvatar'] ?? json['avatarUrl'] ?? json['avatar'])?.toString(),
       score: (json['score'] as num?)?.toInt() ?? 0,
       prize: (json['prize'] as num?)?.toInt() ?? 0,
     );
@@ -312,7 +312,7 @@ class TournamentLeaderboardData {
 
   factory TournamentLeaderboardData.fromJson(Map<String, dynamic> json) {
     final tMap = (json['tournament'] as Map<String, dynamic>?) ?? {};
-    final rawLb = json['leaderboard'];
+    final rawLb = json['leaderboard'] ?? json['rankings'];
     List<LeaderboardEntry> lbList = [];
     if (rawLb is List) {
       lbList = rawLb
@@ -321,29 +321,33 @@ class TournamentLeaderboardData {
     }
 
     LeaderboardEntry? uRank;
-    if (json['userRank'] != null) {
-      uRank = LeaderboardEntry.fromJson(json['userRank'] as Map<String, dynamic>);
+    final rawUserRank = json['userRank'] ?? json['userStanding'];
+    if (rawUserRank is Map<String, dynamic>) {
+      uRank = LeaderboardEntry.fromJson(rawUserRank);
     }
 
-    var rawGames = tMap['allowedGames'];
+    var rawGames = tMap['allowedGames'] ?? json['allowedGames'];
     List<String> games = [];
     if (rawGames is List) {
       games = rawGames.map((g) => g.toString()).toList();
     }
 
+    final rawStatus = tMap['status'] ?? json['status'];
+    final parsedStatus = TournamentStatus.fromString(rawStatus?.toString() ?? 'LIVE');
+
     return TournamentLeaderboardData(
-      tournamentId: tMap['id']?.toString() ?? '',
-      title: tMap['title']?.toString() ?? 'Tournament Leaderboard',
-      prizePool: (tMap['prizePool'] as num?)?.toInt() ?? 0,
-      status: TournamentStatus.fromString(tMap['status']?.toString() ?? 'LIVE'),
-      endTime: tMap['endTime'] != null
-          ? DateTime.tryParse(tMap['endTime'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      tournamentId: (tMap['id'] ?? json['tournamentId'] ?? json['id'])?.toString() ?? '',
+      title: (tMap['title'] ?? json['title'])?.toString() ?? 'Tournament Leaderboard',
+      prizePool: ((tMap['prizePool'] ?? json['prizePool']) as num?)?.toInt() ?? 0,
+      status: parsedStatus,
+      endTime: tMap['endTime'] != null || json['endTime'] != null
+          ? DateTime.tryParse((tMap['endTime'] ?? json['endTime']).toString()) ?? DateTime.now().add(const Duration(hours: 1))
+          : DateTime.now().add(const Duration(hours: 1)),
       allowedGames: games,
       leaderboard: lbList,
       userRank: uRank,
-      totalParticipants: (json['totalParticipants'] as num?)?.toInt() ?? lbList.length,
-      isLive: json['isLive'] == true,
+      totalParticipants: ((json['totalParticipants'] ?? json['currentParticipants']) as num?)?.toInt() ?? lbList.length,
+      isLive: json['isLive'] == true || parsedStatus == TournamentStatus.live,
     );
   }
 }

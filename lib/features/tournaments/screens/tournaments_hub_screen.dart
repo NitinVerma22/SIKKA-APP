@@ -204,6 +204,7 @@ class _TournamentsHubScreenState extends ConsumerState<TournamentsHubScreen> wit
                   ref: ref,
                   tournament: t,
                   onJoinSuccess: () {
+                    ref.read(joinedTournamentIdsProvider.notifier).markJoined(t.id);
                     ref.invalidate(liveTournamentsProvider);
                     ref.invalidate(myTournamentsProvider);
                     context.push('/tournaments/${t.id}');
@@ -248,6 +249,7 @@ class _TournamentsHubScreenState extends ConsumerState<TournamentsHubScreen> wit
                   ref: ref,
                   tournament: t,
                   onJoinSuccess: () {
+                    ref.read(joinedTournamentIdsProvider.notifier).markJoined(t.id);
                     ref.invalidate(upcomingTournamentsProvider);
                     ref.invalidate(myTournamentsProvider);
                     context.push('/tournaments/${t.id}');
