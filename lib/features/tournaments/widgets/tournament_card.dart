@@ -80,7 +80,6 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
     if (number >= 1000000) {
       return '${(number / 1000000).toStringAsFixed(1)}M';
     }
-    // Indian formatting helper or comma separation
     final str = number.toString();
     final buffer = StringBuffer();
     int count = 0;
@@ -111,114 +110,113 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
     final progressPct = hasCap ? (currentJoined / maxCap).clamp(0.0, 1.0) : 0.0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(26),
         border: Border.all(
-          color: isLive ? const Color(0xFFE3D8FF) : const Color(0xFFE6E8F2),
-          width: isLive ? 1.5 : 1.0,
+          color: isLive ? const Color(0xFFE9E4FF) : const Color(0xFFEFF1F7),
+          width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
             color: isLive
-                ? const Color(0xFF6D3CF0).withValues(alpha: 0.14)
-                : const Color(0xFF3C3278).withValues(alpha: 0.06),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
+                ? const Color(0xFF6D3CF0).withValues(alpha: 0.08)
+                : const Color(0xFF1E293B).withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(26),
           onTap: widget.onTap,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // 1. Tags Header Row
+                // 1. Header (Tag Pill + Live Status)
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Flash / Custom Tag
+                    // Tag Pill (🏆 MEGA)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6D3CF0), Color(0xFF8B5CF6)],
+                          colors: [Color(0xFF5B1FE6), Color(0xFF7A2CE8)],
                         ),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF5B1FE6).withValues(alpha: 0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        (t.tag != null && t.tag!.isNotEmpty ? t.tag! : 'FLASH ⚡').toUpperCase(),
-                        style: GoogleFonts.outfit(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('🏆', style: TextStyle(fontSize: 13)),
+                          const SizedBox(width: 6),
+                          Text(
+                            (t.tag != null && t.tag!.isNotEmpty ? t.tag! : 'MEGA')
+                                .replaceAll('⚡', '')
+                                .replaceAll('🔥', '')
+                                .replaceAll('🏆', '')
+                                .trim()
+                                .toUpperCase(),
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
 
-                    // State Tag
+                    // Status Pill (🔴 LIVE / ⏰ UPCOMING / ENDED)
                     _buildStateTag(isLive, isUpcoming, isCompleted),
-
-                    const Spacer(),
-
-                    // Entry Tag (FREE / PAID)
-                    _buildEntryTag(t),
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 // 2. Tournament Title
                 Text(
                   t.title,
                   style: GoogleFonts.outfit(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF151B33),
-                    letterSpacing: -0.3,
-                    height: 1.2,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF0F172A),
+                    letterSpacing: -0.4,
+                    height: 1.15,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (t.description != null && t.description!.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    t.description!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF6B7390),
-                    ),
-                  ),
-                ],
 
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
 
-                // 3. Prize Stage (Golden Trophy + Huge Coins + Real Cash Value Badge)
+                // 3. Golden Prize Pool Stage
                 _buildPrizeStage(t),
 
                 const SizedBox(height: 12),
 
-                // 4. Top Winners Podium (1st, 2nd, 3rd place preview)
-                _buildTopWinnersPodium(t),
-
-                const SizedBox(height: 14),
-
-                // 5. Progress Bar Row
+                // 4. Progress / Spots Row
                 _buildProgressRow(currentJoined, maxCap, spotsLeft, progressPct, hasCap),
 
                 const SizedBox(height: 14),
 
-                // 6. Footer (Countdown Timer & Main Action CTA)
-                _buildFooter(isLive, isUpcoming, isCompleted, isJoined, t),
+                // 5. Footer (Timer & Action CTA)
+                _buildFooter(isLive, isUpcoming, isCompleted, isJoined, t, hasCap, spotsLeft),
               ],
             ),
           ),
@@ -230,10 +228,11 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
   Widget _buildStateTag(bool isLive, bool isUpcoming, bool isCompleted) {
     if (isLive) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFE8E8),
-          borderRadius: BorderRadius.circular(10),
+          color: const Color(0xFFFFF1F2),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFFEE2E2), width: 1.2),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -241,22 +240,22 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
             FadeTransition(
               opacity: _blinkController,
               child: Container(
-                width: 7,
-                height: 7,
+                width: 8,
+                height: 8,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFE53935),
+                  color: Color(0xFFE11D48),
                   shape: BoxShape.circle,
                 ),
               ),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 6),
             Text(
               'LIVE',
               style: GoogleFonts.outfit(
-                color: const Color(0xFFC62828),
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
+                color: const Color(0xFFE11D48),
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.6,
               ),
             ),
           ],
@@ -266,27 +265,36 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
 
     if (isUpcoming) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFFEEF0F8),
-          borderRadius: BorderRadius.circular(10),
+          color: const Color(0xFFEFF6FF),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFDBEAFE), width: 1.2),
         ),
-        child: Text(
-          'UPCOMING',
-          style: GoogleFonts.outfit(
-            color: const Color(0xFF4B5575),
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('⏰', style: TextStyle(fontSize: 11)),
+            const SizedBox(width: 5),
+            Text(
+              'UPCOMING',
+              style: GoogleFonts.outfit(
+                color: const Color(0xFF2563EB),
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
         color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         'ENDED',
@@ -299,399 +307,258 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
     );
   }
 
-  Widget _buildEntryTag(Tournament t) {
-    if (t.entryType == TournamentEntryType.free) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: const Color(0xFFDDF8E6),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          '🎬 FREE (Watch Ad)',
-          style: GoogleFonts.outfit(
-            color: const Color(0xFF15803D),
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF1CC),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        '🪙 ${t.entryFeeCoins} Coins',
-        style: GoogleFonts.outfit(
-          color: const Color(0xFFC2650A),
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-
   Widget _buildPrizeStage(Tournament t) {
+    final int cashRupees = t.prizePoolRupees > 0
+        ? t.prizePoolRupees
+        : (t.prizePool / 20).round();
+
     return Container(
-      width: double.infinity,
+      height: 116,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFFFF3D1), Color(0xFFFFD98A), Color(0xFFFFC45C)],
+          colors: [
+            Color(0xFFFFF8D6),
+            Color(0xFFFFE885),
+            Color(0xFFFFD43F),
+          ],
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFFE3A3), width: 1.2),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFFFE066), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFB800).withValues(alpha: 0.16),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Stack(
-        children: [
-          // Background Trophy illustration
-          const Positioned(
-            right: 8,
-            bottom: 4,
-            child: Opacity(
-              opacity: 0.28,
-              child: Icon(
-                Icons.emoji_events_rounded,
-                size: 96,
-                color: Color(0xFFD97706),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Left Coins Stack
+            SizedBox(
+              width: 78,
+              child: Image.asset(
+                'assets/images/games_hub/coins_stack.png',
+                height: 72,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => Image.asset(
+                  'assets/images/water_sort/coin_pile.png',
+                  height: 72,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Text('🪙', style: TextStyle(fontSize: 40)),
+                  ),
+                ),
               ),
             ),
-          ),
 
-          // Foreground Content
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // PRIZE POOL pill
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    '🏆 PRIZE POOL',
-                    style: GoogleFonts.outfit(
-                      color: const Color(0xFF7A4B08),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Coins Amount
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(right: 6),
-                      child: const Text('🪙', style: TextStyle(fontSize: 24)),
-                    ),
-                    Text(
-                      _formatNumber(t.prizePool),
-                      style: GoogleFonts.outfit(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFF7C3A00),
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'COINS',
-                      style: GoogleFonts.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF7C3A00),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Real Cash Value Pill (Rupees)
-                if (t.prizePoolRupees > 0) ...[
-                  const SizedBox(height: 10),
+            // Center Info
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // 🏆 PRIZE POOL pill
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2.5),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF15803D), Color(0xFF22C55E)],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF15803D).withValues(alpha: 0.32),
-                          blurRadius: 14,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
+                      color: Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.25),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              '₹',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
+                        const Text('🏆', style: TextStyle(fontSize: 10)),
+                        const SizedBox(width: 4),
                         Text(
-                          '${t.prizePoolRupees}',
+                          'PRIZE POOL',
                           style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            height: 1.0,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'real cash\nvalue',
-                          style: GoogleFonts.outfit(
-                            color: Colors.white.withValues(alpha: 0.95),
                             fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            height: 1.15,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF78350F),
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 4),
+
+                  // 10,000 COINS
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '${_formatNumber(t.prizePool)} ',
+                            style: GoogleFonts.outfit(
+                              fontSize: 23,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF3F1D0B),
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'COINS',
+                            style: GoogleFonts.outfit(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF5A2A0C),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+
+                  // ≈ ₹500 (Mint green pill)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '≈ ',
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF78350F),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD1FAE5),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFA7F3D0), width: 1.0),
+                        ),
+                        child: Text(
+                          '₹${_formatNumber(cashRupees)}',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF059669),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+
+            // Right Golden Trophy
+            SizedBox(
+              width: 78,
+              child: Image.asset(
+                'assets/images/water_sort/trophy_gold.png',
+                height: 76,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Center(
+                  child: Text('🏆', style: TextStyle(fontSize: 42)),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTopWinnersPodium(Tournament t) {
-    // Determine Top 3 prizes (Rupees and Coins)
-    final tiers = t.prizeStructure;
-    final medals = ['🥇', '🥈', '🥉'];
-    final places = ['1st place', '2nd place', '3rd place'];
-
-    return Row(
-      children: List.generate(3, (idx) {
-        String prizeDisplay = '';
-        if (idx < tiers.length) {
-          final tier = tiers[idx];
-          final rupees = tier.getCalculatedRupees(t.prizePool, t.prizePoolRupees);
-          if (rupees > 0) {
-            prizeDisplay = '₹$rupees';
-          } else {
-            prizeDisplay = '${_formatNumber(tier.prize)}c';
-          }
-        } else {
-          // Standard proportional fallback
-          if (t.prizePoolRupees > 0) {
-            final fallbackRupees = [
-              (t.prizePoolRupees * 0.5).round(),
-              (t.prizePoolRupees * 0.3).round(),
-              (t.prizePoolRupees * 0.2).round(),
-            ];
-            prizeDisplay = '₹${fallbackRupees[idx]}';
-          } else {
-            final fallbackCoins = [
-              (t.prizePool * 0.5).round(),
-              (t.prizePool * 0.3).round(),
-              (t.prizePool * 0.2).round(),
-            ];
-            prizeDisplay = '${_formatNumber(fallbackCoins[idx])}c';
-          }
-        }
-
-        final isGold = idx == 0;
-        return Expanded(
-          child: Container(
-            margin: EdgeInsets.only(right: idx < 2 ? 8 : 0),
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            decoration: BoxDecoration(
-              color: isGold ? const Color(0xFFFFF8E6) : const Color(0xFFFAFAFE),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isGold ? const Color(0xFFFFE3A3) : const Color(0xFFE6E8F2),
-              ),
-            ),
-            child: Column(
+  Widget _buildProgressRow(
+    int currentJoined,
+    int? maxCap,
+    int spotsLeft,
+    double progressPct,
+    bool hasCap,
+  ) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(medals[idx], style: const TextStyle(fontSize: 18)),
-                const SizedBox(height: 3),
-                Text(
-                  prizeDisplay,
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF15803D),
-                  ),
-                ),
-                Text(
-                  places[idx],
-                  style: GoogleFonts.outfit(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF6B7390),
+                const Icon(Icons.people_alt_rounded, size: 16, color: Color(0xFF5B1FE6)),
+                const SizedBox(width: 6),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '$currentJoined',
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF151B33),
+                        ),
+                      ),
+                      TextSpan(
+                        text: hasCap ? ' / $maxCap joined' : ' joined',
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _buildProgressRow(int currentJoined, int? maxCap, int spotsLeft, double progressPct, bool hasCap) {
-    if (hasCap && maxCap != null) {
-      final isFull = spotsLeft <= 0;
-      final isHot = spotsLeft <= (maxCap * 0.35).round() || spotsLeft <= 25;
-
-      return Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '$currentJoined',
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF151B33),
-                      ),
-                    ),
-                    TextSpan(
-                      text: ' / $maxCap joined',
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF6B7390),
-                      ),
-                    ),
-                  ],
-                ),
-                style: const TextStyle(fontSize: 12),
+            Text(
+              hasCap
+                  ? (spotsLeft <= 0 ? 'Full' : '$spotsLeft spots left')
+                  : 'Unlimited spots',
+              style: GoogleFonts.outfit(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF64748B),
               ),
-              Text(
-                isFull
-                    ? '🔒 Full'
-                    : (isHot ? '🔥 $spotsLeft spots left' : '$spotsLeft spots left'),
-                style: GoogleFonts.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: isFull
-                      ? const Color(0xFFDC2626)
-                      : (isHot ? const Color(0xFFD9480F) : const Color(0xFF6B7390)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(99),
-            child: Container(
-              height: 8,
-              color: const Color(0xFFECEEF7),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: FractionallySizedBox(
-                  widthFactor: progressPct,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isFull
-                            ? const [Color(0xFFEF4444), Color(0xFFDC2626)]
-                            : const [Color(0xFF6D3CF0), Color(0xFF8B5CF6)],
-                      ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: Container(
+            height: 6,
+            color: const Color(0xFFECEEF7),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: hasCap ? progressPct : 1.0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: hasCap && spotsLeft <= 0
+                          ? const [Color(0xFFEF4444), Color(0xFFDC2626)]
+                          : const [Color(0xFF5B1FE6), Color(0xFF7A2CE8)],
                     ),
+                    borderRadius: BorderRadius.circular(99),
                   ),
                 ),
               ),
             ),
           ),
-        ],
-      );
-    } else {
-      // Unlimited capacity
-      return Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '$currentJoined',
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF151B33),
-                      ),
-                    ),
-                    TextSpan(
-                      text: ' players joined',
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF6B7390),
-                      ),
-                    ),
-                  ],
-                ),
-                style: const TextStyle(fontSize: 12),
-              ),
-              Text(
-                '✨ Open Arena',
-                style: GoogleFonts.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF16A34A),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(99),
-            child: Container(
-              height: 6,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF22C55E), Color(0xFF10B981)],
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+        ),
+      ],
+    );
   }
 
-  Widget _buildFooter(bool isLive, bool isUpcoming, bool isCompleted, bool isJoined, Tournament t) {
+  Widget _buildFooter(
+    bool isLive,
+    bool isUpcoming,
+    bool isCompleted,
+    bool isJoined,
+    Tournament t,
+    bool hasCap,
+    int spotsLeft,
+  ) {
     return Row(
       children: [
         // Left Timer block
@@ -699,85 +566,110 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isLive ? 'Ends in' : 'Starts in',
+              isLive ? 'Ends in' : (isUpcoming ? 'Starts in' : 'Ended'),
               style: GoogleFonts.outfit(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF6B7390),
+                color: const Color(0xFF94A3B8),
               ),
             ),
             const SizedBox(height: 2),
             Text(
               _formatTimerDigits(_remainingTime),
               style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF151B33),
-                letterSpacing: -0.2,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF0F172A),
+                letterSpacing: -0.3,
               ),
             ),
           ],
         ),
-        const SizedBox(width: 14),
+
+        // Vertical separator
+        Container(
+          height: 34,
+          width: 1.5,
+          color: const Color(0xFFF1F5F9),
+          margin: const EdgeInsets.symmetric(horizontal: 14),
+        ),
 
         // Right CTA Button
         Expanded(
-          child: _buildCtaButton(isLive, isUpcoming, isCompleted, isJoined, t),
+          child: _buildCtaButton(
+            isLive,
+            isUpcoming,
+            isCompleted,
+            isJoined,
+            t,
+            hasCap,
+            spotsLeft,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildCtaButton(bool isLive, bool isUpcoming, bool isCompleted, bool isJoined, Tournament t) {
+  Widget _buildCtaButton(
+    bool isLive,
+    bool isUpcoming,
+    bool isCompleted,
+    bool isJoined,
+    Tournament t,
+    bool hasCap,
+    int spotsLeft,
+  ) {
     if (isCompleted) {
       return OutlinedButton(
         onPressed: widget.onTap,
         style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF6D3CF0),
+          foregroundColor: const Color(0xFF5B1FE6),
           side: const BorderSide(color: Color(0xFFD9CCFB), width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          padding: const EdgeInsets.symmetric(vertical: 13),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          padding: const EdgeInsets.symmetric(vertical: 12),
         ),
         child: Text(
           'Results 🏆',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 14),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13),
         ),
       );
     }
 
     if (isUpcoming) {
       return Container(
+        height: 48,
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Text(
-          'Upcoming • ${_formatUpcomingTime(t.startTime)}',
+          'Starts Soon ⏰',
           style: GoogleFonts.outfit(
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            fontSize: 13,
             color: const Color(0xFF64748B),
           ),
-          overflow: TextOverflow.ellipsis,
         ),
       );
     }
 
+    // When joined: Play Now 🎮 (Vibrant Green)
     if (isJoined) {
       return Container(
+        height: 48,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF15803D), Color(0xFF22C55E)],
+            colors: [Color(0xFF00C06D), Color(0xFF00A859)],
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF15803D).withValues(alpha: 0.3),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
+              color: const Color(0xFF00C06D).withValues(alpha: 0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -787,17 +679,21 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 13),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            padding: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.play_circle_fill_rounded, size: 18),
+              const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 20),
               const SizedBox(width: 6),
               Text(
                 'Play Now 🎮',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 14),
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
@@ -805,43 +701,44 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
       );
     }
 
-    // Live and unjoined: CTA Button
-    final bool hasCap = t.maxParticipants != null && t.maxParticipants! > 0;
-    final bool isFull = hasCap && t.currentParticipants >= t.maxParticipants!;
-
+    // Live & unjoined
+    final isFull = hasCap && spotsLeft <= 0;
     if (isFull) {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        height: 48,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: const Color(0xFFCBD5E1)),
         ),
-        child: Center(
-          child: Text(
-            'Arena Full 🔒',
-            style: GoogleFonts.outfit(
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-              color: const Color(0xFF94A3B8),
-            ),
+        child: Text(
+          'Arena Full 🔒',
+          style: GoogleFonts.outfit(
+            fontWeight: FontWeight.w800,
+            fontSize: 13,
+            color: const Color(0xFF94A3B8),
           ),
         ),
       );
     }
 
-    final bool isFree = t.entryType == TournamentEntryType.free;
+    final isFree = t.entryType == TournamentEntryType.free;
     return Container(
+      height: 48,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6D3CF0), Color(0xFF8B5CF6)],
+        gradient: LinearGradient(
+          colors: isFree
+              ? const [Color(0xFF00C06D), Color(0xFF00A859)]
+              : const [Color(0xFF5B1FE6), Color(0xFF7A2CE8)],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6D3CF0).withValues(alpha: 0.3),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+            color: (isFree ? const Color(0xFF00C06D) : const Color(0xFF5B1FE6))
+                .withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -851,66 +748,29 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         ),
-        child: isFree
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Join Free',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13),
-                  ),
-                  Text(
-                    '• watch ad 🎬',
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 10,
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Join Tournament',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13),
-                  ),
-                  Text(
-                    '• ${t.entryFeeCoins} Coins',
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 10,
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isFree ? Icons.play_circle_fill_rounded : Icons.flash_on_rounded,
+              color: Colors.white,
+              size: 19,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              isFree ? 'Join Free 🎬' : 'Join • 🪙 ${t.entryFeeCoins}',
+              style: GoogleFonts.outfit(
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+                color: Colors.white,
               ),
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  String _formatUpcomingTime(DateTime dt) {
-    final now = DateTime.now();
-    final isToday = dt.year == now.year && dt.month == now.month && dt.day == now.day;
-    final isTomorrow = dt.year == now.year && dt.month == now.month && dt.day == now.day + 1;
-
-    final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
-    final timeStr = '$hour:$minute $ampm';
-
-    if (isToday) {
-      return 'Today, $timeStr';
-    } else if (isTomorrow) {
-      return 'Tomorrow, $timeStr';
-    } else {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      final monthStr = months[dt.month - 1];
-      return '${dt.day} $monthStr, $timeStr';
-    }
   }
 }
