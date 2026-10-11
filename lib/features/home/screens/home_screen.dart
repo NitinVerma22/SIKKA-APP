@@ -510,23 +510,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       userName, userLevel),
                   const SizedBox(height: AppSizes.lg),
 
-                  // Daily Code Banner
+                  // Daily Code Banner / Promo Carousel
                   const PromoCarousel(),
                   const SizedBox(height: AppSizes.lg),
 
-                  _buildAnnouncementBar(context, selectedLanguage),
-                  const SizedBox(height: AppSizes.lg),
-
+                  // How to use Sikka Video Tutorial Bar (Moved up, announcement bar removed)
                   if (configState.config?['showVideoTutorialBar'] ?? true)
                     _buildVideoTutorialBar(context, selectedLanguage),
                   if (configState.config?['showVideoTutorialBar'] ?? true)
                     const SizedBox(height: AppSizes.lg),
 
-                  // 2. Daily Streak Widget (Restored at the top)
-                  const DailyStreakWidget(),
-                  const SizedBox(height: AppSizes.lg),
-
-                  // 4. Earning Tasks Grid
+                  // 2. Earning Tasks Grid (Ways to Earn Sikka moved up)
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: AppSizes.xs),
@@ -541,7 +535,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ),
                   const SizedBox(height: AppSizes.md),
 
-                  // Grid items (2-column, 3 rows)
+                  // Grid items in requested order:
+                  // 1. Tournament, 2. Games, 3. Complete Offers, 4. Complete Surveys,
+                  // 5. Spin, 6. Daily Code, 7. Make Team, 8. Make Friends
                   GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
@@ -550,7 +546,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     crossAxisSpacing: 12,
                     childAspectRatio: 0.85, 
                     children: [
-                      // 1. Tournament Arena Card
+                      // 1. Tournament Arena
                       _buildNewGridCard(
                         title: 'Tournament\nArena',
                         subtitleWidget: RichText(
@@ -574,7 +570,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         onTap: () => AppNavigator.push(context, ref, '/tournaments'),
                       ),
 
-                      // 2. Play Games & Earn Card
+                      // 2. Play Games & Earn
                       _buildNewGridCard(
                         title: 'Play Games\n& Earn',
                         subtitleWidget: RichText(
@@ -598,27 +594,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         onTap: () => AppNavigator.push(context, ref, '/games'),
                       ),
 
-                      _buildNewGridCard(
-                        title: 'Spin Wheel',
-                        subtitleWidget: RichText(
-                          maxLines: 4,
-                          text: const TextSpan(
-                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
-                            children: [
-                              TextSpan(text: 'Win upto\n'),
-                              TextSpan(text: '90\nCoins', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.w900, fontSize: 22)),
-                            ],
-                          ),
-                        ),
-                        badgeText: 'EASY & FUN',
-                        badgeColor: const Color(0xFFFFCDD2).withOpacity(0.6),
-                        badgeTextColor: const Color(0xFFC62828),
-                        bgColor: const Color(0xFFFFF0F5),
-                        buttonGradient: const [Color(0xFFFF4081), Color(0xFFE91E63)],
-                        buttonText: 'Lets Go',
-                        imageWidget: Image.asset('assets/images/home_cards/spin_wheel.png'),
-                          onTap: () => AppNavigator.push(context, ref, '/games/spin_earn'),
-                      ),
+                      // 3. Complete Offers
                       _buildNewGridCard(
                         title: 'Complete Offers',
                         subtitleWidget: RichText(
@@ -639,7 +615,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         buttonGradient: const [Color(0xFFFFA726), Color(0xFFF57C00)],
                         buttonText: 'Lets Go',
                         imageWidget: Image.asset('assets/images/home_cards/offers.png'),
-                          onTap: () {
+                        onTap: () {
                           if (_isAdScaleXOpening) return;
                           setState(() {
                             _isAdScaleXOpening = true;
@@ -660,27 +636,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           });
                         },
                       ),
-                      _buildNewGridCard(
-                        title: 'Daily Code',
-                        subtitleWidget: RichText(
-                          maxLines: 4,
-                          text: const TextSpan(
-                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
-                            children: [
-                              TextSpan(text: 'Win upto\n'),
-                              TextSpan(text: '2000\nCoins', style: TextStyle(color: Color(0xFF1976D2), fontWeight: FontWeight.w900, fontSize: 22)),
-                            ],
-                          ),
-                        ),
-                        badgeText: 'DAILY',
-                        badgeColor: const Color(0xFFBBDEFB).withOpacity(0.6),
-                        badgeTextColor: const Color(0xFF1565C0),
-                        bgColor: const Color(0xFFF0F8FF),
-                        buttonGradient: const [Color(0xFF42A5F5), Color(0xFF1E88E5)],
-                        buttonText: 'Lets Go',
-                        imageWidget: Image.asset('assets/images/home_cards/daily_code.png'),
-                          onTap: () => AppNavigator.push(context, ref, '/home/daily_code'),
-                      ),
+
+                      // 4. Complete Surveys
                       _buildNewGridCard(
                         title: 'Complete Surveys',
                         subtitleWidget: RichText(
@@ -700,8 +657,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         buttonGradient: const [Color(0xFFAB47BC), Color(0xFF8E24AA)],
                         buttonText: 'Lets Go',
                         imageWidget: Image.asset('assets/images/home_cards/surveys.png'),
-                          onTap: () => AppNavigator.push(context, ref, '/home/surveys'),
+                        onTap: () => AppNavigator.push(context, ref, '/home/surveys'),
                       ),
+
+                      // 5. Spin Wheel
+                      _buildNewGridCard(
+                        title: 'Spin Wheel',
+                        subtitleWidget: RichText(
+                          maxLines: 4,
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
+                            children: [
+                              TextSpan(text: 'Win upto\n'),
+                              TextSpan(text: '90\nCoins', style: TextStyle(color: Color(0xFFE91E63), fontWeight: FontWeight.w900, fontSize: 22)),
+                            ],
+                          ),
+                        ),
+                        badgeText: 'EASY & FUN',
+                        badgeColor: const Color(0xFFFFCDD2).withOpacity(0.6),
+                        badgeTextColor: const Color(0xFFC62828),
+                        bgColor: const Color(0xFFFFF0F5),
+                        buttonGradient: const [Color(0xFFFF4081), Color(0xFFE91E63)],
+                        buttonText: 'Lets Go',
+                        imageWidget: Image.asset('assets/images/home_cards/spin_wheel.png'),
+                        onTap: () => AppNavigator.push(context, ref, '/games/spin_earn'),
+                      ),
+
+                      // 6. Daily Code
+                      _buildNewGridCard(
+                        title: 'Daily Code',
+                        subtitleWidget: RichText(
+                          maxLines: 4,
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500),
+                            children: [
+                              TextSpan(text: 'Win upto\n'),
+                              TextSpan(text: '2000\nCoins', style: TextStyle(color: Color(0xFF1976D2), fontWeight: FontWeight.w900, fontSize: 22)),
+                            ],
+                          ),
+                        ),
+                        badgeText: 'DAILY',
+                        badgeColor: const Color(0xFFBBDEFB).withOpacity(0.6),
+                        badgeTextColor: const Color(0xFF1565C0),
+                        bgColor: const Color(0xFFF0F8FF),
+                        buttonGradient: const [Color(0xFF42A5F5), Color(0xFF1E88E5)],
+                        buttonText: 'Lets Go',
+                        imageWidget: Image.asset('assets/images/home_cards/daily_code.png'),
+                        onTap: () => AppNavigator.push(context, ref, '/home/daily_code'),
+                      ),
+
+                      // 7. Make Team
                       _buildNewGridCard(
                         title: 'Make Team',
                         subtitleWidget: RichText(
@@ -722,15 +727,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         buttonGradient: const [Color(0xFF66BB6A), Color(0xFF43A047)],
                         buttonText: 'Lets Go',
                         imageWidget: Image.asset('assets/images/home_cards/networks.png'),
-                          onTap: () => AppNavigator.push(context, ref, '/my_network'),
+                        onTap: () => AppNavigator.push(context, ref, '/my_network'),
                       ),
+
+                      // 8. Make Friends Take Gifts
                       _buildNewGridCard(
                         title: 'Make Friends\nTake Gifts',
                         subtitleWidget: const Text(
-                            'Connect,\nchat and\nget gifts!',
-                            maxLines: 3,
-                            style: TextStyle(fontSize: 14, color: Color(0xFFC2185B), fontWeight: FontWeight.w800, height: 1.1),
-                          ),
+                          'Connect,\nchat and\nget gifts!',
+                          maxLines: 3,
+                          style: TextStyle(fontSize: 14, color: Color(0xFFC2185B), fontWeight: FontWeight.w800, height: 1.1),
+                        ),
                         badgeText: 'SOCIAL',
                         badgeColor: const Color(0xFFF8BBD0).withOpacity(0.6),
                         badgeTextColor: const Color(0xFFC2185B),
@@ -738,22 +745,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         buttonGradient: const [Color(0xFFEC407A), Color(0xFFD81B60)],
                         buttonText: 'Lets Go',
                         imageWidget: Image.asset('assets/images/home_cards/friends.png'),
-                          onTap: () => AppNavigator.push(context, ref, '/playground/friends'),
+                        onTap: () => AppNavigator.push(context, ref, '/playground/friends'),
                       ),
                     ],
                   ),
+                  const SizedBox(height: AppSizes.lg),
+
+                  // 3. Daily Streak Widget (Moved below Ways to Earn)
+                  const DailyStreakWidget(),
                   const SizedBox(height: AppSizes.xl),
 
-                  // Native Ad below Ways to Earn
+                  // Native Ad below Ways to Earn / Daily Streak
                   const NativeAdWidget(),
-                  const SizedBox(height: AppSizes.xl),
-
-                  // 5. Refer & Earn Banner
-                  FadeInSlideWidget(
-                    slideOffset: 28,
-                    duration: const Duration(milliseconds: 750),
-                    child: _buildReferralBanner(context),
-                  ),
                   const SizedBox(height: AppSizes.xl),
 
                   // 6. Social Join Tasks
