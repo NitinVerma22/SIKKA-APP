@@ -102,12 +102,12 @@ class _TournamentGamesScreenState extends ConsumerState<TournamentGamesScreen> {
           style: GoogleFonts.outfit(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF1E293B),
+            color: const Color(0xFF0F172A),
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.leaderboard_rounded, color: Color(0xFF6E5DE7)),
+            icon: const Icon(Icons.bar_chart_rounded, color: Color(0xFF5B1FE6), size: 24),
             onPressed: () => context.push('/tournaments/${widget.tournamentId}/leaderboard'),
           ),
         ],
@@ -127,440 +127,439 @@ class _TournamentGamesScreenState extends ConsumerState<TournamentGamesScreen> {
             _remaining = tournament.timeRemaining;
           }
 
-          final p = tournament.userParticipation;
-          final gameConfigs = [
-            {
-              'id': 'arrow_escape',
-              'title': 'Arrow Escape',
-              'subtitle': 'Directional Puzzle',
-              'color': const Color(0xFFF64D67),
-              'bg': const Color(0xFFFEF6F7),
-              'icon': Icons.navigation_rounded,
-            },
-            {
-              'id': 'water_sort',
-              'title': 'Colour Sort',
-              'subtitle': 'Liquid Tube Sort',
-              'color': const Color(0xFF3B82F6),
-              'bg': const Color(0xFFEFF6FF),
-              'icon': Icons.science_rounded,
-            },
-            {
-              'id': 'bubble_shooter',
-              'title': 'Bubble Sort',
-              'subtitle': 'Bubble Match 3',
-              'color': const Color(0xFF10B981),
-              'bg': const Color(0xFFECFDF5),
-              'icon': Icons.bubble_chart_rounded,
-            },
+          final allGames = [
             {
               'id': 'treasure_grid',
               'title': 'Treasure Grid',
-              'subtitle': 'Mine & Gem Hunt',
-              'color': const Color(0xFFF59E0B),
-              'bg': const Color(0xFFFFFBEB),
-              'icon': Icons.grid_view_rounded,
-            },
-            {
-              'id': 'math_rush',
-              'title': 'Math Rush',
-              'subtitle': 'Speed Arithmetic',
-              'color': const Color(0xFF8B5CF6),
-              'bg': const Color(0xFFF5F3FF),
-              'icon': Icons.calculate_rounded,
+              'desc': 'Tap tiles to find coins & avoid bombs.',
+              'icon': '💎',
+              'leftImage': 'assets/images/games_hub/treasure_grid_left.webp',
+              'rightImage': 'assets/images/games_hub/treasure_grid_right.webp',
+              'gradient': [const Color(0xFFFFEDD5), const Color(0xFFFFF1F2)],
+              'borderColor': const Color(0xFFFED7AA),
+              'buttonColor': const Color(0xFFEF4444),
             },
             {
               'id': 'emoji_memory',
               'title': 'Emoji Memory',
-              'subtitle': 'Card Flip & Match',
-              'color': const Color(0xFFEC4899),
-              'bg': const Color(0xFFFDF2F8),
-              'icon': Icons.sentiment_very_satisfied_rounded,
+              'desc': 'Memorize positions and find the target emoji.',
+              'icon': '😃',
+              'leftImage': 'assets/images/games_hub/emoji_memory_left.webp',
+              'rightImage': 'assets/images/games_hub/emoji_memory_right.webp',
+              'gradient': [const Color(0xFFE0F2FE), const Color(0xFFEDE9FE)],
+              'borderColor': const Color(0xFFBAE6FD),
+              'buttonColor': const Color(0xFF2563EB),
+            },
+            {
+              'id': 'math_rush',
+              'title': 'Math Rush',
+              'desc': 'Solve math equations before time runs out.',
+              'icon': '➕',
+              'leftImage': 'assets/images/games_hub/math_rush_left.webp',
+              'rightImage': 'assets/images/games_hub/math_rush_right.webp',
+              'gradient': [const Color(0xFFDCFCE7), const Color(0xFFF0FDF4)],
+              'borderColor': const Color(0xFFBBF7D0),
+              'buttonColor': const Color(0xFF059669),
+            },
+            {
+              'id': 'water_sort',
+              'title': 'Colour Sort',
+              'desc': 'Pour and sort colored liquids in tubes.',
+              'icon': '🧪',
+              'leftImage': 'assets/images/games_hub/water_left.png',
+              'rightImage': 'assets/images/games_hub/water_right.png',
+              'gradient': [const Color(0xFFF3E8FF), const Color(0xFFEDE9FE)],
+              'borderColor': const Color(0xFFE9D5FF),
+              'buttonColor': const Color(0xFF7C3AED),
+            },
+            {
+              'id': 'bubble_shooter',
+              'title': 'Bubble Sort',
+              'desc': 'Aim, shoot and pop matching color bubbles.',
+              'icon': '🫧',
+              'leftImage': 'assets/images/games_hub/buble_left.png',
+              'rightImage': 'assets/images/games_hub/buble_right.png',
+              'gradient': [const Color(0xFFE0E7FF), const Color(0xFFEEF2FF)],
+              'borderColor': const Color(0xFFC7D2FE),
+              'buttonColor': const Color(0xFF4F46E5),
+            },
+            {
+              'id': 'arrow_escape',
+              'title': 'Arrow Escape',
+              'desc': 'Tap arrows to navigate and escape the maze.',
+              'icon': '🏹',
+              'leftImage': 'assets/images/games_hub/arrow left.png',
+              'rightImage': 'assets/images/games_hub/arrow_right.png',
+              'gradient': [const Color(0xFFFFEDD5), const Color(0xFFFEF3C7)],
+              'borderColor': const Color(0xFFFDE68A),
+              'buttonColor': const Color(0xFFEA580C),
             },
           ];
 
-          final activeGames = gameConfigs.where((g) => tournament.allowedGames.contains(g['id'])).toList();
+          // Filter to only the games allowed for this tournament
+          final activeGames = tournament.allowedGames.isNotEmpty
+              ? allGames.where((g) => tournament.allowedGames.contains(g['id'])).toList()
+              : allGames;
 
           return RefreshIndicator(
-            color: const Color(0xFF6E5DE7),
+            color: const Color(0xFF5B1FE6),
             onRefresh: () async {
               ref.invalidate(tournamentDetailProvider(widget.tournamentId));
             },
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Standing & Timer Banner
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF4338CA), Color(0xFF6E5DE7), Color(0xFF8B5CF6)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6E5DE7).withValues(alpha: 0.25),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                tournament.title,
-                                style: GoogleFonts.outfit(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.timer_rounded, color: Color(0xFFFFD43B), size: 14),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    _formatDuration(_remaining),
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                  // 1. Concise Header (Tournament Title, Countdown, Score & Rank)
+                  _buildConciseHeader(tournament),
 
-                        const SizedBox(height: 14),
+                  const SizedBox(height: 18),
 
-                        // Score & Rank Cards Row
-                        Row(
-                          children: [
-                            // Current Score
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'YOUR SCORE',
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white.withValues(alpha: 0.75),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${p?.score ?? 0} pts',
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w900,
-                                        color: const Color(0xFFFFD43B),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-
-                            // Current Rank
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'CURRENT RANK',
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white.withValues(alpha: 0.75),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      p?.rank != null ? '#${p!.rank}' : 'Rank -',
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // 2. Select Game Title & Subtitle
+                  // Section Title
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Select a Game to Play 🎯',
+                        'Allowed Games',
                         style: GoogleFonts.outfit(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1E293B),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF0F172A),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDDF8E6),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '1 Coin = 1 Point',
-                          style: GoogleFonts.outfit(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF15803D),
-                          ),
+                      const SizedBox(width: 6),
+                      const Text('✨', style: TextStyle(fontSize: 16)),
+                      const Spacer(),
+                      Text(
+                        '${activeGames.length} available',
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF64748B),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Play as many rounds as you like to climb the leaderboard!',
-                    style: GoogleFonts.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
-                  // 3. Games Grid (2x3)
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 14,
-                      childAspectRatio: 0.95,
-                    ),
-                    itemCount: activeGames.length,
-                    itemBuilder: (context, idx) {
-                      final game = activeGames[idx];
-                      final Color primaryColor = game['color'] as Color;
-                      final Color bgColor = game['bg'] as Color;
-
-                      return Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: primaryColor.withValues(alpha: 0.25)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: primaryColor.withValues(alpha: 0.08),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                  // 2. Games List Cards
+                  if (activeGames.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'No games assigned to this tournament yet.',
+                          style: GoogleFonts.outfit(fontSize: 13, color: const Color(0xFF64748B)),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: primaryColor.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(game['icon'] as IconData, color: primaryColor, size: 24),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: primaryColor.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    'POINTS',
-                                    style: GoogleFonts.outfit(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w900,
-                                      color: primaryColor,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                      ),
+                    )
+                  else
+                    ...activeGames.map((game) => _buildGameCard(game, tournament)),
 
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  game['title'] as String,
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w900,
-                                    color: const Color(0xFF1E293B),
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  game['subtitle'] as String,
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 11,
-                                    color: const Color(0xFF64748B),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(
-                              width: double.infinity,
-                              height: 36,
-                              child: ElevatedButton(
-                                onPressed: () => _launchGame(context, game['id'] as String, tournament),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: EdgeInsets.zero,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.play_arrow_rounded, size: 16),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Play Arena',
-                                      style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w800),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // 4. Fair Play & Scoring Note
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.stars_rounded, color: Color(0xFFF59E0B), size: 24),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Scores update instantly upon game completion. Play anytime before the timer ends!',
-                            style: GoogleFonts.outfit(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF475569),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(color: Color(0xFF6E5DE7)),
+          child: CircularProgressIndicator(color: Color(0xFF5B1FE6)),
         ),
         error: (err, _) => Center(
           child: Text('Error: $err', style: GoogleFonts.outfit(color: Colors.red)),
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -3),
-            ),
-          ],
+    );
+  }
+
+  // Concise Top Banner (Title, Countdown, Your Score, Current Rank)
+  Widget _buildConciseHeader(Tournament tournament) {
+    final p = tournament.userParticipation;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF281366), Color(0xFF1E0E52), Color(0xFF140838)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: SafeArea(
-          child: SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              onPressed: () => context.push('/tournaments/${widget.tournamentId}/leaderboard'),
-              icon: const Icon(Icons.leaderboard_rounded, size: 18),
-              label: Text(
-                'View Leaderboard 🏆',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 14),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF281366).withValues(alpha: 0.25),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row 1: Tournament Title + Countdown Timer Pill
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  tournament.title,
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6E5DE7),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.timer_rounded, color: Color(0xFFFFD43B), size: 13),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatDuration(_remaining),
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Row 2: Your Score & Current Rank (Compact Inline Pills)
+          Row(
+            children: [
+              // Score Pill
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('⭐', style: TextStyle(fontSize: 14)),
+                      const SizedBox(width: 6),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'YOUR SCORE',
+                            style: GoogleFonts.outfit(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '${p?.score ?? 0} pts',
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFFFFD43B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // Rank Pill
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('👑', style: TextStyle(fontSize: 14)),
+                      const SizedBox(width: 6),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'CURRENT RANK',
+                            style: GoogleFonts.outfit(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            p?.rank != null ? '#${p!.rank}' : 'Rank #1',
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF4ADE80),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Game Card matching the design image
+  Widget _buildGameCard(Map<String, dynamic> game, Tournament tournament) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: game['gradient'] as List<Color>,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: (game['borderColor'] as Color).withValues(alpha: 0.6),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (game['buttonColor'] as Color).withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => _launchGame(context, game['id'] as String, tournament),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left 3D Pedestal Icon
+                SizedBox(
+                  width: 68,
+                  height: 68,
+                  child: Image.asset(
+                    game['leftImage'] as String,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Center(
+                      child: Text(game['icon'] as String, style: const TextStyle(fontSize: 34)),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                // Middle Details (Title, Description, Click to Play button)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        game['title'] as String,
+                        style: GoogleFonts.outfit(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF0F172A),
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        game['desc'] as String,
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF64748B),
+                          height: 1.25,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      // Pill Button: Click to Play →
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: game['buttonColor'] as Color,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (game['buttonColor'] as Color).withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Click to Play',
+                              style: GoogleFonts.outfit(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Text('→', style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 6),
+
+                // Right 3D Illustration
+                SizedBox(
+                  width: 76,
+                  height: 76,
+                  child: Image.asset(
+                    game['rightImage'] as String,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Center(
+                      child: Text(game['icon'] as String, style: const TextStyle(fontSize: 34)),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
