@@ -149,6 +149,7 @@ class Tournament {
   final TournamentStatus status;
   final bool isJoinedExplicit;
   final UserParticipation? userParticipation;
+  final int displayOrder;
 
   const Tournament({
     required this.id,
@@ -170,6 +171,7 @@ class Tournament {
     required this.status,
     this.isJoinedExplicit = false,
     this.userParticipation,
+    this.displayOrder = 999,
   });
 
   bool get isJoined => isJoinedExplicit || userParticipation != null;
@@ -252,6 +254,11 @@ class Tournament {
       status: TournamentStatus.fromString(json['status']?.toString() ?? 'UPCOMING'),
       isJoinedExplicit: rawIsJoined,
       userParticipation: userPart,
+      displayOrder: (json['displayOrder'] as num?)?.toInt() ??
+          (json['order'] as num?)?.toInt() ??
+          (json['tag'] != null && json['tag'].toString().contains(':')
+              ? int.tryParse(json['tag'].toString().split(':')[1]) ?? 999
+              : 999),
     );
   }
 }

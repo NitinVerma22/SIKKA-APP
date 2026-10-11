@@ -5,6 +5,76 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/tournament_models.dart';
 import '../providers/tournament_providers.dart';
 
+class TournamentCardTheme {
+  final List<Color> gradientColors;
+  final Color borderColor;
+  final Color shadowColor;
+
+  const TournamentCardTheme({
+    required this.gradientColors,
+    required this.borderColor,
+    required this.shadowColor,
+  });
+
+  static TournamentCardTheme forTournament(Tournament t) {
+    final tagLower = (t.tag ?? '').toLowerCase().trim();
+    if (tagLower.contains('purple') || tagLower.contains('violet')) {
+      return purple;
+    } else if (tagLower.contains('blue') || tagLower.contains('sky') || tagLower.contains('azure')) {
+      return blue;
+    } else if (tagLower.contains('green') || tagLower.contains('emerald') || tagLower.contains('mint')) {
+      return green;
+    } else if (tagLower.contains('amber') || tagLower.contains('orange') || tagLower.contains('gold') || tagLower.contains('sunset') || tagLower.contains('yellow')) {
+      return amber;
+    } else if (tagLower.contains('rose') || tagLower.contains('pink') || tagLower.contains('red') || tagLower.contains('ruby')) {
+      return rose;
+    } else if (tagLower.contains('cyan') || tagLower.contains('teal') || tagLower.contains('ice') || tagLower.contains('aqua')) {
+      return cyan;
+    }
+
+    // Default: deterministically cycle through 6 themes by tournament ID hash
+    const themes = [purple, blue, green, amber, rose, cyan];
+    final index = t.id.hashCode.abs() % themes.length;
+    return themes[index];
+  }
+
+  static const purple = TournamentCardTheme(
+    gradientColors: [Color(0xFFFCFAFF), Color(0xFFF3EDFF)],
+    borderColor: Color(0xFFE4D7FF),
+    shadowColor: Color(0x147C3AED),
+  );
+
+  static const blue = TournamentCardTheme(
+    gradientColors: [Color(0xFFF6FAFF), Color(0xFFEAF3FE)],
+    borderColor: Color(0xFFD2E6FE),
+    shadowColor: Color(0x142563EB),
+  );
+
+  static const green = TournamentCardTheme(
+    gradientColors: [Color(0xFFF4FBF7), Color(0xFFE5F7EC)],
+    borderColor: Color(0xFFC4F1D4),
+    shadowColor: Color(0x14059669),
+  );
+
+  static const amber = TournamentCardTheme(
+    gradientColors: [Color(0xFFFFFBF3), Color(0xFFFFF1DF)],
+    borderColor: Color(0xFFFDE1BF),
+    shadowColor: Color(0x14D97706),
+  );
+
+  static const rose = TournamentCardTheme(
+    gradientColors: [Color(0xFFFFF5F7), Color(0xFFFEE7ED)],
+    borderColor: Color(0xFFFDD2DC),
+    shadowColor: Color(0x14E11D48),
+  );
+
+  static const cyan = TournamentCardTheme(
+    gradientColors: [Color(0xFFF2FBFC), Color(0xFFE2F6F9)],
+    borderColor: Color(0xFFBFEFF6),
+    shadowColor: Color(0x140891B2),
+  );
+}
+
 class TournamentCard extends ConsumerStatefulWidget {
   final Tournament tournament;
   final VoidCallback onTap;
@@ -113,21 +183,24 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
         : t.currentParticipants;
     final spotsLeft = hasCap ? (maxCap - effectiveJoined).clamp(0, maxCap) : 0;
     final progressPct = hasCap ? (effectiveJoined / maxCap).clamp(0.0, 1.0) : 0.0;
+    final cardTheme = TournamentCardTheme.forTournament(t);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: cardTheme.gradientColors,
+        ),
         borderRadius: BorderRadius.circular(26),
         border: Border.all(
-          color: isLive ? const Color(0xFFE9E4FF) : const Color(0xFFEFF1F7),
+          color: cardTheme.borderColor,
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: isLive
-                ? const Color(0xFF6D3CF0).withValues(alpha: 0.08)
-                : const Color(0xFF1E293B).withValues(alpha: 0.04),
+            color: cardTheme.shadowColor,
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -144,83 +217,43 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 1. Header (Tag Pill + Live Status)
+                // 1. Header (Tournament Title on left, Status Pill on right)
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Tag Pill (🏆 MEGA)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF5B1FE6), Color(0xFF7A2CE8)],
+                    Expanded(
+                      child: Text(
+                        t.title,
+                        style: GoogleFonts.outfit(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF0F172A),
+                          letterSpacing: -0.3,
+                          height: 1.2,
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF5B1FE6).withValues(alpha: 0.25),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('🏆', style: TextStyle(fontSize: 13)),
-                          const SizedBox(width: 6),
-                          Text(
-                            (t.tag != null && t.tag!.isNotEmpty ? t.tag! : 'MEGA')
-                                .replaceAll('⚡', '')
-                                .replaceAll('🔥', '')
-                                .replaceAll('🏆', '')
-                                .trim()
-                                .toUpperCase(),
-                            style: GoogleFonts.outfit(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                        ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-
+                    const SizedBox(width: 8),
                     // Status Pill (🔴 LIVE / ⏰ UPCOMING / ENDED)
                     _buildStateTag(isLive, isUpcoming, isCompleted),
                   ],
                 ),
 
-                const SizedBox(height: 10),
-
-                // 2. Tournament Title
-                Text(
-                  t.title,
-                  style: GoogleFonts.outfit(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: const Color(0xFF0F172A),
-                    letterSpacing: -0.4,
-                    height: 1.15,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
                 const SizedBox(height: 12),
 
-                // 3. Golden Prize Pool Stage
+                // 2. Golden Prize Pool Stage
                 _buildPrizeStage(t),
 
                 const SizedBox(height: 12),
 
-                // 4. Progress / Spots Row
+                // 3. Progress / Spots Row
                 _buildProgressRow(effectiveJoined, maxCap, spotsLeft, progressPct, hasCap),
 
                 const SizedBox(height: 14),
 
-                // 5. Footer (Timer & Action CTA)
+                // 4. Footer (Timer & Action CTA)
                 _buildFooter(isLive, isUpcoming, isCompleted, isJoined, t, hasCap, spotsLeft),
               ],
             ),

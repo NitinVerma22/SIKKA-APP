@@ -930,69 +930,37 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         children: [
           // Header Row
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF1F2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(child: Text('🎁', style: TextStyle(fontSize: 20))),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF1F2),
-                      borderRadius: BorderRadius.circular(12),
+                  Text(
+                    'Prize Distribution',
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF0F172A),
                     ),
-                    child: const Center(child: Text('🎁', style: TextStyle(fontSize: 20))),
                   ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Prize Distribution',
-                        style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF0F172A),
-                        ),
-                      ),
-                      Text(
-                        'Rank higher and win exciting coin rewards!',
-                        style: GoogleFonts.outfit(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    'Rank higher and win exciting coin rewards!',
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF64748B),
+                    ),
                   ),
                 ],
-              ),
-              InkWell(
-                onTap: () => context.push('/tournaments/${tournament.id}/leaderboard'),
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F3FF),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFDDD6FE)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Full Leaderboard',
-                        style: GoogleFonts.outfit(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF5B1FE6),
-                        ),
-                      ),
-                      const SizedBox(width: 3),
-                      const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF5B1FE6)),
-                    ],
-                  ),
-                ),
               ),
             ],
           ),
@@ -1175,76 +1143,39 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         children: [
           // Header Row
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDE9FE),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Icon(Icons.sports_esports_rounded, color: Color(0xFF5B1FE6), size: 20),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEDE9FE),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.sports_esports_rounded, color: Color(0xFF5B1FE6), size: 20),
+                  Text(
+                    'Allowed Arena Games',
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF0F172A),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Allowed Arena Games',
-                        style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF0F172A),
-                        ),
-                      ),
-                      Text(
-                        '${games.length} casual games available to score points',
-                        style: GoogleFonts.outfit(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    '${games.length} casual games available to score points',
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF64748B),
+                    ),
                   ),
                 ],
-              ),
-              InkWell(
-                onTap: () {
-                  if (isJoined) {
-                    context.push('/tournaments/${tournament.id}/games');
-                  } else {
-                    TournamentJoinDialog.show(
-                      context: context,
-                      ref: ref,
-                      tournament: tournament,
-                      onJoinSuccess: () => _handleJoinSuccess(tournament),
-                    );
-                  }
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Play Games',
-                        style: GoogleFonts.outfit(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF5B1FE6),
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(Icons.arrow_forward_ios_rounded, size: 11, color: Color(0xFF5B1FE6)),
-                    ],
-                  ),
-                ),
               ),
             ],
           ),
@@ -1353,53 +1284,25 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         children: [
           // Header Row
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEDE9FE),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.shield_rounded, color: Color(0xFF5B1FE6), size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Fair Play & Scoring Rules',
-                    style: GoogleFonts.outfit(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                ],
-              ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F3FF),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFDDD6FE)),
+                  color: const Color(0xFFEDE9FE),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Read More',
-                      style: GoogleFonts.outfit(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF5B1FE6),
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF5B1FE6)),
-                  ],
+                child: const Center(
+                  child: Icon(Icons.shield_rounded, color: Color(0xFF5B1FE6), size: 20),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Fair Play & Scoring Rules',
+                style: GoogleFonts.outfit(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF0F172A),
                 ),
               ),
             ],
@@ -1407,35 +1310,21 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
           const SizedBox(height: 14),
 
-          // 2 Columns Checkmark List
-          Row(
+          // Single-column Checkmark List (1 per row)
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left Column
-              Expanded(
-                child: Column(
-                  children: [
-                    _buildRuleCheckItem('1 Coin = 1 Tournament Point'),
-                    const SizedBox(height: 8),
-                    _buildRuleCheckItem('Instant score update'),
-                    const SizedBox(height: 8),
-                    _buildRuleCheckItem('Prizes credited to wallet'),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              // Right Column
-              Expanded(
-                child: Column(
-                  children: [
-                    _buildRuleCheckItem("Daily bonuses don't count"),
-                    const SizedBox(height: 8),
-                    _buildRuleCheckItem('In case of tie, higher score wins'),
-                    const SizedBox(height: 8),
-                    _buildRuleCheckItem('Fair play strictly enforced'),
-                  ],
-                ),
-              ),
+              _buildRuleCheckItem('1 Coin = 1 Tournament Point'),
+              const SizedBox(height: 10),
+              _buildRuleCheckItem('Instant score update'),
+              const SizedBox(height: 10),
+              _buildRuleCheckItem('Prizes credited to wallet directly'),
+              const SizedBox(height: 10),
+              _buildRuleCheckItem("Daily bonuses don't count towards tournament score"),
+              const SizedBox(height: 10),
+              _buildRuleCheckItem('In case of tie, player reaching score earlier wins'),
+              const SizedBox(height: 10),
+              _buildRuleCheckItem('Fair play strictly enforced • Anti-cheat active'),
             ],
           ),
         ],
@@ -1448,15 +1337,15 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Icon(Icons.check_circle_rounded, color: Color(0xFF5B1FE6), size: 16),
-        const SizedBox(width: 6),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
             style: GoogleFonts.outfit(
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF475569),
-              height: 1.25,
+              height: 1.3,
             ),
           ),
         ),

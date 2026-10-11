@@ -71,13 +71,15 @@ final tournamentHubTabProvider = StateProvider<int>((ref) => 0);
 /// Live tournaments provider
 final liveTournamentsProvider = FutureProvider.autoDispose<List<Tournament>>((ref) async {
   final service = ref.watch(tournamentServiceProvider);
-  return service.getTournaments(status: TournamentStatus.live);
+  final list = await service.getTournaments(status: TournamentStatus.live);
+  return [...list]..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 });
 
 /// Upcoming tournaments provider
 final upcomingTournamentsProvider = FutureProvider.autoDispose<List<Tournament>>((ref) async {
   final service = ref.watch(tournamentServiceProvider);
-  return service.getTournaments(status: TournamentStatus.upcoming);
+  final list = await service.getTournaments(status: TournamentStatus.upcoming);
+  return [...list]..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 });
 
 /// Completed tournaments provider
