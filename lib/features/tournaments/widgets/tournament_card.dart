@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/tournament_models.dart';
+import '../providers/tournament_providers.dart';
 
-class TournamentCard extends StatefulWidget {
+class TournamentCard extends ConsumerStatefulWidget {
   final Tournament tournament;
   final VoidCallback onTap;
   final VoidCallback onJoinTap;
@@ -16,10 +18,10 @@ class TournamentCard extends StatefulWidget {
   });
 
   @override
-  State<TournamentCard> createState() => _TournamentCardState();
+  ConsumerState<TournamentCard> createState() => _TournamentCardState();
 }
 
-class _TournamentCardState extends State<TournamentCard> with SingleTickerProviderStateMixin {
+class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTickerProviderStateMixin {
   late Duration _remainingTime;
   Timer? _countdownTimer;
   late AnimationController _blinkController;
@@ -101,13 +103,16 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
     final isLive = t.isLive;
     final isUpcoming = t.isUpcoming;
     final isCompleted = t.isCompleted;
-    final isJoined = t.isJoined;
+    final isOptimisticallyJoined = ref.watch(joinedTournamentIdsProvider).contains(t.id);
+    final isJoined = t.isJoined || isOptimisticallyJoined;
 
     final maxCap = t.maxParticipants;
-    final currentJoined = t.currentParticipants;
     final hasCap = maxCap != null && maxCap > 0;
-    final spotsLeft = hasCap ? (maxCap - currentJoined).clamp(0, maxCap) : 0;
-    final progressPct = hasCap ? (currentJoined / maxCap).clamp(0.0, 1.0) : 0.0;
+    final effectiveJoined = (hasCap && isOptimisticallyJoined && !t.isJoined)
+        ? t.currentParticipants + 1
+        : t.currentParticipants;
+    final spotsLeft = hasCap ? (maxCap - effectiveJoined).clamp(0, maxCap) : 0;
+    final progressPct = hasCap ? (effectiveJoined / maxCap).clamp(0.0, 1.0) : 0.0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -211,7 +216,7 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
                 const SizedBox(height: 12),
 
                 // 4. Progress / Spots Row
-                _buildProgressRow(currentJoined, maxCap, spotsLeft, progressPct, hasCap),
+                _buildProgressRow(effectiveJoined, maxCap, spotsLeft, progressPct, hasCap),
 
                 const SizedBox(height: 14),
 

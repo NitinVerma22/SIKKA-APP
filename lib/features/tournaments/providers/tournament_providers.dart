@@ -40,6 +40,29 @@ class ActiveTournamentNotifier extends StateNotifier<String?> {
   }
 }
 
+/// In-memory tracker of tournament IDs that the user has joined during this app session.
+/// Provides immediate, instantaneous (0ms) reactive updates to CTA buttons and status banners
+/// before asynchronous network refetches complete.
+final joinedTournamentIdsProvider = StateNotifierProvider<JoinedTournamentsNotifier, Set<String>>((ref) {
+  return JoinedTournamentsNotifier();
+});
+
+class JoinedTournamentsNotifier extends StateNotifier<Set<String>> {
+  JoinedTournamentsNotifier() : super({});
+
+  void markJoined(String tournamentId) {
+    state = {...state, tournamentId};
+  }
+
+  bool isJoined(String tournamentId) {
+    return state.contains(tournamentId);
+  }
+
+  void reset() {
+    state = {};
+  }
+}
+
 /// Currently selected Hub screen tab: 0=Live, 1=Upcoming, 2=My Tournaments, 3=History
 final tournamentHubTabProvider = StateProvider<int>((ref) => 0);
 

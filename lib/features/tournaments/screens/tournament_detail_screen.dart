@@ -124,6 +124,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           }
 
           _remaining = tournament.timeRemaining;
+          final isOptimisticallyJoined = ref.watch(joinedTournamentIdsProvider).contains(widget.tournamentId);
+          final isJoined = tournament.isJoined || isOptimisticallyJoined;
 
           return RefreshIndicator(
             color: const Color(0xFF5B1FE6),
@@ -137,11 +139,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 1. Hero Card (Deep Purple Banner with Prize Pool & Trophy)
-                  _buildHeroCard(tournament),
+                  _buildHeroCard(tournament, isOptimisticallyJoined),
                   const SizedBox(height: 14),
 
                   // 2. User Status Bar (Green Entered Pill if joined)
-                  _buildUserStatusBar(tournament),
+                  _buildUserStatusBar(tournament, isJoined),
                   const SizedBox(height: 16),
 
                   // 3. Prize Distribution Section (Rank #1, #2, #3, #4-#10, #11-#50)
@@ -149,7 +151,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   const SizedBox(height: 16),
 
                   // 4. Allowed Arena Games (2-Column Grid)
-                  _buildAllowedGamesSection(tournament),
+                  _buildAllowedGamesSection(tournament, isJoined),
                   const SizedBox(height: 16),
 
                   // 5. Fair Play & Scoring Rules
@@ -168,176 +170,193 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         ),
       ),
       bottomNavigationBar: detailAsync.maybeWhen(
-        data: (tournament) => tournament != null
-            ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 16,
-                      offset: const Offset(0, -4),
-                    ),
-                  ],
-                ),
-                child: SafeArea(
-                  child: Row(
-                    children: [
-                      // View Leaderboard CTA (White with purple border)
-                      Expanded(
-                        child: SizedBox(
-                          height: 50,
-                          child: OutlinedButton(
-                            onPressed: () => context.push('/tournaments/${tournament.id}/leaderboard'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF5B1FE6),
-                              backgroundColor: Colors.white,
-                              side: const BorderSide(color: Color(0xFF5B1FE6), width: 1.8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(26),
-                              ),
-                              padding: EdgeInsets.zero,
-                              elevation: 0,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text('🏆', style: TextStyle(fontSize: 16)),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Leaderboard',
-                                  style: GoogleFonts.outfit(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 15,
-                                    color: const Color(0xFF5B1FE6),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
+        data: (tournament) {
+          if (tournament == null) return const SizedBox.shrink();
+          final isOptimisticallyJoined = ref.watch(joinedTournamentIdsProvider).contains(widget.tournamentId);
+          final isJoined = tournament.isJoined || isOptimisticallyJoined;
 
-                      // Play CTA (Vibrant Purple-Indigo Gradient)
-                      Expanded(
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF5B1FE6), Color(0xFF8B5CF6)],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  // View Leaderboard CTA (White with purple border)
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: OutlinedButton(
+                        onPressed: () => context.push('/tournaments/${tournament.id}/leaderboard'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF5B1FE6),
+                          backgroundColor: Colors.white,
+                          side: const BorderSide(color: Color(0xFF5B1FE6), width: 1.8),
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(26),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF5B1FE6).withValues(alpha: 0.35),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
                           ),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (tournament.isJoined) {
-                                context.push('/tournaments/${tournament.id}/games');
-                              } else if (tournament.isUpcoming) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'This tournament starts in ${_formatDuration(_remaining)}! Stay tuned.',
-                                      style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-                                    ),
-                                    backgroundColor: const Color(0xFF5B1FE6),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              } else {
-                                final isFull = tournament.maxParticipants != null &&
-                                    tournament.maxParticipants! > 0 &&
-                                    tournament.currentParticipants >= tournament.maxParticipants!;
-                                if (isFull) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'This tournament arena is full! No more spots available.',
-                                        style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-                                      ),
-                                      backgroundColor: const Color(0xFFDC2626),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                TournamentJoinDialog.show(
-                                  context: context,
-                                  ref: ref,
-                                  tournament: tournament,
-                                  onJoinSuccess: () {
-                                    ref.invalidate(tournamentDetailProvider(widget.tournamentId));
-                                    ref.invalidate(liveTournamentsProvider);
-                                    ref.invalidate(myTournamentsProvider);
-                                  },
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(26),
+                          padding: EdgeInsets.zero,
+                          elevation: 0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('🏆', style: TextStyle(fontSize: 16)),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Leaderboard',
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                                color: const Color(0xFF5B1FE6),
                               ),
-                              padding: EdgeInsets.zero,
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.sports_esports_rounded, color: Colors.white, size: 20),
-                                const SizedBox(width: 6),
-                                Text(
-                                  tournament.isJoined
-                                      ? 'Play Now >'
-                                      : (tournament.maxParticipants != null &&
-                                              tournament.maxParticipants! > 0 &&
-                                              tournament.currentParticipants >= tournament.maxParticipants!
-                                          ? 'Arena Full 🔒'
-                                          : (tournament.isUpcoming ? 'Starts Soon ⏰' : 'Join Now ⚔️')),
-                                  style: GoogleFonts.outfit(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 15,
-                                    color: Colors.white,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              )
-            : const SizedBox.shrink(),
+                  const SizedBox(width: 12),
+
+                  // Play CTA (Vibrant Green if joined, Purple if not)
+                  Expanded(
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: isJoined
+                            ? const LinearGradient(
+                                colors: [Color(0xFF00C06D), Color(0xFF00A859)],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              )
+                            : const LinearGradient(
+                                colors: [Color(0xFF5B1FE6), Color(0xFF8B5CF6)],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isJoined ? const Color(0xFF00C06D) : const Color(0xFF5B1FE6))
+                                .withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (isJoined) {
+                            context.push('/tournaments/${tournament.id}/games');
+                          } else if (tournament.isUpcoming) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'This tournament starts in ${_formatDuration(_remaining)}! Stay tuned.',
+                                  style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                                ),
+                                backgroundColor: const Color(0xFF5B1FE6),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          } else {
+                            final isFull = tournament.maxParticipants != null &&
+                                tournament.maxParticipants! > 0 &&
+                                tournament.currentParticipants >= tournament.maxParticipants!;
+                            if (isFull) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'This tournament arena is full! No more spots available.',
+                                    style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                                  ),
+                                  backgroundColor: const Color(0xFFDC2626),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                              return;
+                            }
+
+                            TournamentJoinDialog.show(
+                              context: context,
+                              ref: ref,
+                              tournament: tournament,
+                              onJoinSuccess: () {
+                                ref.invalidate(tournamentDetailProvider(widget.tournamentId));
+                                ref.invalidate(liveTournamentsProvider);
+                                ref.invalidate(myTournamentsProvider);
+                              },
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(26),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              isJoined ? Icons.play_circle_fill_rounded : Icons.sports_esports_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              isJoined
+                                  ? 'Play Now 🎮'
+                                  : (tournament.maxParticipants != null &&
+                                          tournament.maxParticipants! > 0 &&
+                                          tournament.currentParticipants >= tournament.maxParticipants!
+                                      ? 'Arena Full 🔒'
+                                      : (tournament.isUpcoming ? 'Starts Soon ⏰' : 'Join Now ⚔️')),
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                                color: Colors.white,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
         orElse: () => const SizedBox.shrink(),
       ),
     );
   }
 
   // 1. Hero Card
-  Widget _buildHeroCard(Tournament tournament) {
+  Widget _buildHeroCard(Tournament tournament, bool isOptimisticallyJoined) {
     final int cashRupees = tournament.prizePoolRupees > 0
         ? tournament.prizePoolRupees
         : (tournament.prizePool / 20).round();
     final maxCap = tournament.maxParticipants;
-    final currentJoined = tournament.currentParticipants;
     final hasCap = maxCap != null && maxCap > 0;
-    final spotsLeft = hasCap ? (maxCap - currentJoined).clamp(0, maxCap) : 0;
-    final progressPct = hasCap ? (currentJoined / maxCap).clamp(0.0, 1.0) : 0.0;
+    final effectiveJoined = (hasCap && isOptimisticallyJoined && !tournament.isJoined)
+        ? tournament.currentParticipants + 1
+        : tournament.currentParticipants;
+    final spotsLeft = hasCap ? (maxCap - effectiveJoined).clamp(0, maxCap) : 0;
+    final progressPct = hasCap ? (effectiveJoined / maxCap).clamp(0.0, 1.0) : 0.0;
 
     return Container(
       width: double.infinity,
@@ -682,8 +701,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     const SizedBox(width: 6),
                     Text(
                       hasCap
-                          ? '${tournament.currentParticipants} / ${tournament.maxParticipants} Joined'
-                          : '${tournament.currentParticipants} Joined',
+                          ? '$effectiveJoined / ${tournament.maxParticipants} Joined'
+                          : '$effectiveJoined Joined',
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -732,8 +751,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
   }
 
   // 2. User Status Bar (Green Entered Pill if joined)
-  Widget _buildUserStatusBar(Tournament tournament) {
-    if (!tournament.isJoined) {
+  Widget _buildUserStatusBar(Tournament tournament, bool isJoined) {
+    if (!isJoined) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -773,8 +792,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
       );
     }
 
-    final p = tournament.userParticipation!;
-    final rankText = p.rank != null ? 'Rank #${p.rank}' : 'Rank #1';
+    final p = tournament.userParticipation;
+    final rankText = (p != null && p.rank != null) ? 'Rank #${p.rank}' : 'Rank #1';
+    final score = p?.score ?? 0;
 
     return Container(
       width: double.infinity,
@@ -818,7 +838,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Current Score: ${p.score} Points',
+                    'Current Score: $score Points',
                     style: GoogleFonts.outfit(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -1108,7 +1128,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
   }
 
   // 4. Allowed Arena Games (2-Column Grid)
-  Widget _buildAllowedGamesSection(Tournament tournament) {
+  Widget _buildAllowedGamesSection(Tournament tournament, bool isJoined) {
     final gameInfoMap = {
       'treasure_grid': {'title': 'Treasure Grid', 'icon': '💎', 'bg': const Color(0xFFE0F2FE)},
       'emoji_memory': {'title': 'Emoji Memory', 'icon': '😃', 'bg': const Color(0xFFFEF3C7)},
@@ -1183,7 +1203,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
               ),
               InkWell(
                 onTap: () {
-                  if (tournament.isJoined) {
+                  if (isJoined) {
                     context.push('/tournaments/${tournament.id}/games');
                   } else {
                     TournamentJoinDialog.show(
@@ -1192,6 +1212,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       tournament: tournament,
                       onJoinSuccess: () {
                         ref.invalidate(tournamentDetailProvider(widget.tournamentId));
+                        ref.invalidate(liveTournamentsProvider);
+                        ref.invalidate(myTournamentsProvider);
                       },
                     );
                   }
@@ -1241,7 +1263,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
               return InkWell(
                 onTap: () {
-                  if (tournament.isJoined) {
+                  if (isJoined) {
                     context.push('/tournaments/${tournament.id}/games');
                   } else {
                     TournamentJoinDialog.show(
@@ -1250,6 +1272,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       tournament: tournament,
                       onJoinSuccess: () {
                         ref.invalidate(tournamentDetailProvider(widget.tournamentId));
+                        ref.invalidate(liveTournamentsProvider);
+                        ref.invalidate(myTournamentsProvider);
                       },
                     );
                   }

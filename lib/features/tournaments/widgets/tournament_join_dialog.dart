@@ -173,6 +173,10 @@ class TournamentJoinDialog {
           if (!context.mounted) return;
 
           if (result.success) {
+            // Instantly mark joined in memory so UI reflects Play Now without reload
+            ref.read(joinedTournamentIdsProvider.notifier).markJoined(tournament.id);
+            ref.invalidate(tournamentDetailProvider(tournament.id));
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(result.message),
@@ -336,6 +340,10 @@ class TournamentJoinDialog {
                                 if (!context.mounted) return;
 
                                 if (result.success) {
+                                  // Instantly mark joined in memory so UI reflects Play Now without reload
+                                  dRef.read(joinedTournamentIdsProvider.notifier).markJoined(tournament.id);
+                                  dRef.invalidate(tournamentDetailProvider(tournament.id));
+
                                   // Refresh user profile to immediately reflect deducted balance
                                   dRef.read(userProvider.notifier).refresh(silent: true);
                                   dRef
