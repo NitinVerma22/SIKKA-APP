@@ -49,6 +49,28 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     return '$hours:$minutes:$seconds';
   }
 
+  String _formatTournamentDate(DateTime dt) {
+    final now = DateTime.now();
+    final isToday = dt.year == now.year && dt.month == now.month && dt.day == now.day;
+    final isTomorrow = dt.year == now.year && dt.month == now.month && dt.day == now.day + 1;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final monthStr = months[dt.month - 1];
+
+    if (isToday) {
+      return 'Today, ${dt.day} $monthStr';
+    } else if (isTomorrow) {
+      return 'Tomorrow, ${dt.day} $monthStr';
+    } else {
+      return '${dt.day} $monthStr';
+    }
+  }
+
+  String _formatNumber(num value) {
+    final str = value.toInt().toString();
+    final reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    return str.replaceAllMapped(reg, (Match m) => '${m[1]},');
+  }
+
   @override
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(tournamentDetailProvider(widget.tournamentId));
@@ -63,17 +85,29 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          'Tournament Arena',
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF1E293B),
-          ),
+        title: Column(
+          children: [
+            Text(
+              'Tournament Arena',
+              style: GoogleFonts.outfit(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            Text(
+              'Compete in games and win exciting rewards!',
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.leaderboard_rounded, color: Color(0xFF6E5DE7)),
+            icon: const Icon(Icons.bar_chart_rounded, color: Color(0xFF5B1FE6), size: 24),
             onPressed: () => context.push('/tournaments/${widget.tournamentId}/leaderboard'),
           ),
         ],
@@ -92,50 +126,42 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           _remaining = tournament.timeRemaining;
 
           return RefreshIndicator(
-            color: const Color(0xFF6E5DE7),
+            color: const Color(0xFF5B1FE6),
             onRefresh: () async {
               ref.invalidate(tournamentDetailProvider(widget.tournamentId));
             },
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Hero Card (Timer, Title, Prize Pool)
+                  // 1. Hero Card (Deep Purple Banner with Prize Pool & Trophy)
                   _buildHeroCard(tournament),
-                  const SizedBox(height: 16),
-
-                  // 2. User Status & Participation Bar
-                  _buildUserStatusBar(tournament),
-                  const SizedBox(height: 22),
-
-                  // 3. Rewards Header
-                  _buildRewardsHeader(),
                   const SizedBox(height: 14),
 
-                  // 4. 3D Podium Stage
-                  _buildPodiumStage(tournament),
+                  // 2. User Status Bar (Green Entered Pill if joined)
+                  _buildUserStatusBar(tournament),
                   const SizedBox(height: 16),
 
-                  // 5. Prize Distribution Card
-                  _buildPrizeDistributionCard(tournament),
-                  const SizedBox(height: 24),
+                  // 3. Prize Distribution Section (Rank #1, #2, #3, #4-#10, #11-#50)
+                  _buildPrizeDistributionSection(tournament),
+                  const SizedBox(height: 16),
 
-                  // 6. Allowed Games Overview Card
-                  _buildAllowedGamesSummary(tournament),
-                  const SizedBox(height: 24),
+                  // 4. Allowed Arena Games (2-Column Grid)
+                  _buildAllowedGamesSection(tournament),
+                  const SizedBox(height: 16),
 
-                  // 7. Rules & Scoring Card
-                  _buildRulesCard(),
-                  const SizedBox(height: 90), // Padding for bottom sticky bar
+                  // 5. Fair Play & Scoring Rules
+                  _buildFairPlayRulesCard(),
+                  const SizedBox(height: 100), // Padding for sticky bottom navigation bar
                 ],
               ),
             ),
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(color: Color(0xFF6E5DE7)),
+          child: CircularProgressIndicator(color: Color(0xFF5B1FE6)),
         ),
         error: (err, _) => Center(
           child: Text('Error: $err', style: GoogleFonts.outfit(color: Colors.red)),
@@ -165,9 +191,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           child: OutlinedButton(
                             onPressed: () => context.push('/tournaments/${tournament.id}/leaderboard'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF6D3CF0),
+                              foregroundColor: const Color(0xFF5B1FE6),
                               backgroundColor: Colors.white,
-                              side: const BorderSide(color: Color(0xFF6D3CF0), width: 1.8),
+                              side: const BorderSide(color: Color(0xFF5B1FE6), width: 1.8),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(26),
                               ),
@@ -178,13 +204,13 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Text('🏆', style: TextStyle(fontSize: 16)),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 8),
                                 Text(
                                   'Leaderboard',
                                   style: GoogleFonts.outfit(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 14,
-                                    color: const Color(0xFF6D3CF0),
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 15,
+                                    color: const Color(0xFF5B1FE6),
                                   ),
                                 ),
                               ],
@@ -194,20 +220,20 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       ),
                       const SizedBox(width: 12),
 
-                      // Play CTA (Vibrant Purple Gradient)
+                      // Play CTA (Vibrant Purple-Indigo Gradient)
                       Expanded(
                         child: Container(
                           height: 50,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFF6D3CF0), Color(0xFF8B5CF6)],
+                              colors: [Color(0xFF5B1FE6), Color(0xFF8B5CF6)],
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
                             ),
                             borderRadius: BorderRadius.circular(26),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF6D3CF0).withValues(alpha: 0.35),
+                                color: const Color(0xFF5B1FE6).withValues(alpha: 0.35),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -224,7 +250,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                       'This tournament starts in ${_formatDuration(_remaining)}! Stay tuned.',
                                       style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
                                     ),
-                                    backgroundColor: const Color(0xFF6D3CF0),
+                                    backgroundColor: const Color(0xFF5B1FE6),
                                     behavior: SnackBarBehavior.floating,
                                   ),
                                 );
@@ -270,23 +296,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  tournament.isJoined
-                                      ? Icons.sports_esports_rounded
-                                      : (tournament.maxParticipants != null &&
-                                              tournament.maxParticipants! > 0 &&
-                                              tournament.currentParticipants >= tournament.maxParticipants!
-                                          ? Icons.lock_rounded
-                                          : (tournament.isUpcoming
-                                              ? Icons.schedule_rounded
-                                              : Icons.flash_on_rounded)),
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
+                                const Icon(Icons.sports_esports_rounded, color: Colors.white, size: 20),
                                 const SizedBox(width: 6),
                                 Text(
                                   tournament.isJoined
-                                      ? 'Play >'
+                                      ? 'Play Now >'
                                       : (tournament.maxParticipants != null &&
                                               tournament.maxParticipants! > 0 &&
                                               tournament.currentParticipants >= tournament.maxParticipants!
@@ -294,7 +308,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                           : (tournament.isUpcoming ? 'Starts Soon ⏰' : 'Join Now ⚔️')),
                                   style: GoogleFonts.outfit(
                                     fontWeight: FontWeight.w900,
-                                    fontSize: 14,
+                                    fontSize: 15,
                                     color: Colors.white,
                                     letterSpacing: 0.3,
                                   ),
@@ -314,206 +328,429 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     );
   }
 
+  // 1. Hero Card
   Widget _buildHeroCard(Tournament tournament) {
+    final int cashRupees = tournament.prizePoolRupees > 0
+        ? tournament.prizePoolRupees
+        : (tournament.prizePool / 20).round();
+    final maxCap = tournament.maxParticipants;
+    final currentJoined = tournament.currentParticipants;
+    final hasCap = maxCap != null && maxCap > 0;
+    final spotsLeft = hasCap ? (maxCap - currentJoined).clamp(0, maxCap) : 0;
+    final progressPct = hasCap ? (currentJoined / maxCap).clamp(0.0, 1.0) : 0.0;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4338CA), Color(0xFF6E5DE7), Color(0xFF8B5CF6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF281366),
+            Color(0xFF1E0E52),
+            Color(0xFF140838),
+          ],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6E5DE7).withValues(alpha: 0.3),
+            color: const Color(0xFF281366).withValues(alpha: 0.35),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top row: Tag & Live Timer
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (tournament.tag != null && tournament.tag!.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    tournament.tag!.toUpperCase(),
-                    style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-
-              // Countdown Pill
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      tournament.isLive ? Icons.timer_rounded : Icons.access_time_rounded,
-                      color: const Color(0xFFFFD43B),
-                      size: 14,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      tournament.isLive ? 'Ends in ${_formatDuration(_remaining)}' : 'Starts in ${_formatDuration(_remaining)}',
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Title
-          Text(
-            tournament.title,
-            style: GoogleFonts.outfit(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              height: 1.2,
-            ),
-          ),
-
-          if (tournament.description != null && tournament.description!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              tournament.description!,
-              style: GoogleFonts.outfit(
-                fontSize: 13,
-                color: Colors.white.withValues(alpha: 0.85),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 20),
-
-          // Prize Pool and Players Stats Banner
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Row: Tag pill (MEGA 🏆) + Live pill (🔴 LIVE)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Prize Pool
-                Column(
-                  children: [
-                    Text(
-                      'TOTAL PRIZE POOL',
-                      style: GoogleFonts.outfit(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
+                // Tag pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6B21A8), Color(0xFF9333EA)],
                     ),
-                    const SizedBox(height: 2),
-                    Row(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF9333EA).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        (tournament.tag != null && tournament.tag!.isNotEmpty
+                                ? tournament.tag!
+                                : 'MEGA')
+                            .replaceAll('⚡', '')
+                            .replaceAll('🔥', '')
+                            .replaceAll('🏆', '')
+                            .trim()
+                            .toUpperCase(),
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text('🏆', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+
+                // Status pill
+                if (tournament.isLive)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.emoji_events_rounded, color: Color(0xFFFFD43B), size: 18),
-                        const SizedBox(width: 4),
-                        Text(
-                          tournament.prizePoolRupees > 0
-                              ? '${tournament.prizePool} Coins (₹${tournament.prizePoolRupees})'
-                              : '${tournament.prizePool} Coins',
-                          style: GoogleFonts.outfit(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFFFFD43B),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFE11D48),
+                            shape: BoxShape.circle,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
-
-                // Total Players
-                Column(
-                  children: [
-                    Text(
-                      'REGISTERED PLAYERS',
-                      style: GoogleFonts.outfit(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        const Icon(Icons.people_alt_rounded, color: Colors.white, size: 16),
                         const SizedBox(width: 6),
                         Text(
-                          tournament.maxParticipants != null && tournament.maxParticipants! > 0
-                              ? '${tournament.currentParticipants} / ${tournament.maxParticipants} Players'
-                              : '${tournament.currentParticipants} Players',
+                          'LIVE',
                           style: GoogleFonts.outfit(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                            color: const Color(0xFFE11D48),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.6,
                           ),
                         ),
                       ],
                     ),
-                  ],
+                  )
+                else if (tournament.isUpcoming)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('⏰', style: TextStyle(fontSize: 11)),
+                        const SizedBox(width: 5),
+                        Text(
+                          'UPCOMING',
+                          style: GoogleFonts.outfit(
+                            color: const Color(0xFF2563EB),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'ENDED',
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Tournament Title
+            Text(
+              tournament.title,
+              style: GoogleFonts.outfit(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: -0.4,
+                height: 1.15,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            const SizedBox(height: 6),
+
+            // Date and Remaining Timer Info Row
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_rounded, size: 13, color: Colors.white70),
+                const SizedBox(width: 5),
+                Text(
+                  _formatTournamentDate(tournament.startTime),
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text('|', style: GoogleFonts.outfit(color: Colors.white38, fontSize: 13)),
+                const SizedBox(width: 10),
+                const Icon(Icons.access_time_rounded, size: 13, color: Colors.white70),
+                const SizedBox(width: 5),
+                Text(
+                  tournament.isLive
+                      ? 'Ends in ${_formatDuration(_remaining)}'
+                      : (tournament.isUpcoming
+                          ? 'Starts in ${_formatDuration(_remaining)}'
+                          : 'Ended'),
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+
+            const SizedBox(height: 16),
+
+            // Prize Pool Box + 3D Golden Trophy
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left Prize Pool Box
+                Expanded(
+                  flex: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFFDE68A), width: 1.2),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('🏆', style: TextStyle(fontSize: 11)),
+                            const SizedBox(width: 4),
+                            Text(
+                              'TOTAL PRIZE POOL',
+                              style: GoogleFonts.outfit(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFF78350F),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            children: [
+                              Image.asset(
+                                'assets/images/games_hub/coins_stack.png',
+                                height: 26,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => const Text('🪙', style: TextStyle(fontSize: 18)),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _formatNumber(tournament.prizePool),
+                                style: GoogleFonts.outfit(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF3F1D0B),
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Coins',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF5A2A0C),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD1FAE5),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFA7F3D0)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('🪙 ≈ ', style: TextStyle(fontSize: 11, color: Color(0xFF047857), fontWeight: FontWeight.bold)),
+                              Text(
+                                '₹${_formatNumber(cashRupees)}',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF047857),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                // Right 3D Trophy + Sparkles
+                Expanded(
+                  flex: 5,
+                  child: SizedBox(
+                    height: 105,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFFFFB800).withValues(alpha: 0.22),
+                          ),
+                        ),
+                        Image.asset(
+                          'assets/images/water_sort/trophy_gold.png',
+                          height: 95,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Center(
+                            child: Text('🏆', style: TextStyle(fontSize: 60)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            // Registered Players & Spots Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.people_alt_rounded, size: 15, color: Colors.white),
+                    const SizedBox(width: 6),
+                    Text(
+                      hasCap
+                          ? '${tournament.currentParticipants} / ${tournament.maxParticipants} Joined'
+                          : '${tournament.currentParticipants} Joined',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  hasCap
+                      ? (spotsLeft <= 0 ? 'Full' : '$spotsLeft spots left')
+                      : 'Unlimited spots',
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: Container(
+                height: 6,
+                color: Colors.white.withValues(alpha: 0.2),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: hasCap ? progressPct : 1.0,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFA855F7), Color(0xFFC084FC)],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  // 2. User Status Bar (Green Entered Pill if joined)
   Widget _buildUserStatusBar(Tournament tournament) {
     if (!tournament.isJoined) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: const BoxDecoration(
                 color: Color(0xFFEDE9FE),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.sports_esports_rounded, color: Color(0xFF6E5DE7), size: 24),
+              child: const Icon(Icons.sports_esports_rounded, color: Color(0xFF5B1FE6), size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -521,14 +758,12 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'You Haven\'t Joined Yet',
-                    style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
+                    'Join Tournament Arena ⚔️',
+                    style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF0F172A)),
                   ),
                   Text(
-                    tournament.entryType == TournamentEntryType.free
-                        ? 'Watch 1 rewarded video to enter free!'
-                        : 'Entry fee: ${tournament.entryFeeCoins} Coins',
-                    style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFF64748B)),
+                    'Compete in games and climb the leaderboard for rewards!',
+                    style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w500, color: const Color(0xFF64748B)),
                   ),
                 ],
               ),
@@ -539,12 +774,15 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     }
 
     final p = tournament.userParticipation!;
+    final rankText = p.rank != null ? 'Rank #${p.rank}' : 'Rank #1';
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF86EFAC)),
+        color: const Color(0xFFEDFCF2),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF86EFAC), width: 1.2),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -552,795 +790,143 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                width: 32,
+                height: 32,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFDCFCE7),
+                  color: Color(0xFF16A34A),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 24),
+                child: const Icon(Icons.check, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'You are Entered! 🎉',
-                    style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF166534)),
-                  ),
-                  Text(
-                    'Current Score: ${p.score} Points',
-                    style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF15803D)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          if (p.rank != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF16A34A),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                'Rank #${p.rank}',
-                style: GoogleFonts.outfit(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  String _formatNumber(num value) {
-    final str = value.toInt().toString();
-    final reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
-    return str.replaceAllMapped(reg, (Match m) => '${m[1]},');
-  }
-
-  Widget _buildRewardsHeader() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFEF3C7),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFDE68A)),
-          ),
-          child: const Text('👑', style: TextStyle(fontSize: 20)),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RichText(
-                text: TextSpan(
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                  children: const [
-                    TextSpan(
-                      text: 'Tournament ',
-                      style: TextStyle(color: Color(0xFF0F172A)),
-                    ),
-                    TextSpan(
-                      text: 'Rewards',
-                      style: TextStyle(color: Color(0xFF6D3CF0)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Top players win bigger rewards!',
-                style: GoogleFonts.outfit(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F3FF),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFDDD6FE)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🏆', style: TextStyle(fontSize: 12)),
-              const SizedBox(width: 4),
-              Text(
-                'Prize Distribution',
-                style: GoogleFonts.outfit(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF6D3CF0),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  PrizeTier? _findTierForRank(Tournament tournament, int rank) {
-    for (final t in tournament.prizeStructure) {
-      if (rank >= t.rankMin && rank <= t.rankMax) return t;
-    }
-    if (tournament.prizeStructure.length >= rank) {
-      return tournament.prizeStructure[rank - 1];
-    }
-    return null;
-  }
-
-  Widget _buildPodiumStage(Tournament tournament) {
-    final t1 = _findTierForRank(tournament, 1);
-    final t2 = _findTierForRank(tournament, 2);
-    final t3 = _findTierForRank(tournament, 3);
-
-    final coins1 = t1?.prize ?? (tournament.prizePool * 0.5).round();
-    final rupees1 = t1?.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees) ??
-        (tournament.prizePoolRupees > 0 ? (tournament.prizePoolRupees * 0.5).round() : 0);
-
-    final coins2 = t2?.prize ?? (tournament.prizePool * 0.3).round();
-    final rupees2 = t2?.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees) ??
-        (tournament.prizePoolRupees > 0 ? (tournament.prizePoolRupees * 0.3).round() : 0);
-
-    final coins3 = t3?.prize ?? (tournament.prizePool * 0.2).round();
-    final rupees3 = t3?.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees) ??
-        (tournament.prizePoolRupees > 0 ? (tournament.prizePoolRupees * 0.2).round() : 0);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(10, 20, 10, 16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFFAF5FF),
-            Color(0xFFF3E8FF),
-            Color(0xFFEDE9FE),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFDDD6FE)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6D3CF0).withValues(alpha: 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Decorative background sparkles & confetti
-          const Positioned(top: 6, left: 14, child: Text('✨', style: TextStyle(fontSize: 16))),
-          const Positioned(top: 18, right: 16, child: Text('🪙', style: TextStyle(fontSize: 16))),
-          const Positioned(bottom: 75, left: 12, child: Text('🪙', style: TextStyle(fontSize: 14))),
-          const Positioned(bottom: 85, right: 14, child: Text('✨', style: TextStyle(fontSize: 14))),
-          const Positioned(top: 8, left: 110, child: Text('🎉', style: TextStyle(fontSize: 12))),
-
-          // 3 Podiums Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // 2nd Place (Left)
-              Expanded(
-                flex: 10,
-                child: _buildPodiumColumn(
-                  place: 2,
-                  placeLabel: '2nd Place',
-                  coins: coins2,
-                  rupees: rupees2,
-                  pedestalHeight: 88,
-                  gradientColors: const [Color(0xFFF1F5F9), Color(0xFFCBD5E1), Color(0xFF94A3B8)],
-                  topFaceColor: const Color(0xFFF8FAFC),
-                  badgeColor: const Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // 1st Place (Center - Tallest)
-              Expanded(
-                flex: 12,
-                child: _buildPodiumColumn(
-                  place: 1,
-                  placeLabel: '1st Place',
-                  coins: coins1,
-                  rupees: rupees1,
-                  pedestalHeight: 124,
-                  gradientColors: const [Color(0xFFFDE68A), Color(0xFFF59E0B), Color(0xFFD97706)],
-                  topFaceColor: const Color(0xFFFEF3C7),
-                  badgeColor: const Color(0xFFD97706),
-                  isFirst: true,
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // 3rd Place (Right - Shortest)
-              Expanded(
-                flex: 10,
-                child: _buildPodiumColumn(
-                  place: 3,
-                  placeLabel: '3rd Place',
-                  coins: coins3,
-                  rupees: rupees3,
-                  pedestalHeight: 64,
-                  gradientColors: const [Color(0xFFFFEDD5), Color(0xFFFB923C), Color(0xFFC2410C)],
-                  topFaceColor: const Color(0xFFFFF7ED),
-                  badgeColor: const Color(0xFFC2410C),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPodiumColumn({
-    required int place,
-    required String placeLabel,
-    required int coins,
-    required int rupees,
-    required double pedestalHeight,
-    required List<Color> gradientColors,
-    required Color topFaceColor,
-    required Color badgeColor,
-    bool isFirst = false,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Trophy & Crown
-        _buildTrophyWidget(place: place, isFirst: isFirst),
-        const SizedBox(height: 6),
-
-        // 3D Pedestal
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Top Face (3D bevel)
-            Container(
-              height: 12,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: topFaceColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-            ),
-            // Front Face
-            Container(
-              height: pedestalHeight,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: gradientColors,
-                ),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+                  Row(
+                    children: [
+                      Text(
+                        'You are Entered!',
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF15803D),
+                        ),
                       ),
+                      const SizedBox(width: 4),
+                      const Text('🎉', style: TextStyle(fontSize: 13)),
                     ],
                   ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      placeLabel,
-                      style: GoogleFonts.outfit(
-                        fontSize: isFirst ? 11 : 10,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Base shadow
-            Container(
-              height: 4,
-              margin: const EdgeInsets.symmetric(horizontal: 6),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 10),
-
-        // Coin Amount Pill
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🪙', style: TextStyle(fontSize: 12)),
-              const SizedBox(width: 3),
-              Text(
-                '${_formatNumber(coins)} Coins',
-                style: GoogleFonts.outfit(
-                  fontSize: isFirst ? 12 : 11,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF1E293B),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Rupees Badge
-        if (rupees > 0) ...[
-          const SizedBox(height: 3),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-            decoration: BoxDecoration(
-              color: const Color(0xFFDCFCE7),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xFF86EFAC)),
-            ),
-            child: Text(
-              '₹$rupees',
-              style: GoogleFonts.outfit(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                color: const Color(0xFF15803D),
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildTrophyWidget({required int place, required bool isFirst}) {
-    if (isFirst) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('👑', style: TextStyle(fontSize: 22)),
-          const SizedBox(height: 2),
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFE082), Color(0xFFFFB300), Color(0xFFFF8F00)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(6),
-                topRight: Radius.circular(6),
-                bottomLeft: Radius.circular(18),
-                bottomRight: Radius.circular(18),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFF59E0B).withValues(alpha: 0.45),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    '1',
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFFB45309),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Container(
-            width: 22,
-            height: 5,
-            decoration: BoxDecoration(
-              color: const Color(0xFFD97706),
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-        ],
-      );
-    } else if (place == 2) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 14),
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFF8FAFC), Color(0xFFCBD5E1), Color(0xFF94A3B8)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(5),
-                topRight: Radius.circular(5),
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF64748B).withValues(alpha: 0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Container(
-                width: 22,
-                height: 22,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    '2',
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFF475569),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Container(
-            width: 20,
-            height: 4,
-            decoration: BoxDecoration(
-              color: const Color(0xFF64748B),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ],
-      );
-    } else {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 18),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFEDD5), Color(0xFFFB923C), Color(0xFFC2410C)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(5),
-                topRight: Radius.circular(5),
-                bottomLeft: Radius.circular(14),
-                bottomRight: Radius.circular(14),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFEA580C).withValues(alpha: 0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Container(
-                width: 20,
-                height: 20,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    '3',
+                  const SizedBox(height: 2),
+                  Text(
+                    'Current Score: ${p.score} Points',
                     style: GoogleFonts.outfit(
                       fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFF9A3412),
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF166534),
                     ),
                   ),
-                ),
+                ],
               ),
-            ),
+            ],
           ),
           Container(
-            width: 18,
-            height: 4,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF9A3412),
-              borderRadius: BorderRadius.circular(2),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF00C06D), Color(0xFF16A34A)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF16A34A).withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          ),
-        ],
-      );
-    }
-  }
-
-  Widget _buildPrizeDistributionCard(Tournament tournament) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEDE9FE),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Text('🎁', style: TextStyle(fontSize: 20)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Prize Distribution',
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
-                    Text(
-                      'Rank higher and win exciting coin rewards!',
-                      style: GoogleFonts.outfit(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Tiers
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: tournament.prizeStructure.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, idx) {
-              final tier = tournament.prizeStructure[idx];
-              return _buildPrizeTierRow(tournament, tier);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPrizeTierRow(Tournament tournament, PrizeTier tier) {
-    final isRank1 = tier.rankMin == 1 && tier.rankMax == 1;
-    final isRank2 = tier.rankMin == 2 && tier.rankMax == 2;
-    final isRank3 = tier.rankMin == 3 && tier.rankMax == 3;
-
-    Color bg;
-    Color border;
-    Color labelColor;
-    Color amountColor;
-    String iconEmoji;
-
-    if (isRank1) {
-      bg = const Color(0xFFFFFBEB);
-      border = const Color(0xFFFDE68A);
-      labelColor = const Color(0xFFB45309);
-      amountColor = const Color(0xFF92400E);
-      iconEmoji = '👑';
-    } else if (isRank2) {
-      bg = const Color(0xFFF5F3FF);
-      border = const Color(0xFFDDD6FE);
-      labelColor = const Color(0xFF6D28D9);
-      amountColor = const Color(0xFF5B21B6);
-      iconEmoji = '👑';
-    } else if (isRank3) {
-      bg = const Color(0xFFFFF7ED);
-      border = const Color(0xFFFED7AA);
-      labelColor = const Color(0xFFC2410C);
-      amountColor = const Color(0xFF9A3412);
-      iconEmoji = '👑';
-    } else {
-      bg = const Color(0xFFF8FAFC);
-      border = const Color(0xFFE2E8F0);
-      labelColor = const Color(0xFF334155);
-      amountColor = const Color(0xFF1E293B);
-      iconEmoji = '🎖️';
-    }
-
-    final rupees = tier.getCalculatedRupees(tournament.prizePool, tournament.prizePoolRupees);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border, width: isRank1 || isRank2 || isRank3 ? 1.5 : 1),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Text(iconEmoji, style: const TextStyle(fontSize: 16)),
-              const SizedBox(width: 8),
-              Text(
-                'Rank ${tier.label}',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: labelColor,
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              const Text('🪙', style: TextStyle(fontSize: 13)),
-              const SizedBox(width: 4),
-              Text(
-                '${_formatNumber(tier.prize)} Coins',
-                style: GoogleFonts.outfit(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: amountColor,
-                ),
-              ),
-              if (rupees > 0) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFF86EFAC)),
-                  ),
-                  child: Text(
-                    '₹$rupees',
-                    style: GoogleFonts.outfit(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFF15803D),
-                    ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('👑', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: 5),
+                Text(
+                  rankText,
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
                   ),
                 ),
               ],
-            ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAllowedGamesSummary(Tournament tournament) {
+  // 3. Prize Distribution Section (Rank #1, #2, #3, #4-#10, #11-#50)
+  Widget _buildPrizeDistributionSection(Tournament tournament) {
+    final tiers = (tournament.prizeStructure.isNotEmpty)
+        ? tournament.prizeStructure
+        : [
+            PrizeTier(rankMin: 1, rankMax: 1, prize: (tournament.prizePool * 0.35).round(), prizeRupees: 0),
+            PrizeTier(rankMin: 2, rankMax: 2, prize: (tournament.prizePool * 0.20).round(), prizeRupees: 0),
+            PrizeTier(rankMin: 3, rankMax: 3, prize: (tournament.prizePool * 0.10).round(), prizeRupees: 0),
+            PrizeTier(rankMin: 4, rankMax: 10, prize: (tournament.prizePool * 0.03).round(), prizeRupees: 0),
+            PrizeTier(rankMin: 11, rankMax: 50, prize: (tournament.prizePool * 0.0035).round(), prizeRupees: 0),
+          ];
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    width: 38,
+                    height: 38,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEDE9FE),
-                      borderRadius: BorderRadius.circular(10),
+                      color: const Color(0xFFFFF1F2),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.sports_esports_rounded, color: Color(0xFF6E5DE7), size: 20),
+                    child: const Center(child: Text('🎁', style: TextStyle(fontSize: 20))),
                   ),
                   const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Allowed Arena Games 🎮',
+                        'Prize Distribution',
                         style: GoogleFonts.outfit(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1E293B),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF0F172A),
                         ),
                       ),
                       Text(
-                        '${tournament.allowedGames.length} casual games available to score',
+                        'Rank higher and win exciting coin rewards!',
                         style: GoogleFonts.outfit(
                           fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: const Color(0xFF64748B),
                         ),
                       ),
@@ -1348,121 +934,504 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   ),
                 ],
               ),
-              if (tournament.isJoined)
-                TextButton(
-                  onPressed: () => context.push('/tournaments/${tournament.id}/games'),
-                  child: Text(
-                    'Play Games →',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 12, color: const Color(0xFF6E5DE7)),
+              InkWell(
+                onTap: () => context.push('/tournaments/${tournament.id}/leaderboard'),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F3FF),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFDDD6FE)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Full Leaderboard',
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF5B1FE6),
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF5B1FE6)),
+                    ],
                   ),
                 ),
+              ),
             ],
           ),
+
           const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: tournament.allowedGames.map((gameId) {
-              final gameNames = {
-                'arrow_escape': '🏹 Arrow Escape',
-                'water_sort': '🧪 Colour Sort',
-                'bubble_shooter': '🫧 Bubble Sort',
-                'treasure_grid': '💎 Treasure Grid',
-                'math_rush': '➗ Math Rush',
-                'emoji_memory': '🃏 Emoji Memory',
-              };
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Text(
-                  gameNames[gameId] ?? gameId,
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF334155),
+
+          // Tiers List
+          Column(
+            children: tiers.map((tier) {
+              final isRank1 = tier.rankMin == 1 && tier.rankMax == 1;
+              final isRank2 = tier.rankMin == 2 && tier.rankMax == 2;
+              final isRank3 = tier.rankMin == 3 && tier.rankMax == 3;
+
+              final String rankLabel = isRank1
+                  ? 'Rank #1'
+                  : (isRank2
+                      ? 'Rank #2'
+                      : (isRank3
+                          ? 'Rank #3'
+                          : (tier.rankMin == tier.rankMax
+                              ? 'Rank #${tier.rankMin}'
+                              : '#${tier.rankMin} – #${tier.rankMax}')));
+
+              BoxDecoration decoration;
+              Widget iconWidget;
+
+              if (isRank1) {
+                decoration = BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
                   ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFFDE68A), width: 1.2),
+                );
+                iconWidget = Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFACC15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Text('1', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF78350F), fontSize: 16)),
+                  ),
+                );
+              } else if (isRank2) {
+                decoration = BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                );
+                iconWidget = Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFCBD5E1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Text('2', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF334155), fontSize: 16)),
+                  ),
+                );
+              } else if (isRank3) {
+                decoration = BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFFED7AA), width: 1.2),
+                );
+                iconWidget = Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFB923C),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Text('3', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF7C2D12), fontSize: 16)),
+                  ),
+                );
+              } else {
+                decoration = BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+                );
+                iconWidget = const Text('🎖', style: TextStyle(fontSize: 22));
+              }
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: decoration,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        iconWidget,
+                        const SizedBox(width: 12),
+                        Text(
+                          rankLabel,
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 22,
+                          height: 22,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFACC15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.account_balance_rounded, size: 12, color: Color(0xFF78350F)),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_formatNumber(tier.prize)} Coins',
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               );
             }).toList(),
           ),
-          if (!tournament.isJoined) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Join the tournament using the button below to start playing games and scoring points!',
-                      style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF92400E)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  Widget _buildRulesCard() {
+  // 4. Allowed Arena Games (2-Column Grid)
+  Widget _buildAllowedGamesSection(Tournament tournament) {
+    final gameInfoMap = {
+      'treasure_grid': {'title': 'Treasure Grid', 'icon': '💎', 'bg': const Color(0xFFE0F2FE)},
+      'emoji_memory': {'title': 'Emoji Memory', 'icon': '😃', 'bg': const Color(0xFFFEF3C7)},
+      'math_rush': {'title': 'Math Rush', 'icon': '➕', 'bg': const Color(0xFFDCFCE7)},
+      'water_sort': {'title': 'Colour Sort', 'icon': '🧪', 'bg': const Color(0xFFF3E8FF)},
+      'bubble_shooter': {'title': 'Bubble Sort', 'icon': '🫧', 'bg': const Color(0xFFE0E7FF)},
+      'arrow_escape': {'title': 'Arrow Escape', 'icon': '🏹', 'bg': const Color(0xFFFFEDD5)},
+    };
+
+    final games = tournament.allowedGames.isNotEmpty
+        ? tournament.allowedGames
+        : gameInfoMap.keys.toList();
+
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.info_outline_rounded, color: Color(0xFF6E5DE7), size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'Fair Play & Scoring Rules',
-                style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDE9FE),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.sports_esports_rounded, color: Color(0xFF5B1FE6), size: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Allowed Arena Games',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                      Text(
+                        '${games.length} casual games available to score points',
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: () {
+                  if (tournament.isJoined) {
+                    context.push('/tournaments/${tournament.id}/games');
+                  } else {
+                    TournamentJoinDialog.show(
+                      context: context,
+                      ref: ref,
+                      tournament: tournament,
+                      onJoinSuccess: () {
+                        ref.invalidate(tournamentDetailProvider(widget.tournamentId));
+                      },
+                    );
+                  }
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Play Games',
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF5B1FE6),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 11, color: Color(0xFF5B1FE6)),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          _buildBullet('1 Coin Earned in Casual Games = 1 Tournament Point.'),
-          _buildBullet('Scores are updated instantly after completing each level/session.'),
-          _buildBullet('Daily bonuses, spin wheel, and surveys do NOT count towards tournament score.'),
-          _buildBullet('In case of a tie, the player who reached the score first ranks higher.'),
-          _buildBullet('Prizes are credited automatically to wallet when tournament ends.'),
+
+          const SizedBox(height: 14),
+
+          // 2-Column Grid
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: games.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 2.7,
+            ),
+            itemBuilder: (context, index) {
+              final gameId = games[index];
+              final info = gameInfoMap[gameId] ?? {
+                'title': gameId.replaceAll('_', ' ').toUpperCase(),
+                'icon': '🎮',
+                'bg': const Color(0xFFF1F5F9),
+              };
+
+              return InkWell(
+                onTap: () {
+                  if (tournament.isJoined) {
+                    context.push('/tournaments/${tournament.id}/games');
+                  } else {
+                    TournamentJoinDialog.show(
+                      context: context,
+                      ref: ref,
+                      tournament: tournament,
+                      onJoinSuccess: () {
+                        ref.invalidate(tournamentDetailProvider(widget.tournamentId));
+                      },
+                    );
+                  }
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: info['bg'] as Color,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            info['icon'] as String,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          info['title'] as String,
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF1E293B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildBullet(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('• ', style: TextStyle(color: Color(0xFF6E5DE7), fontWeight: FontWeight.bold)),
-          Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFF64748B), height: 1.3),
-            ),
+  // 5. Fair Play & Scoring Rules
+  Widget _buildFairPlayRulesCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDE9FE),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.shield_rounded, color: Color(0xFF5B1FE6), size: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Fair Play & Scoring Rules',
+                    style: GoogleFonts.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F3FF),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFDDD6FE)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Read More',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF5B1FE6),
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF5B1FE6)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // 2 Columns Checkmark List
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left Column
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildRuleCheckItem('1 Coin = 1 Tournament Point'),
+                    const SizedBox(height: 8),
+                    _buildRuleCheckItem('Instant score update'),
+                    const SizedBox(height: 8),
+                    _buildRuleCheckItem('Prizes credited to wallet'),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Right Column
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildRuleCheckItem("Daily bonuses don't count"),
+                    const SizedBox(height: 8),
+                    _buildRuleCheckItem('In case of tie, higher score wins'),
+                    const SizedBox(height: 8),
+                    _buildRuleCheckItem('Fair play strictly enforced'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRuleCheckItem(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.check_circle_rounded, color: Color(0xFF5B1FE6), size: 16),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.outfit(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF475569),
+              height: 1.25,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
