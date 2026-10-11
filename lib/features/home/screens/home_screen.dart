@@ -550,6 +550,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     crossAxisSpacing: 12,
                     childAspectRatio: 0.85, 
                     children: [
+                      // 1. Tournament Arena Card
+                      _buildNewGridCard(
+                        title: 'Tournament\nArena',
+                        subtitleWidget: RichText(
+                          maxLines: 4,
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 11, color: Color(0xFF6B7280), fontWeight: FontWeight.w600, height: 1.1),
+                            children: [
+                              TextSpan(text: 'Earn upto\n'),
+                              TextSpan(text: '₹2,000\n', style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.w900, fontSize: 19, height: 1.1)),
+                              TextSpan(text: 'Daily', style: TextStyle(color: Color(0xFF1E1B4B), fontWeight: FontWeight.w800, fontSize: 13, height: 1.1)),
+                            ],
+                          ),
+                        ),
+                        badgeText: 'TOURNAMENT',
+                        badgeColor: const Color(0xFFEDE9FE),
+                        badgeTextColor: const Color(0xFF6D28D9),
+                        bgColor: const Color(0xFFF5F3FF),
+                        buttonGradient: const [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                        buttonText: 'Let\'s Go',
+                        imageWidget: Image.asset('assets/images/home_cards/rewardicon.png', fit: BoxFit.contain),
+                        onTap: () => AppNavigator.push(context, ref, '/tournaments'),
+                      ),
+
+                      // 2. Play Games & Earn Card
+                      _buildNewGridCard(
+                        title: 'Play Games\n& Earn',
+                        subtitleWidget: RichText(
+                          maxLines: 4,
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 11, color: Color(0xFF6B7280), fontWeight: FontWeight.w600, height: 1.1),
+                            children: [
+                              TextSpan(text: 'Earn upto\n'),
+                              TextSpan(text: '750,000\nCoins\n', style: TextStyle(color: Color(0xFFEA580C), fontWeight: FontWeight.w900, fontSize: 18, height: 1.05)),
+                              TextSpan(text: 'per day', style: TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w600, fontSize: 11)),
+                            ],
+                          ),
+                        ),
+                        badgeText: 'GAMES',
+                        badgeColor: const Color(0xFFFFEDD5),
+                        badgeTextColor: const Color(0xFFEA580C),
+                        bgColor: const Color(0xFFFFF7ED),
+                        buttonGradient: const [Color(0xFFFB923C), Color(0xFFEA580C)],
+                        buttonText: 'Let\'s Go',
+                        imageWidget: Image.asset('assets/images/home_cards/gameicon.png', fit: BoxFit.contain),
+                        onTap: () => AppNavigator.push(context, ref, '/games'),
+                      ),
+
                       _buildNewGridCard(
                         title: 'Spin Wheel',
                         subtitleWidget: RichText(
