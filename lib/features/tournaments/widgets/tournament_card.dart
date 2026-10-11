@@ -104,10 +104,11 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
     final isCompleted = t.isCompleted;
     final isJoined = t.isJoined;
 
-    final maxCap = t.maxParticipants ?? 100;
+    final maxCap = t.maxParticipants;
     final currentJoined = t.currentParticipants;
-    final spotsLeft = (maxCap - currentJoined).clamp(0, maxCap);
-    final progressPct = maxCap > 0 ? (currentJoined / maxCap).clamp(0.0, 1.0) : 0.0;
+    final hasCap = maxCap != null && maxCap > 0;
+    final spotsLeft = hasCap ? (maxCap - currentJoined).clamp(0, maxCap) : 0;
+    final progressPct = hasCap ? (currentJoined / maxCap).clamp(0.0, 1.0) : 0.0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -212,7 +213,7 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
                 const SizedBox(height: 14),
 
                 // 5. Progress Bar Row
-                _buildProgressRow(currentJoined, maxCap, spotsLeft, progressPct),
+                _buildProgressRow(currentJoined, maxCap, spotsLeft, progressPct, hasCap),
 
                 const SizedBox(height: 14),
 
@@ -565,68 +566,129 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
     );
   }
 
-  Widget _buildProgressRow(int currentJoined, int maxCap, int spotsLeft, double progressPct) {
-    final isHot = spotsLeft <= 40;
+  Widget _buildProgressRow(int currentJoined, int? maxCap, int spotsLeft, double progressPct, bool hasCap) {
+    if (hasCap && maxCap != null) {
+      final isFull = spotsLeft <= 0;
+      final isHot = spotsLeft <= (maxCap * 0.35).round() || spotsLeft <= 25;
 
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: '$currentJoined',
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF151B33),
+      return Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '$currentJoined',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF151B33),
+                      ),
                     ),
-                  ),
-                  TextSpan(
-                    text: ' / $maxCap joined',
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF6B7390),
+                    TextSpan(
+                      text: ' / $maxCap joined',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF6B7390),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                style: const TextStyle(fontSize: 12),
               ),
-              style: const TextStyle(fontSize: 12),
-            ),
-            Text(
-              isHot ? '🔥 $spotsLeft spots left' : '$spotsLeft spots left',
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: isHot ? const Color(0xFFD9480F) : const Color(0xFF6B7390),
+              Text(
+                isFull
+                    ? '🔒 Full'
+                    : (isHot ? '🔥 $spotsLeft spots left' : '$spotsLeft spots left'),
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: isFull
+                      ? const Color(0xFFDC2626)
+                      : (isHot ? const Color(0xFFD9480F) : const Color(0xFF6B7390)),
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(99),
-          child: Container(
-            height: 8,
-            color: const Color(0xFFECEEF7),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: FractionallySizedBox(
-                widthFactor: progressPct,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF6D3CF0), Color(0xFF8B5CF6)],
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: Container(
+              height: 8,
+              color: const Color(0xFFECEEF7),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: progressPct,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isFull
+                            ? const [Color(0xFFEF4444), Color(0xFFDC2626)]
+                            : const [Color(0xFF6D3CF0), Color(0xFF8B5CF6)],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    } else {
+      // Unlimited capacity
+      return Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '$currentJoined',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF151B33),
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' players joined',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF6B7390),
+                      ),
+                    ),
+                  ],
+                ),
+                style: const TextStyle(fontSize: 12),
+              ),
+              Text(
+                '✨ Open Arena',
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF16A34A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: Container(
+              height: 6,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF22C55E), Color(0xFF10B981)],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildFooter(bool isLive, bool isUpcoming, bool isCompleted, bool isJoined, Tournament t) {
@@ -744,6 +806,30 @@ class _TournamentCardState extends State<TournamentCard> with SingleTickerProvid
     }
 
     // Live and unjoined: CTA Button
+    final bool hasCap = t.maxParticipants != null && t.maxParticipants! > 0;
+    final bool isFull = hasCap && t.currentParticipants >= t.maxParticipants!;
+
+    if (isFull) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
+        ),
+        child: Center(
+          child: Text(
+            'Arena Full 🔒',
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: const Color(0xFF94A3B8),
+            ),
+          ),
+        ),
+      );
+    }
+
     final bool isFree = t.entryType == TournamentEntryType.free;
     return Container(
       decoration: BoxDecoration(

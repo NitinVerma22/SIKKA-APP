@@ -229,6 +229,23 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                   ),
                                 );
                               } else {
+                                final isFull = tournament.maxParticipants != null &&
+                                    tournament.maxParticipants! > 0 &&
+                                    tournament.currentParticipants >= tournament.maxParticipants!;
+                                if (isFull) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'This tournament arena is full! No more spots available.',
+                                        style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                                      ),
+                                      backgroundColor: const Color(0xFFDC2626),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  return;
+                                }
+
                                 TournamentJoinDialog.show(
                                   context: context,
                                   ref: ref,
@@ -253,10 +270,28 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.sports_esports_rounded, color: Colors.white, size: 20),
+                                Icon(
+                                  tournament.isJoined
+                                      ? Icons.sports_esports_rounded
+                                      : (tournament.maxParticipants != null &&
+                                              tournament.maxParticipants! > 0 &&
+                                              tournament.currentParticipants >= tournament.maxParticipants!
+                                          ? Icons.lock_rounded
+                                          : (tournament.isUpcoming
+                                              ? Icons.schedule_rounded
+                                              : Icons.flash_on_rounded)),
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'Play >',
+                                  tournament.isJoined
+                                      ? 'Play >'
+                                      : (tournament.maxParticipants != null &&
+                                              tournament.maxParticipants! > 0 &&
+                                              tournament.currentParticipants >= tournament.maxParticipants!
+                                          ? 'Arena Full 🔒'
+                                          : (tournament.isUpcoming ? 'Starts Soon ⏰' : 'Join Now ⚔️')),
                                   style: GoogleFonts.outfit(
                                     fontWeight: FontWeight.w900,
                                     fontSize: 14,
@@ -440,7 +475,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         const Icon(Icons.people_alt_rounded, color: Colors.white, size: 16),
                         const SizedBox(width: 6),
                         Text(
-                          '${tournament.currentParticipants} Players',
+                          tournament.maxParticipants != null && tournament.maxParticipants! > 0
+                              ? '${tournament.currentParticipants} / ${tournament.maxParticipants} Players'
+                              : '${tournament.currentParticipants} Players',
                           style: GoogleFonts.outfit(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
