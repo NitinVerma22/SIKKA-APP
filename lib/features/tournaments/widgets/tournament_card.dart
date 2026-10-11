@@ -40,38 +40,38 @@ class TournamentCardTheme {
 
   static const purple = TournamentCardTheme(
     gradientColors: [Color(0xFFFCFAFF), Color(0xFFF3EDFF)],
-    borderColor: Color(0xFFE4D7FF),
-    shadowColor: Color(0x147C3AED),
+    borderColor: Color(0xFFB896F8),
+    shadowColor: Color(0x187C3AED),
   );
 
   static const blue = TournamentCardTheme(
     gradientColors: [Color(0xFFF6FAFF), Color(0xFFEAF3FE)],
-    borderColor: Color(0xFFD2E6FE),
-    shadowColor: Color(0x142563EB),
+    borderColor: Color(0xFF90BEFA),
+    shadowColor: Color(0x182563EB),
   );
 
   static const green = TournamentCardTheme(
     gradientColors: [Color(0xFFF4FBF7), Color(0xFFE5F7EC)],
-    borderColor: Color(0xFFC4F1D4),
-    shadowColor: Color(0x14059669),
+    borderColor: Color(0xFF6EE097),
+    shadowColor: Color(0x18059669),
   );
 
   static const amber = TournamentCardTheme(
     gradientColors: [Color(0xFFFFFBF3), Color(0xFFFFF1DF)],
-    borderColor: Color(0xFFFDE1BF),
-    shadowColor: Color(0x14D97706),
+    borderColor: Color(0xFFF8B45E),
+    shadowColor: Color(0x18D97706),
   );
 
   static const rose = TournamentCardTheme(
     gradientColors: [Color(0xFFFFF5F7), Color(0xFFFEE7ED)],
-    borderColor: Color(0xFFFDD2DC),
-    shadowColor: Color(0x14E11D48),
+    borderColor: Color(0xFFF67C9A),
+    shadowColor: Color(0x18E11D48),
   );
 
   static const cyan = TournamentCardTheme(
     gradientColors: [Color(0xFFF2FBFC), Color(0xFFE2F6F9)],
-    borderColor: Color(0xFFBFEFF6),
-    shadowColor: Color(0x140891B2),
+    borderColor: Color(0xFF56D1E3),
+    shadowColor: Color(0x180891B2),
   );
 }
 
@@ -186,33 +186,33 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
     final cardTheme = TournamentCardTheme.forTournament(t);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: cardTheme.gradientColors,
         ),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: cardTheme.borderColor,
-          width: 1.5,
+          width: 2.0,
         ),
         boxShadow: [
           BoxShadow(
             color: cardTheme.shadowColor,
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(16),
           onTap: widget.onTap,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -225,11 +225,11 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
                       child: Text(
                         t.title,
                         style: GoogleFonts.outfit(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF0F172A),
                           letterSpacing: -0.3,
-                          height: 1.2,
+                          height: 1.15,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -241,17 +241,17 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
-                // 2. Golden Prize Pool Stage
+                // 2. Golden Prize Pool Stage (Slimmer & compact)
                 _buildPrizeStage(t),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 7),
 
                 // 3. Progress / Spots Row
                 _buildProgressRow(effectiveJoined, maxCap, spotsLeft, progressPct, hasCap),
 
-                const SizedBox(height: 14),
+                const SizedBox(height: 9),
 
                 // 4. Footer (Timer & Action CTA)
                 _buildFooter(isLive, isUpcoming, isCompleted, isJoined, t, hasCap, spotsLeft),
@@ -266,11 +266,11 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
   Widget _buildStateTag(bool isLive, bool isUpcoming, bool isCompleted) {
     if (isLive) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
         decoration: BoxDecoration(
           color: const Color(0xFFFFF1F2),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFFEE2E2), width: 1.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFECDD3), width: 1.0),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -278,22 +278,22 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
             FadeTransition(
               opacity: _blinkController,
               child: Container(
-                width: 8,
-                height: 8,
+                width: 6,
+                height: 6,
                 decoration: const BoxDecoration(
                   color: Color(0xFFE11D48),
                   shape: BoxShape.circle,
                 ),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
             Text(
               'LIVE',
               style: GoogleFonts.outfit(
                 color: const Color(0xFFE11D48),
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0.6,
+                letterSpacing: 0.4,
               ),
             ),
           ],
@@ -303,24 +303,24 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
 
     if (isUpcoming) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
         decoration: BoxDecoration(
           color: const Color(0xFFEFF6FF),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFDBEAFE), width: 1.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFBFDBFE), width: 1.0),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('⏰', style: TextStyle(fontSize: 11)),
-            const SizedBox(width: 5),
+            const Text('⏰', style: TextStyle(fontSize: 9.5)),
+            const SizedBox(width: 3.5),
             Text(
               'UPCOMING',
               style: GoogleFonts.outfit(
                 color: const Color(0xFF2563EB),
-                fontSize: 11,
+                fontSize: 9.5,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0.5,
+                letterSpacing: 0.3,
               ),
             ),
           ],
@@ -329,16 +329,16 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
       decoration: BoxDecoration(
         color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         'ENDED',
         style: GoogleFonts.outfit(
           color: const Color(0xFF64748B),
-          fontSize: 11,
+          fontSize: 9.5,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -351,7 +351,7 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
         : (t.prizePool / 20).round();
 
     return Container(
-      height: 116,
+      height: 78,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -362,34 +362,34 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
             Color(0xFFFFD43F),
           ],
         ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFFFE066), width: 1.5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFACC15), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFFFFB800).withValues(alpha: 0.16),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Left Coins Stack
             SizedBox(
-              width: 78,
+              width: 52,
               child: Image.asset(
                 'assets/images/games_hub/coins_stack.png',
-                height: 72,
+                height: 50,
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => Image.asset(
                   'assets/images/water_sort/coin_pile.png',
-                  height: 72,
+                  height: 50,
                   fit: BoxFit.contain,
                   errorBuilder: (_, __, ___) => const Center(
-                    child: Text('🪙', style: TextStyle(fontSize: 40)),
+                    child: Text('🪙', style: TextStyle(fontSize: 26)),
                   ),
                 ),
               ),
@@ -402,29 +402,29 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
                 children: [
                   // 🏆 PRIZE POOL pill
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2.5),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('🏆', style: TextStyle(fontSize: 10)),
-                        const SizedBox(width: 4),
+                        const Text('🏆', style: TextStyle(fontSize: 8)),
+                        const SizedBox(width: 3),
                         Text(
                           'PRIZE POOL',
                           style: GoogleFonts.outfit(
-                            fontSize: 10,
+                            fontSize: 8.5,
                             fontWeight: FontWeight.w900,
                             color: const Color(0xFF78350F),
-                            letterSpacing: 0.5,
+                            letterSpacing: 0.4,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
 
                   // 10,000 COINS
                   FittedBox(
@@ -435,16 +435,16 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
                           TextSpan(
                             text: '${_formatNumber(t.prizePool)} ',
                             style: GoogleFonts.outfit(
-                              fontSize: 23,
+                              fontSize: 18,
                               fontWeight: FontWeight.w900,
                               color: const Color(0xFF3F1D0B),
-                              letterSpacing: -0.5,
+                              letterSpacing: -0.4,
                             ),
                           ),
                           TextSpan(
                             text: 'COINS',
                             style: GoogleFonts.outfit(
-                              fontSize: 13,
+                              fontSize: 10.5,
                               fontWeight: FontWeight.w900,
                               color: const Color(0xFF5A2A0C),
                             ),
@@ -453,7 +453,7 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
                       ),
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
 
                   // ≈ ₹500 (Mint green pill)
                   Row(
@@ -462,22 +462,22 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
                       Text(
                         '≈ ',
                         style: GoogleFonts.outfit(
-                          fontSize: 14,
+                          fontSize: 11,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF78350F),
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
                         decoration: BoxDecoration(
                           color: const Color(0xFFD1FAE5),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFA7F3D0), width: 1.0),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFA7F3D0), width: 0.8),
                         ),
                         child: Text(
                           '₹${_formatNumber(cashRupees)}',
                           style: GoogleFonts.outfit(
-                            fontSize: 14,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w900,
                             color: const Color(0xFF059669),
                           ),
@@ -491,13 +491,13 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
 
             // Right Golden Trophy
             SizedBox(
-              width: 78,
+              width: 52,
               child: Image.asset(
                 'assets/images/water_sort/trophy_gold.png',
-                height: 76,
+                height: 52,
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => const Center(
-                  child: Text('🏆', style: TextStyle(fontSize: 42)),
+                  child: Text('🏆', style: TextStyle(fontSize: 28)),
                 ),
               ),
             ),
@@ -606,16 +606,16 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
             Text(
               isLive ? 'Ends in' : (isUpcoming ? 'Starts in' : 'Ended'),
               style: GoogleFonts.outfit(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF94A3B8),
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 1),
             Text(
               _formatTimerDigits(_remainingTime),
               style: GoogleFonts.outfit(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w900,
                 color: const Color(0xFF0F172A),
                 letterSpacing: -0.3,
@@ -626,13 +626,13 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
 
         // Vertical separator
         Container(
-          height: 34,
+          height: 28,
           width: 1.5,
-          color: const Color(0xFFF1F5F9),
-          margin: const EdgeInsets.symmetric(horizontal: 14),
+          color: const Color(0xFFE2E8F0),
+          margin: const EdgeInsets.symmetric(horizontal: 10),
         ),
 
-        // Right CTA Button
+        // Right CTA Button (Smaller & compact)
         Expanded(
           child: _buildCtaButton(
             isLive,
@@ -658,56 +658,59 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
     int spotsLeft,
   ) {
     if (isCompleted) {
-      return OutlinedButton(
-        onPressed: widget.onTap,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF5B1FE6),
-          side: const BorderSide(color: Color(0xFFD9CCFB), width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-        child: Text(
-          'Results 🏆',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13),
+      return SizedBox(
+        height: 38,
+        child: OutlinedButton(
+          onPressed: widget.onTap,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF5B1FE6),
+            side: const BorderSide(color: Color(0xFFD9CCFB), width: 1.5),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+          ),
+          child: Text(
+            'Results 🏆',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 12.5),
+          ),
         ),
       );
     }
 
     if (isUpcoming) {
       return Container(
-        height: 48,
+        height: 38,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Text(
           'Starts Soon ⏰',
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.w800,
-            fontSize: 13,
+            fontSize: 12.5,
             color: const Color(0xFF64748B),
           ),
         ),
       );
     }
 
-    // When joined: Play Now 🎮 (Vibrant Green)
+    // When joined: Play Now 🎮 (Vibrant Green - Smaller)
     if (isJoined) {
       return Container(
-        height: 48,
+        height: 38,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF00C06D), Color(0xFF00A859)],
           ),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF00C06D).withValues(alpha: 0.35),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -718,18 +721,18 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
             shadowColor: Colors.transparent,
             foregroundColor: Colors.white,
             padding: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 6),
+              const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 17),
+              const SizedBox(width: 5),
               Text(
                 'Play Now 🎮',
                 style: GoogleFonts.outfit(
                   fontWeight: FontWeight.w900,
-                  fontSize: 15,
+                  fontSize: 13.5,
                   color: Colors.white,
                 ),
               ),
@@ -743,18 +746,18 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
     final isFull = hasCap && spotsLeft <= 0;
     if (isFull) {
       return Container(
-        height: 48,
+        height: 38,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFCBD5E1)),
         ),
         child: Text(
           'Arena Full 🔒',
           style: GoogleFonts.outfit(
             fontWeight: FontWeight.w800,
-            fontSize: 13,
+            fontSize: 12.5,
             color: const Color(0xFF94A3B8),
           ),
         ),
@@ -763,20 +766,20 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
 
     final isFree = t.entryType == TournamentEntryType.free;
     return Container(
-      height: 48,
+      height: 38,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isFree
               ? const [Color(0xFF00C06D), Color(0xFF00A859)]
               : const [Color(0xFF5B1FE6), Color(0xFF7A2CE8)],
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: (isFree ? const Color(0xFF00C06D) : const Color(0xFF5B1FE6))
                 .withValues(alpha: 0.35),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -787,7 +790,7 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
           shadowColor: Colors.transparent,
           foregroundColor: Colors.white,
           padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -795,14 +798,14 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
             Icon(
               isFree ? Icons.play_circle_fill_rounded : Icons.flash_on_rounded,
               color: Colors.white,
-              size: 19,
+              size: 17,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Text(
               isFree ? 'Join Free 🎬' : 'Join • 🪙 ${t.entryFeeCoins}',
               style: GoogleFonts.outfit(
                 fontWeight: FontWeight.w900,
-                fontSize: 14,
+                fontSize: 13,
                 color: Colors.white,
               ),
             ),
