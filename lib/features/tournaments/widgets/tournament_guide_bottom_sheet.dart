@@ -111,7 +111,7 @@ class TournamentGuideBottomSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Zero Risk • Double Earning • SikkaPlay Special Reward',
+                      'Zero Risk • Double Earning • Sikka Games Special Reward',
                       style: GoogleFonts.outfit(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,

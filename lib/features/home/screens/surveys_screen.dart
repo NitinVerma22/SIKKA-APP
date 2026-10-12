@@ -62,7 +62,7 @@ class SurveysScreen extends ConsumerWidget {
                         ? 'Which online games do you play the most?'
                         : currentQuestion == 2
                             ? 'How often do you watch short video reels?'
-                            : 'Would you recommend SikkaPlay to your friends?',
+                            : 'Would you recommend Sikka Games to your friends?',
                     style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),

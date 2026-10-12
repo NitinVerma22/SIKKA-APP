@@ -33,10 +33,10 @@ class _ReferAndEarnWidgetState extends ConsumerState<ReferAndEarnWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Share your referral code with friends and earn rewards when they join SikkaPlay!\n\n'
+                'Share your referral code with friends and earn rewards when they join Sikka Games!\n\n'
                 '• Get 500 coins when your friend registers and plays for at least 1 hour.\n'
                 '• Get the remaining 9,500 coins dynamically as they keep playing over 30 days.\n\n'
-                'Help us keep SikkaPlay real and rewarding for active players!',
+                'Help us keep Sikka Games real and rewarding for active players!',
                 style: TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.4),
               ),
               const SizedBox(height: 20),
@@ -87,7 +87,7 @@ class _ReferAndEarnWidgetState extends ConsumerState<ReferAndEarnWidget> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                Clipboard.setData(ClipboardData(text: 'Join SikkaPlay using my code $code and earn cash rewards!'));
+                Clipboard.setData(ClipboardData(text: 'Join Sikka Games using my code $code and earn cash rewards!'));
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Referral invite link copied to share!'),

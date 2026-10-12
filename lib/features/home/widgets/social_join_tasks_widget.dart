@@ -34,19 +34,19 @@ class SocialTask {
     String subtitleStr = 'Click to follow and earn coins';
     switch (platformStr.toLowerCase()) {
       case 'telegram':
-        subtitleStr = 'Join SikkaPlay on Telegram';
+        subtitleStr = 'Join Sikka Games on Telegram';
         break;
       case 'whatsapp':
         subtitleStr = 'Follow WhatsApp Channel';
         break;
       case 'instagram':
-        subtitleStr = 'Follow SikkaPlay on Instagram';
+        subtitleStr = 'Follow Sikka Games on Instagram';
         break;
       case 'facebook':
-        subtitleStr = 'Like SikkaPlay page';
+        subtitleStr = 'Like Sikka Games page';
         break;
       case 'youtube':
-        subtitleStr = 'Subscribe SikkaPlay YouTube';
+        subtitleStr = 'Subscribe Sikka Games YouTube';
         break;
     }
 

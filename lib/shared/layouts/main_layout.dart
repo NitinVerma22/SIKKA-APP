@@ -78,7 +78,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       final partnerId = data['partnerId']?.toString().trim() ?? '';
       final partnerName = data['partnerName']?.toString().trim().isNotEmpty == true
           ? data['partnerName'].toString()
-          : 'SikkaPlay Friend';
+          : 'Sikka Games Friend';
       final partnerAvatar = data['senderAvatar']?.toString() ?? '';
 
       if (partnerId.isEmpty && channelName.isEmpty) {
@@ -196,7 +196,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         final unreadCount = friend['unreadCount'] as int? ?? 0;
         final lastMsgTime = friend['lastMessageTime']?.toString() ?? '';
         final lastMsgText = friend['lastMessageText']?.toString() ?? '';
-        final friendName = friend['friendName'] ?? friend['name'] ?? 'SikkaPlay Friend';
+        final friendName = friend['friendName'] ?? friend['name'] ?? 'Sikka Games Friend';
         
         if (friendId.isEmpty || lastMsgTime.isEmpty || unreadCount == 0) {
           continue;
@@ -264,13 +264,13 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
       }
 
       final friends = ref.read(globalFriendsListProvider);
-      String friendName = 'SikkaPlay Friend';
+      String friendName = 'Sikka Games Friend';
       final friend = friends.firstWhere(
         (f) => f['id']?.toString() == senderId, 
         orElse: () => null
       );
       if (friend != null) {
-        friendName = friend['friendName'] ?? friend['name'] ?? 'SikkaPlay Friend';
+        friendName = friend['friendName'] ?? friend['name'] ?? 'Sikka Games Friend';
       }
 
       if (mounted) {
@@ -310,8 +310,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
       const androidDetails = AndroidNotificationDetails(
         'sikkaplay_high_channel_v4',
-        'SikkaPlay Notifications',
-        channelDescription: 'Main notification channel for SikkaPlay',
+        'Sikka Games Notifications',
+        channelDescription: 'Main notification channel for Sikka Games',
         importance: Importance.max,
         priority: Priority.high,
         color: Color(0xFF7C3AED),

@@ -99,7 +99,7 @@ class _VideoTutorialsScreenState extends ConsumerState<VideoTutorialsScreen> {
           Icon(Icons.ondemand_video_rounded, color: Colors.white.withValues(alpha: 0.1), size: 60),
           const SizedBox(height: 8),
           Text(
-            'Sikka Play Tutorial',
+            'Sikka Games Tutorial',
             style: GoogleFonts.outfit(
               color: Colors.white.withValues(alpha: 0.3),
               fontWeight: FontWeight.bold,

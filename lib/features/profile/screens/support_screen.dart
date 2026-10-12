@@ -206,10 +206,10 @@ class _SupportScreenState extends ConsumerState<SupportScreen> with SingleTicker
     if (language != 'Hindi') return {'question': question, 'answer': answer};
 
     final qLower = question.toLowerCase();
-    if (qLower.contains('what is sikkaplay')) {
+    if (qLower.contains('what is sikkagames') || qLower.contains('what is sikkaplay')) {
       return {
-        'question': 'सिक्काप्ले (SikkaPlay) क्या है?',
-        'answer': 'सिक्काप्ले एक प्रीमियम रिवॉर्ड-आधारित गेमिंग प्लेटफॉर्म है जहां आप गेम खेल सकते हैं, सरल दैनिक कार्यों को पूरा कर सकते हैं, रील्स देख सकते हैं, और सिक्का (Sikka) सिक्के कमाने के लिए दोस्तों को रेफर कर सकते हैं। इन सिक्कों को सीधे UPI के माध्यम से निकाला जा सकता है।'
+        'question': 'सिक्का गेम्स (Sikka Games) क्या है?',
+        'answer': 'सिक्का गेम्स एक प्रीमियम रिवॉर्ड-आधारित गेमिंग प्लेटफॉर्म है जहां आप गेम खेल सकते हैं, सरल दैनिक कार्यों को पूरा कर सकते हैं, रील्स देख सकते हैं, और सिक्का (Sikka) सिक्के कमाने के लिए दोस्तों को रेफर कर सकते हैं। इन सिक्कों को सीधे UPI के माध्यम से निकाला जा सकता है।'
       };
     } else if (qLower.contains('how do i earn')) {
       return {

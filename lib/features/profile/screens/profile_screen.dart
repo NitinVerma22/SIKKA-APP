@@ -377,7 +377,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final networkState = ref.watch(networkProvider);
     final userData = userState.userData ?? {};
 
-    final userName = userData['name'] ?? 'SikkaPlay User';
+    final userName = userData['name'] ?? 'Sikka Games User';
     final String rawPhone = userData['phoneNumber'] ?? '';
     final String userEmail = userData['email'] ?? '';
     
@@ -421,8 +421,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final int gamesPlayed = homeState.gamesMinutesPlayed > 0 ? (homeState.gamesMinutesPlayed / 2).ceil() : 0;
 
     // Generate initials for avatar
-    String initials = 'SP';
-    if (userName.isNotEmpty && userName != 'SikkaPlay User') {
+    String initials = 'SG';
+    if (userName.isNotEmpty && userName != 'Sikka Games User') {
       final parts = userName.trim().split(' ');
       if (parts.length > 1) {
         initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
@@ -1597,14 +1597,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         debugPrint('Referral image asset load fallback: $e');
       }
 
-      final String cleanCode = referralCode.trim().isNotEmpty ? referralCode.trim() : 'SIKKAPLAY';
+      final String cleanCode = referralCode.trim().isNotEmpty ? referralCode.trim() : 'SIKKAGAMES';
       final String cleanLink = appLink.trim().isNotEmpty ? appLink.trim() : 'https://sikkaplay.com';
 
       final String shareText = language == 'Hindi'
-          ? '🚀 SikkaPlay से जुड़ें! गेम्स खेलें, रील्स देखें और असली कैश इनाम जीतें! 🎁💰\n\n'
+          ? '🚀 Sikka Games से जुड़ें! गेम्स खेलें, रील्स देखें और असली कैश इनाम जीतें! 🎁💰\n\n'
             '🔥 मेरा रेफरल कोड: 💎 $cleanCode 💎\n\n'
             '📲 अभी ऐप डाउनलोड करें और बोनस पाएं:\n$cleanLink'
-          : '🚀 Join SikkaPlay to play games, watch reels & win real rewards! 🎁💰\n\n'
+          : '🚀 Join Sikka Games to play games, watch reels & win real rewards! 🎁💰\n\n'
             '🔥 Use My Referral Code: 💎 $cleanCode 💎\n\n'
             '📲 Download the app & claim your bonus now:\n$cleanLink';
 
@@ -1613,14 +1613,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ShareParams(
             files: shareFiles,
             text: shareText,
-            subject: language == 'Hindi' ? 'सिक्काप्ले में दोस्तों को आमंत्रित करें' : 'Invite Friends to SikkaPlay',
+            subject: language == 'Hindi' ? 'सिक्का गेम्स में दोस्तों को आमंत्रित करें' : 'Invite Friends to Sikka Games',
           ),
         );
       } else {
         await SharePlus.instance.share(
           ShareParams(
             text: shareText,
-            subject: language == 'Hindi' ? 'सिक्काप्ले में दोस्तों को आमंत्रित करें' : 'Invite Friends to SikkaPlay',
+            subject: language == 'Hindi' ? 'सिक्का गेम्स में दोस्तों को आमंत्रित करें' : 'Invite Friends to Sikka Games',
           ),
         );
       }
@@ -1688,8 +1688,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final selectedLanguage = ref.read(languageProvider);
     final userData = ref.read(userProvider).userData ?? {};
     final userName = userData['name'] ?? context.tr('sikkaplay_user', selectedLanguage);
-    String initials = 'SP';
-    if (userName.isNotEmpty && userName != 'SikkaPlay User') {
+    String initials = 'SG';
+    if (userName.isNotEmpty && userName != 'Sikka Games User') {
       final parts = userName.trim().split(' ');
       if (parts.length > 1) {
         initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();

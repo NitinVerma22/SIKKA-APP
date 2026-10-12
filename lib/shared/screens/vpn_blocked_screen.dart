@@ -142,8 +142,8 @@ class _VpnBlockedScreenState extends State<VpnBlockedScreen> {
                   // Informative warning text
                   Text(
                     _selectedLanguage == 'Hindi'
-                        ? 'निष्पक्ष खेल सुनिश्चित करने और हमारे विज्ञापन नेटवर्क नीतियों का पालन करने के लिए, SikkaPlay VPN, प्रॉक्सी या अनाम होस्टिंग नेटवर्क से ट्रैफ़िक की अनुमति नहीं देता है।\n\nकृपया अपनी VPN/प्रॉक्सी सेवा बंद करें और पुन: प्रयास करें।'
-                        : 'To ensure fair play and comply with our ad network policies, SikkaPlay does not allow traffic from VPNs, Proxies, or Anonymous Hosting Networks.\n\nPlease turn off your VPN/Proxy service and retry.',
+                        ? 'निष्पक्ष खेल सुनिश्चित करने और हमारे विज्ञापन नेटवर्क नीतियों का पालन करने के लिए, Sikka Games VPN, प्रॉक्सी या अनाम होस्टिंग नेटवर्क से ट्रैफ़िक की अनुमति नहीं देता है।\n\nकृपया अपनी VPN/प्रॉक्सी सेवा बंद करें और पुन: प्रयास करें।'
+                        : 'To ensure fair play and comply with our ad network policies, Sikka Games does not allow traffic from VPNs, Proxies, or Anonymous Hosting Networks.\n\nPlease turn off your VPN/Proxy service and retry.',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 15,

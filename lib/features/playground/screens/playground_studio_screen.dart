@@ -192,7 +192,7 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
   }
 
   void _showIncomingGameRequestDialog() {
-    final partnerName = widget.partner['partnerName'] ?? 'SikkaPlay User';
+    final partnerName = widget.partner['partnerName'] ?? 'Sikka Games User';
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -343,7 +343,7 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
   }
 
   void _showPlayAgainRequestDialog() {
-    final partnerName = widget.partner['partnerName'] ?? 'SikkaPlay User';
+    final partnerName = widget.partner['partnerName'] ?? 'Sikka Games User';
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -2263,7 +2263,7 @@ class _PlaygroundStudioScreenState extends ConsumerState<PlaygroundStudioScreen>
 
   @override
   Widget build(BuildContext context) {
-    final partnerName = widget.partner['partnerName'] ?? 'SikkaPlay Player';
+    final partnerName = widget.partner['partnerName'] ?? 'Sikka Games Player';
     final partnerUsername = widget.partner['partnerUsername'];
 
     return PopScope(

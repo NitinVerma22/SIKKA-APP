@@ -104,7 +104,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(_selectedLanguage == 'Hindi' ? 'SikkaPlay वापस ऑनलाइन है! आपका स्वागत है।' : 'SikkaPlay is back online! Welcome back.'),
+                content: Text(_selectedLanguage == 'Hindi' ? 'Sikka Games वापस ऑनलाइन है! आपका स्वागत है।' : 'Sikka Games is back online! Welcome back.'),
                 backgroundColor: AppColors.success,
                 behavior: SnackBarBehavior.floating,
               ),
@@ -202,8 +202,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                   // Information Text
                   Text(
                     _selectedLanguage == 'Hindi'
-                        ? 'SikkaPlay निर्धारित अपग्रेड और सिस्टम अनुकूलन के लिए अस्थायी रूप से ऑफ़लाइन है।\n\nहम आपको सर्वोत्तम संभव अनुभव प्रदान करने के लिए अपने इनाम सिस्टम को ठीक कर रहे हैं। आपके धैर्य के लिए धन्यवाद!'
-                        : 'SikkaPlay is temporarily offline for scheduled upgrades and system optimizations.\n\nWe are fine-tuning our reward systems to provide you with the best experience possible. Thank you for your patience!',
+                        ? 'Sikka Games निर्धारित अपग्रेड और सिस्टम अनुकूलन के लिए अस्थायी रूप से ऑफ़लाइन है।\n\nहम आपको सर्वोत्तम संभव अनुभव प्रदान करने के लिए अपने इनाम सिस्टम को ठीक कर रहे हैं। आपके धैर्य के लिए धन्यवाद!'
+                        : 'Sikka Games is temporarily offline for scheduled upgrades and system optimizations.\n\nWe are fine-tuning our reward systems to provide you with the best experience possible. Thank you for your patience!',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 15,

@@ -132,8 +132,8 @@ class _UpdateAppScreenState extends State<UpdateAppScreen> {
                   // Information Text
                   Text(
                     _selectedLanguage == 'Hindi'
-                        ? 'SikkaPlay का एक महत्वपूर्ण नया संस्करण उपलब्ध है। अखंडता, सुरक्षा और नवीनतम पुरस्कारों तक पहुंच बनाए रखने के लिए, जारी रखने के लिए आपको ऐप को अपडेट करना होगा।'
-                        : 'A critical new version of SikkaPlay is available. To maintain integrity, security, and access to the latest rewards, you must update the app to continue.',
+                        ? 'Sikka Games का एक महत्वपूर्ण नया संस्करण उपलब्ध है। अखंडता, सुरक्षा और नवीनतम पुरस्कारों तक पहुंच बनाए रखने के लिए, जारी रखने के लिए आपको ऐप को अपडेट करना होगा।'
+                        : 'A critical new version of Sikka Games is available. To maintain integrity, security, and access to the latest rewards, you must update the app to continue.',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 15,

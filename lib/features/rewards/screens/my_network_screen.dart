@@ -51,14 +51,14 @@ class _MyNetworkScreenState extends ConsumerState<MyNetworkScreen> {
         debugPrint('Referral image asset load fallback: $e');
       }
 
-      final String cleanCode = referralCode.trim().isNotEmpty ? referralCode.trim() : 'SIKKAPLAY';
+      final String cleanCode = referralCode.trim().isNotEmpty ? referralCode.trim() : 'SIKKAGAMES';
       final String cleanLink = appLink.trim().isNotEmpty ? appLink.trim() : 'https://sikkaplay.com';
 
       final String shareText = language == 'Hindi'
-          ? '🚀 SikkaPlay से जुड़ें! गेम्स खेलें, रील्स देखें और असली कैश इनाम जीतें! 🎁💰\n\n'
+          ? '🚀 Sikka Games से जुड़ें! गेम्स खेलें, रील्स देखें और असली कैश इनाम जीतें! 🎁💰\n\n'
             '🔥 मेरा रेफरल कोड: 💎 $cleanCode 💎\n\n'
             '📲 अभी ऐप डाउनलोड करें और बोनस पाएं:\n$cleanLink'
-          : '🚀 Join SikkaPlay to play games, watch reels & win real rewards! 🎁💰\n\n'
+          : '🚀 Join Sikka Games to play games, watch reels & win real rewards! 🎁💰\n\n'
             '🔥 Use My Referral Code: 💎 $cleanCode 💎\n\n'
             '📲 Download the app & claim your bonus now:\n$cleanLink';
 
@@ -67,14 +67,14 @@ class _MyNetworkScreenState extends ConsumerState<MyNetworkScreen> {
           ShareParams(
             files: shareFiles,
             text: shareText,
-            subject: language == 'Hindi' ? 'सिक्काप्ले में दोस्तों को आमंत्रित करें' : 'Invite Friends to SikkaPlay',
+            subject: language == 'Hindi' ? 'सिक्का गेम्स में दोस्तों को आमंत्रित करें' : 'Invite Friends to Sikka Games',
           ),
         );
       } else {
         await SharePlus.instance.share(
           ShareParams(
             text: shareText,
-            subject: language == 'Hindi' ? 'सिक्काप्ले में दोस्तों को आमंत्रित करें' : 'Invite Friends to SikkaPlay',
+            subject: language == 'Hindi' ? 'सिक्का गेम्स में दोस्तों को आमंत्रित करें' : 'Invite Friends to Sikka Games',
           ),
         );
       }
@@ -828,7 +828,7 @@ class _MyNetworkScreenState extends ConsumerState<MyNetworkScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user['name'] ?? (_selectedLanguage == 'Hindi' ? 'सिक्काप्ले यूजर' : 'SikkaPlay User'),
+                  user['name'] ?? (_selectedLanguage == 'Hindi' ? 'सिक्का गेम्स यूजर' : 'Sikka Games User'),
                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 2),

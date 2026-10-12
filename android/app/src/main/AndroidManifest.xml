@@ -17,7 +17,7 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     
     <application
-        android:label="Sikka Play"
+        android:label="Sikka Games"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">

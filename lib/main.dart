@@ -42,11 +42,11 @@ Future<String?> _checkDeviceSafety() async {
     bool isDevelopmentMode = await SafeDevice.isDevelopmentModeEnable;
 
     if (isJailBroken) {
-      return "This device is rooted/jailbroken. SikkaPlay cannot run on rooted devices for security reasons.";
+      return "This device is rooted/jailbroken. Sikka Games cannot run on rooted devices for security reasons.";
     } else if (!isRealDevice) {
-      return "SikkaPlay cannot run on an emulator.";
+      return "Sikka Games cannot run on an emulator.";
     } else if (isDevelopmentMode) {
-      return "Developer Mode is enabled. Please disable Developer Options in your settings to use SikkaPlay.";
+      return "Developer Mode is enabled. Please disable Developer Options in your settings to use Sikka Games.";
     }
   } catch (e) {
     print("Error during device safety check: $e");
@@ -71,7 +71,7 @@ Future<void> _handleNotificationAction(NotificationResponse response) async {
     final Map<String, dynamic> data = json.decode(payloadStr);
     final String channelName = data['channelName'] ?? '';
     final String partnerId = data['partnerId'] ?? '';
-    final String partnerName = data['partnerName'] ?? 'SikkaPlay Friend';
+    final String partnerName = data['partnerName'] ?? 'Sikka Games Friend';
     final String partnerAvatar = data['senderAvatar'] ?? '';
 
     if (response.actionId == 'mute_action') {
@@ -177,7 +177,7 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
   }
 
   final notification = message.notification;
-  final String title = notification?.title ?? message.data['title'] ?? 'SikkaPlay';
+  final String title = notification?.title ?? message.data['title'] ?? 'Sikka Games';
   final String body = notification?.body ?? message.data['body'] ?? '';
   
   if (title.isEmpty && body.isEmpty) return;
@@ -192,8 +192,8 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
 
   final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
     'sikkaplay_high_channel_v4',
-    'SikkaPlay Notifications',
-    channelDescription: 'Main notification channel for SikkaPlay',
+    'Sikka Games Notifications',
+    channelDescription: 'Main notification channel for Sikka Games',
     importance: Importance.max,
     priority: Priority.high,
     color: const Color(0xFF7C3AED), // App brand theme color (Purple)
@@ -239,8 +239,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'sikkaplay_high_channel_v4',
-      'SikkaPlay Notifications',
-      description: 'Main notification channel for SikkaPlay',
+      'Sikka Games Notifications',
+      description: 'Main notification channel for Sikka Games',
       importance: Importance.max,
       playSound: true,
       enableVibration: true,
@@ -283,8 +283,8 @@ Future<void> _initializeServices() async {
     // Configure Android Notification Channel  // Create high importance channel
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'sikkaplay_high_channel_v4',
-      'SikkaPlay Notifications',
-      description: 'Main notification channel for SikkaPlay',
+      'Sikka Games Notifications',
+      description: 'Main notification channel for Sikka Games',
       importance: Importance.max,
       playSound: true,
       enableVibration: true,
@@ -420,7 +420,7 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
     // When backend sends FCM data payload, it comes in message.data
     final channelName = message.data['channelName'] ?? '';
     final partnerId = message.data['senderId'] ?? message.data['partnerId'] ?? '';
-    final partnerName = message.data['senderName'] ?? message.data['partnerName'] ?? 'SikkaPlay Friend';
+    final partnerName = message.data['senderName'] ?? message.data['partnerName'] ?? 'Sikka Games Friend';
     final partnerAvatar = message.data['senderAvatar'] ?? '';
 
     if (channelName.isNotEmpty && partnerId.isNotEmpty) {
@@ -541,7 +541,7 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'SikkaPlay',
+      title: 'Sikka Games',
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

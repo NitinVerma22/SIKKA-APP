@@ -78,9 +78,9 @@ class _PlaygroundLobbyScreenState extends State<PlaygroundLobbyScreen> {
 
     if (res['success'] == true) {
       final progress = res['crateProgress'];
-      final name = res['name'] ?? 'SikkaPlay Player';
+      final name = res['name'] ?? 'Sikka Games Player';
       
-      String initials = 'SP';
+      String initials = 'SG';
       if (name.isNotEmpty) {
         final parts = name.trim().split(' ');
         if (parts.length > 1) {

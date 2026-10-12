@@ -380,11 +380,11 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
         debugPrint('Referral image asset load fallback: $e');
       }
 
-      final String cleanCode = referralCode.trim().isNotEmpty ? referralCode.trim() : 'SIKKAPLAY';
+      final String cleanCode = referralCode.trim().isNotEmpty ? referralCode.trim() : 'SIKKAGAMES';
       final String cleanLink = appLink.trim().isNotEmpty ? appLink.trim() : 'https://sikkaplay.com';
 
       final String shareText =
-          '🚀 Join SikkaPlay to play games, watch reels & win real rewards! 🎁💰\n\n'
+          '🚀 Join Sikka Games to play games, watch reels & win real rewards! 🎁💰\n\n'
           '🔥 Use My Referral Code: 💎 $cleanCode 💎\n\n'
           '📲 Download the app & claim your bonus now:\n$cleanLink';
 
@@ -393,14 +393,14 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
           ShareParams(
             files: shareFiles,
             text: shareText,
-            subject: 'Invite Friends to SikkaPlay',
+            subject: 'Invite Friends to Sikka Games',
           ),
         );
       } else {
         await SharePlus.instance.share(
           ShareParams(
             text: shareText,
-            subject: 'Invite Friends to SikkaPlay',
+            subject: 'Invite Friends to Sikka Games',
           ),
         );
       }
@@ -692,7 +692,7 @@ class _PlaygroundFriendsScreenState extends ConsumerState<PlaygroundFriendsScree
   }
 
   Widget _buildSuggestionCard(dynamic user) {
-    final String displayName = _capitalizeName(user['name'] ?? 'SikkaPlay User');
+    final String displayName = _capitalizeName(user['name'] ?? 'Sikka Games User');
     final String userId = user['id']?.toString() ?? '';
     final String username = user['username']?.toString() ?? '';
     final String gender = user['gender']?.toString().toLowerCase() ?? 'male';

@@ -228,7 +228,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             final Map<String, dynamic> data = json.decode(pendingRouteStr);
             final String channelName = data['channelName'] ?? '';
             final String partnerId = data['partnerId'] ?? '';
-            final String partnerName = data['partnerName'] ?? 'SikkaPlay Friend';
+            final String partnerName = data['partnerName'] ?? 'Sikka Games Friend';
             final String partnerAvatar = data['senderAvatar'] ?? '';
             
             if (partnerId.isNotEmpty || channelName.isNotEmpty) {
@@ -285,8 +285,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           ),
           content: Text(
             isHindi 
-                ? 'SikkaPlay का एक नया संस्करण उपलब्ध है। नवीनतम सुविधाओं और बग फिक्स प्राप्त करने के लिए कृपया अपडेट करें।'
-                : 'A new version of SikkaPlay is available. Please update to get the latest features and bug fixes.',
+                ? 'Sikka Games का एक नया संस्करण उपलब्ध है। नवीनतम सुविधाओं और बग फिक्स प्राप्त करने के लिए कृपया अपडेट करें।'
+                : 'A new version of Sikka Games is available. Please update to get the latest features and bug fixes.',
             style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
           actions: [
@@ -372,7 +372,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                       ),
                       child: ClipOval(
                         child: Image.asset(
-                          'assets/images/app_logo.webp',
+                          'assets/images/new_app_logo.png',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => const Center(
                             child: Icon(
@@ -387,7 +387,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   ),
                   const SizedBox(height: AppSizes.lg),
                   Text(
-                    'SikkaPlay',
+                    'Sikka Games',
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                           fontSize: AppSizes.getResponsiveFontSize(context, 38),
                           fontWeight: FontWeight.w900,

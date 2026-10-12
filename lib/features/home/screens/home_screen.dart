@@ -464,7 +464,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final balance = userData['balance'] ?? homeState.balance;
     final referralEarning =
         userData['referralBalance'] ?? homeState.referralEarning;
-    final userName = userData['name'] ?? 'SikkaPlay User';
+    final userName = userData['name'] ?? 'Sikka Games User';
 
     // Calculate level based on total earned (e.g. 1000 coins = 1 level)
     final totalEarned = userData['totalEarned'] ?? 0;
@@ -970,7 +970,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'How to use Sikka Play',
+                    'How to use Sikka Games',
                     style: GoogleFonts.outfit(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -1128,7 +1128,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     ),
                     child: ClipOval(
                       child: Image.asset(
-                        'assets/images/app_logo.webp',
+                        'assets/images/new_app_logo.png',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
                             const Center(
@@ -1170,7 +1170,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'SikkaPlay',
+                      'Sikka Games',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w900,
                             color: AppColors.textPrimary,
@@ -1523,8 +1523,8 @@ class _SocialBenefitsDialogState extends State<_SocialBenefitsDialog> {
           ),
           _buildBenefitItem(
             isHindi
-                ? 'SikkaPlay समुदाय का हिस्सा बनें'
-                : 'Become part of the SikkaPlay community',
+                ? 'Sikka Games समुदाय का हिस्सा बनें'
+                : 'Become part of the Sikka Games community',
           ),
           const SizedBox(height: 8),
         ],
