@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/ads/ad_service.dart';
 import '../models/tournament_models.dart';
 import '../providers/tournament_providers.dart';
 
@@ -18,6 +19,35 @@ class TournamentLeaderboardScreen extends ConsumerStatefulWidget {
 }
 
 class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderboardScreen> {
+  bool _isExiting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-cache interstitial ad to be ready on screen exit
+    AdService.instance.loadInterstitialAd();
+  }
+
+  void _handleExit() {
+    if (_isExiting) return;
+    _isExiting = true;
+
+    void performPop() {
+      if (!mounted) return;
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/tournaments/${widget.tournamentId}');
+      }
+    }
+
+    // Show Interstitial Ad on exit
+    AdService.instance.showInterstitialAd(
+      onAdDismissed: performPop,
+      allowFastDismiss: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lbAsync = ref.watch(tournamentLeaderboardProvider(widget.tournamentId));
@@ -27,22 +57,22 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
     final isJoined = (detailTournament?.isJoined == true) ||
         ref.watch(joinedTournamentIdsProvider).any((id) => id.trim().toLowerCase() == widget.tournamentId.trim().toLowerCase());
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/tournaments/${widget.tournamentId}');
-            }
-          },
-        ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleExit();
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20),
+            onPressed: _handleExit,
+          ),
         title: Text(
           'Leaderboard 🏆',
           style: GoogleFonts.outfit(
@@ -222,8 +252,9 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStatusHeader(TournamentLeaderboardData data, Tournament? detailTournament) {
     final title = data.title.isNotEmpty && data.title != 'Tournament Leaderboard'
