@@ -167,6 +167,17 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
     return buffer.toString().split('').reversed.join('');
   }
 
+  String _formatCoinsShort(int number) {
+    if (number >= 1000000) {
+      final val = number / 1000000;
+      return '${val.toStringAsFixed(number % 1000000 == 0 ? 0 : 1)}M';
+    } else if (number >= 1000) {
+      final val = number / 1000;
+      return '${val.toStringAsFixed(number % 1000 == 0 ? 0 : 1)}k';
+    }
+    return number.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = widget.tournament;
@@ -351,158 +362,158 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
         : (t.prizePool / 20).round();
 
     return Container(
-      height: 78,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFFFFF8D6),
-            Color(0xFFFFE885),
-            Color(0xFFFFD43F),
+            Color(0xFFFFEC9E),
+            Color(0xFFFFDA6B),
+            Color(0xFFFFBF38),
           ],
         ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFACC15), width: 1.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFB800).withValues(alpha: 0.16),
+            color: const Color(0xFFFFB800).withValues(alpha: 0.22),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Left Coins Stack
-            SizedBox(
-              width: 52,
-              child: Image.asset(
-                'assets/images/games_hub/coins_stack.png',
-                height: 50,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Image.asset(
-                  'assets/images/water_sort/coin_pile.png',
-                  height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Left Coins Stack
+              SizedBox(
+                width: 58,
+                child: Image.asset(
+                  'assets/images/games_hub/coins_stack.png',
+                  height: 52,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Center(
-                    child: Text('🪙', style: TextStyle(fontSize: 26)),
+                  errorBuilder: (_, __, ___) => Image.asset(
+                    'assets/images/water_sort/coin_pile.png',
+                    height: 52,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Center(
+                      child: Text('🪙', style: TextStyle(fontSize: 26)),
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // Center Info
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 🏆 PRIZE POOL pill
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('🏆', style: TextStyle(fontSize: 8)),
-                        const SizedBox(width: 3),
-                        Text(
-                          'PRIZE POOL',
-                          style: GoogleFonts.outfit(
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF78350F),
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-
-                  // 10,000 COINS
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: '${_formatNumber(t.prizePool)} ',
-                            style: GoogleFonts.outfit(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              color: const Color(0xFF3F1D0B),
-                              letterSpacing: -0.4,
-                            ),
-                          ),
-                          TextSpan(
-                            text: 'COINS',
-                            style: GoogleFonts.outfit(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w900,
-                              color: const Color(0xFF5A2A0C),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-
-                  // ≈ ₹500 (Mint green pill)
-                  Row(
+              // Center: Extra + Coins
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        '≈ ',
-                        style: GoogleFonts.outfit(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF78350F),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '₹${_formatNumber(cashRupees)} EXTRA',
+                              style: GoogleFonts.outfit(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFF00C853),
+                                letterSpacing: -0.5,
+                                shadows: const [
+                                  Shadow(
+                                    color: Color(0xFF00692C),
+                                    offset: Offset(0, 1.8),
+                                    blurRadius: 0,
+                                  ),
+                                  Shadow(
+                                    color: Color(0xFF004D20),
+                                    offset: Offset(0, 2.5),
+                                    blurRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 2.5),
+                              child: Text(
+                                'worth\nof coins',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF451A03),
+                                  height: 1.0,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD1FAE5),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFA7F3D0), width: 0.8),
-                        ),
+                      const SizedBox(height: 2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
                         child: Text(
-                          '₹${_formatNumber(cashRupees)}',
+                          '= ${_formatNumber(t.prizePool)} COINS',
                           style: GoogleFonts.outfit(
-                            fontSize: 11.5,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w900,
-                            color: const Color(0xFF059669),
+                            color: const Color(0xFF3F1D0B),
+                            letterSpacing: -0.2,
                           ),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-
-            // Right Golden Trophy
-            SizedBox(
-              width: 52,
-              child: Image.asset(
-                'assets/images/water_sort/trophy_gold.png',
-                height: 52,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Center(
-                  child: Text('🏆', style: TextStyle(fontSize: 28)),
                 ),
               ),
+
+              // Right Level Rewards Podium
+              SizedBox(
+                width: 66,
+                child: Image.asset(
+                  'assets/images/games_hub/levelrewards.png',
+                  height: 54,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Image.asset(
+                    'assets/images/water_sort/trophy_gold.png',
+                    height: 54,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Center(
+                      child: Text('🏆', style: TextStyle(fontSize: 28)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 4),
+
+          // Bottom Distribution Note
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Text(
+              'ये ₹${_formatNumber(cashRupees)} (${_formatCoinsShort(t.prizePool)} coins) sabhi qualified players mein ranking ke hisaab se distribute honge!',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                fontSize: 8.5,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF4A200B),
+                height: 1.15,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

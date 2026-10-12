@@ -688,11 +688,16 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           ),
                         ),
                         Image.asset(
-                          'assets/images/water_sort/trophy_gold.png',
+                          'assets/images/games_hub/levelrewards.png',
                           height: 95,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Center(
-                            child: Text('🏆', style: TextStyle(fontSize: 60)),
+                          errorBuilder: (_, __, ___) => Image.asset(
+                            'assets/images/water_sort/trophy_gold.png',
+                            height: 95,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Center(
+                              child: Text('🏆', style: TextStyle(fontSize: 60)),
+                            ),
                           ),
                         ),
                       ],
