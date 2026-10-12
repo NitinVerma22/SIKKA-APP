@@ -469,15 +469,43 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
         // Prize
         if (entry.prize > 0)
           Container(
-            margin: const EdgeInsets.only(top: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            margin: const EdgeInsets.only(top: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(6),
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+              ),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFDE68A), width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.18),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1.5),
+                ),
+              ],
             ),
-            child: Text(
-              '+${entry.prize}c',
-              style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w900, color: const Color(0xFFD97706)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/images/games_hub/coins_stack.png',
+                  width: 15,
+                  height: 15,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Text('🪙', style: TextStyle(fontSize: 11)),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '+${entry.prize}',
+                  style: GoogleFonts.outfit(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFFB45309),
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
             ),
           ),
       ],
