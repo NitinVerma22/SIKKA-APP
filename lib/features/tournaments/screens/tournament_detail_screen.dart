@@ -22,7 +22,6 @@ class TournamentDetailScreen extends ConsumerStatefulWidget {
 
 class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen> {
   Timer? _countdownTimer;
-  Duration _remaining = Duration.zero;
   bool _isJoinedLocally = false;
 
   void _handleJoinSuccess(Tournament tournament) {
@@ -56,12 +55,17 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     super.dispose();
   }
 
-  String _formatDuration(Duration duration) {
-    if (duration.isNegative || duration == Duration.zero) return '00:00:00';
-    final hours = duration.inHours.toString().padLeft(2, '0');
-    final minutes = (duration.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
-    return '$hours:$minutes:$seconds';
+  String _formatDetailedCountdown(Duration d) {
+    if (d.isNegative || d.inSeconds <= 0) return '00:00:00';
+    final days = d.inDays;
+    final hours = (d.inHours % 24).toString().padLeft(2, '0');
+    final minutes = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    if (days > 0) {
+      return '${days}d ${hours}h ${minutes}m ${seconds}s';
+    } else {
+      return '${hours}h ${minutes}m ${seconds}s';
+    }
   }
 
   String _formatTournamentDate(DateTime dt) {
@@ -142,7 +146,6 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             );
           }
 
-          _remaining = tournament.timeRemaining;
           final isJoined = tournament.isJoined || isOptimisticallyJoined;
 
           return RefreshIndicator(
@@ -248,110 +251,159 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             ),
             const SizedBox(width: 12),
 
-            // Play CTA (Vibrant Green if joined, Purple if not)
+            // Play / Countdown / Join CTA
             Expanded(
-              child: Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  gradient: isJoined
-                      ? const LinearGradient(
-                          colors: [Color(0xFF00C06D), Color(0xFF00A859)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        )
-                      : const LinearGradient(
-                          colors: [Color(0xFF5B1FE6), Color(0xFF8B5CF6)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
+              child: () {
+                final hasStarted = tournament.hasStarted;
+                final hasEnded = tournament.hasEnded;
+                final isFull = tournament.maxParticipants != null &&
+                    tournament.maxParticipants! > 0 &&
+                    tournament.currentParticipants >= tournament.maxParticipants!;
+
+                final countdownText = _formatDetailedCountdown(tournament.timeUntilStart);
+
+                Color gradStart;
+                Color gradEnd;
+                Color shadowCol;
+                IconData btnIcon;
+                String btnText;
+                VoidCallback? btnAction;
+
+                if (hasEnded) {
+                  gradStart = const Color(0xFF64748B);
+                  gradEnd = const Color(0xFF475569);
+                  shadowCol = const Color(0xFF64748B);
+                  btnIcon = Icons.emoji_events_rounded;
+                  btnText = 'Tournament Ended 🏆';
+                  btnAction = () => context.push('/tournaments/${tournament.id}/leaderboard');
+                } else if (tournament.isUpcoming) {
+                  // Upcoming: Coming Soon ⏰
+                  gradStart = const Color(0xFF94A3B8);
+                  gradEnd = const Color(0xFF64748B);
+                  shadowCol = const Color(0xFF94A3B8);
+                  btnIcon = Icons.alarm_on_rounded;
+                  btnText = 'Coming Soon ⏰';
+                  btnAction = () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '⏰ This tournament is upcoming. Registration will open once it goes live!',
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
                         ),
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isJoined ? const Color(0xFF00C06D) : const Color(0xFF5B1FE6))
-                          .withValues(alpha: 0.35),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (isJoined) {
-                      context.push('/tournaments/${tournament.id}/games');
-                    } else if (tournament.isUpcoming) {
+                        backgroundColor: const Color(0xFF5B1FE6),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  };
+                } else if (isJoined) {
+                  if (!hasStarted) {
+                    // Joined but tournament has not started yet
+                    gradStart = const Color(0xFF4F46E5);
+                    gradEnd = const Color(0xFF7C3AED);
+                    shadowCol = const Color(0xFF6366F1);
+                    btnIcon = Icons.alarm_on_rounded;
+                    btnText = 'Starts in $countdownText';
+                    btnAction = () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            'This tournament starts in ${_formatDuration(_remaining)}! Stay tuned.',
+                            '⏰ Tournament starts in $countdownText! Game arena unlocks at start time.',
                             style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
                           ),
                           backgroundColor: const Color(0xFF5B1FE6),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
-                    } else {
-                      final isFull = tournament.maxParticipants != null &&
-                          tournament.maxParticipants! > 0 &&
-                          tournament.currentParticipants >= tournament.maxParticipants!;
-                      if (isFull) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'This tournament arena is full! No more spots available.',
-                              style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-                            ),
-                            backgroundColor: const Color(0xFFDC2626),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                        return;
-                      }
-
+                    };
+                  } else {
+                    // Joined and tournament is live & started: Play Now 🎮
+                    gradStart = const Color(0xFF00C06D);
+                    gradEnd = const Color(0xFF00A859);
+                    shadowCol = const Color(0xFF00C06D);
+                    btnIcon = Icons.play_circle_fill_rounded;
+                    btnText = 'Play Now 🎮';
+                    btnAction = () => context.push('/tournaments/${tournament.id}/games');
+                  }
+                } else {
+                  // Not joined yet
+                  if (isFull) {
+                    gradStart = const Color(0xFF94A3B8);
+                    gradEnd = const Color(0xFF64748B);
+                    shadowCol = const Color(0xFF94A3B8);
+                    btnIcon = Icons.lock_rounded;
+                    btnText = 'Arena Full 🔒';
+                    btnAction = null;
+                  } else {
+                    final isFree = tournament.entryFeeCoins == 0;
+                    gradStart = isFree ? const Color(0xFF00C06D) : const Color(0xFF5B1FE6);
+                    gradEnd = isFree ? const Color(0xFF00A859) : const Color(0xFF8B5CF6);
+                    shadowCol = isFree ? const Color(0xFF00C06D) : const Color(0xFF5B1FE6);
+                    btnIcon = isFree ? Icons.ondemand_video_rounded : Icons.monetization_on_rounded;
+                    btnText = isFree ? 'Join Free 🎬' : 'Join • 🪙 ${tournament.entryFeeCoins}';
+                    btnAction = () {
                       TournamentJoinDialog.show(
                         context: context,
                         ref: ref,
                         tournament: tournament,
                         onJoinSuccess: () => _handleJoinSuccess(tournament),
                       );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(26),
+                    };
+                  }
+                }
+
+                return Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [gradStart, gradEnd],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
                     ),
-                    padding: EdgeInsets.zero,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        isJoined ? Icons.play_circle_fill_rounded : Icons.sports_esports_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        isJoined
-                            ? 'Play Now 🎮'
-                            : (tournament.maxParticipants != null &&
-                                    tournament.maxParticipants! > 0 &&
-                                    tournament.currentParticipants >= tournament.maxParticipants!
-                                ? 'Arena Full 🔒'
-                                : (tournament.isUpcoming ? 'Starts Soon ⏰' : 'Join Now ⚔️')),
-                        style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 15,
-                          color: Colors.white,
-                          letterSpacing: 0.3,
-                        ),
+                    borderRadius: BorderRadius.circular(26),
+                    boxShadow: [
+                      BoxShadow(
+                        color: shadowCol.withValues(alpha: 0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                ),
-              ),
+                  child: ElevatedButton(
+                    onPressed: btnAction,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(btnIcon, color: Colors.white, size: 20),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              btnText,
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14.5,
+                                color: Colors.white,
+                                letterSpacing: 0.3,
+                              ),
+                              maxLines: 1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }(),
             ),
           ],
         ),
@@ -457,87 +509,94 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                             const SizedBox(width: 6),
 
                             // Status Pill
-                            if (tournament.isLive)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFE11D48),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'LIVE',
-                                      style: GoogleFonts.outfit(
-                                        color: const Color(0xFFE11D48),
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            else if (tournament.isUpcoming)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text('⏰', style: TextStyle(fontSize: 9.5)),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      'UPCOMING',
-                                      style: GoogleFonts.outfit(
-                                        color: const Color(0xFF2563EB),
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 0.4,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            else
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  'ENDED',
-                                  style: GoogleFonts.outfit(
+                            () {
+                              final hasEnded = tournament.hasEnded;
+                              final isLiveNow = (tournament.isLive || tournament.status == TournamentStatus.live) && !tournament.isUpcoming && !hasEnded;
+                              final isUpcomingSoon = tournament.isUpcoming;
+
+                              if (isLiveNow) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
                                     color: Colors.white,
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w800,
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                ),
-                              ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFE11D48),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'LIVE',
+                                        style: GoogleFonts.outfit(
+                                          color: const Color(0xFFE11D48),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              } else if (isUpcomingSoon) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text('⏰', style: TextStyle(fontSize: 9.5)),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        'UPCOMING',
+                                        style: GoogleFonts.outfit(
+                                          color: const Color(0xFF2563EB),
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 0.4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              } else {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'ENDED',
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                );
+                              }
+                            }(),
 
                             const SizedBox(width: 8),
 
                             // Countdown Timer & Date
                             Expanded(
                               child: Text(
-                                tournament.isLive
-                                    ? '${_formatTournamentDate(tournament.startTime)} • Ends in ${_formatDuration(_remaining)}'
-                                    : (tournament.isUpcoming
-                                        ? '${_formatTournamentDate(tournament.startTime)} • Starts in ${_formatDuration(_remaining)}'
+                                !tournament.hasStarted
+                                    ? '${_formatTournamentDate(tournament.startTime)} • Starts in ${_formatDetailedCountdown(tournament.timeUntilStart)}'
+                                    : (!tournament.hasEnded
+                                        ? '${_formatTournamentDate(tournament.endTime)} • Ends in ${_formatDetailedCountdown(tournament.timeUntilEnd)}'
                                         : 'Ended'),
                                 style: GoogleFonts.outfit(
                                   fontSize: 10.5,
@@ -566,6 +625,33 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+
+                        if (tournament.minPointsToWin > 0) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFFECACA), width: 1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('🎯', style: TextStyle(fontSize: 10)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Score min. ${tournament.minPointsToWin} pts to win rewards',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFFDC2626), // Eye-catching Red
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
 
                         const SizedBox(height: 8),
 
@@ -760,7 +846,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Current Score: $score Points',
+                    tournament.hasStarted
+                        ? 'Current Score: $score Points'
+                        : 'Starts in: ${_formatDetailedCountdown(tournament.timeUntilStart)}',
                     style: GoogleFonts.outfit(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -774,13 +862,16 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF00C06D), Color(0xFF16A34A)],
+              gradient: LinearGradient(
+                colors: tournament.hasStarted
+                    ? const [Color(0xFF00C06D), Color(0xFF16A34A)]
+                    : const [Color(0xFF4F46E5), Color(0xFF7C3AED)],
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF16A34A).withValues(alpha: 0.3),
+                  color: (tournament.hasStarted ? const Color(0xFF16A34A) : const Color(0xFF6366F1))
+                      .withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -789,10 +880,10 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('👑', style: TextStyle(fontSize: 12)),
+                Text(tournament.hasStarted ? '👑' : '⏳', style: const TextStyle(fontSize: 12)),
                 const SizedBox(width: 5),
                 Text(
-                  rankText,
+                  tournament.hasStarted ? rankText : 'Ready',
                   style: GoogleFonts.outfit(
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
@@ -908,7 +999,31 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
               return InkWell(
                 onTap: () {
                   if (isJoined) {
+                    if (!tournament.hasStarted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '⏰ Tournament starts in ${_formatDetailedCountdown(tournament.timeUntilStart)}! Game arena will open then.',
+                            style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                          ),
+                          backgroundColor: const Color(0xFF5B1FE6),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
                     context.push('/tournaments/${tournament.id}/games');
+                  } else if (tournament.isUpcoming) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '⏰ This tournament is upcoming. Registration will open once it goes live!',
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                        ),
+                        backgroundColor: const Color(0xFF5B1FE6),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
                   } else {
                     TournamentJoinDialog.show(
                       context: context,

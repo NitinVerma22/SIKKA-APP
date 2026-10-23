@@ -143,6 +143,7 @@ class Tournament {
   final int prizePool;
   final int prizePoolRupees;
   final List<PrizeTier> prizeStructure;
+  final int minPointsToWin;
   final int minParticipants;
   final int? maxParticipants;
   final int currentParticipants;
@@ -165,6 +166,7 @@ class Tournament {
     required this.prizePool,
     this.prizePoolRupees = 0,
     required this.prizeStructure,
+    this.minPointsToWin = 1000,
     required this.minParticipants,
     this.maxParticipants,
     required this.currentParticipants,
@@ -180,15 +182,34 @@ class Tournament {
   bool get isUpcoming => status == TournamentStatus.upcoming;
   bool get isCompleted => status == TournamentStatus.completed;
 
-  Duration get timeRemaining {
+  bool get hasStarted {
     final now = DateTime.now();
-    if (isUpcoming) {
-      return startTime.isAfter(now) ? startTime.difference(now) : Duration.zero;
+    return now.isAfter(startTime) || now.isAtSameMomentAs(startTime);
+  }
+
+  bool get hasEnded {
+    final now = DateTime.now();
+    return now.isAfter(endTime) || isCompleted;
+  }
+
+  Duration get timeUntilStart {
+    final now = DateTime.now();
+    return startTime.isAfter(now) ? startTime.difference(now) : Duration.zero;
+  }
+
+  Duration get timeUntilEnd {
+    final now = DateTime.now();
+    return endTime.isAfter(now) ? endTime.difference(now) : Duration.zero;
+  }
+
+  Duration get timeRemaining {
+    if (hasEnded) {
+      return Duration.zero;
     }
-    if (isLive) {
-      return endTime.isAfter(now) ? endTime.difference(now) : Duration.zero;
+    if (!hasStarted) {
+      return timeUntilStart;
     }
-    return Duration.zero;
+    return timeUntilEnd;
   }
 
   factory Tournament.fromJson(Map<String, dynamic> json) {
@@ -248,6 +269,7 @@ class Tournament {
       prizePool: (json['prizePool'] as num?)?.toInt() ?? 0,
       prizePoolRupees: (json['prizePoolRupees'] as num?)?.toInt() ?? 0,
       prizeStructure: prizes,
+      minPointsToWin: (json['minPointsToWin'] as num?)?.toInt() ?? 1000,
       minParticipants: (json['minParticipants'] as num?)?.toInt() ?? 2,
       maxParticipants: (json['maxParticipants'] as num?)?.toInt(),
       currentParticipants: ((json['currentParticipants'] ?? json['participantCount']) as num?)?.toInt() ?? 0,
@@ -267,6 +289,7 @@ class LeaderboardEntry {
   final int rank;
   final String userId;
   final String userName;
+  final String? username;
   final String? userAvatar;
   final int score;
   final int prize;
@@ -275,6 +298,7 @@ class LeaderboardEntry {
     required this.rank,
     required this.userId,
     required this.userName,
+    this.username,
     this.userAvatar,
     required this.score,
     required this.prize,
@@ -285,6 +309,7 @@ class LeaderboardEntry {
       rank: (json['rank'] as num?)?.toInt() ?? 0,
       userId: json['userId']?.toString() ?? '',
       userName: (json['userName'] ?? json['name'] ?? json['username'])?.toString() ?? 'Player',
+      username: json['username']?.toString(),
       userAvatar: (json['userAvatar'] ?? json['avatarUrl'] ?? json['avatar'])?.toString(),
       score: (json['score'] as num?)?.toInt() ?? 0,
       prize: (json['prize'] as num?)?.toInt() ?? 0,

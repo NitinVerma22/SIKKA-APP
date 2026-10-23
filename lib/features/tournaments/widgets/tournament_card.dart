@@ -92,14 +92,12 @@ class TournamentCard extends ConsumerStatefulWidget {
 }
 
 class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTickerProviderStateMixin {
-  late Duration _remainingTime;
   Timer? _countdownTimer;
   late AnimationController _blinkController;
 
   @override
   void initState() {
     super.initState();
-    _remainingTime = widget.tournament.timeRemaining;
     _startTimer();
 
     _blinkController = AnimationController(
@@ -110,26 +108,18 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
 
   void _startTimer() {
     _countdownTimer?.cancel();
-    if (_remainingTime.inSeconds > 0) {
-      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (!mounted) return;
-        setState(() {
-          if (_remainingTime.inSeconds > 0) {
-            _remainingTime = _remainingTime - const Duration(seconds: 1);
-          } else {
-            _countdownTimer?.cancel();
-          }
-        });
-      });
-    }
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      setState(() {});
+    });
   }
 
   @override
   void didUpdateWidget(covariant TournamentCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.tournament.id != widget.tournament.id ||
-        oldWidget.tournament.status != widget.tournament.status) {
-      _remainingTime = widget.tournament.timeRemaining;
+        oldWidget.tournament.status != widget.tournament.status ||
+        oldWidget.tournament.startTime != widget.tournament.startTime) {
       _startTimer();
     }
   }
@@ -141,10 +131,28 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
     super.dispose();
   }
 
-  String _formatTimerDigits(Duration d) {
-    final hours = d.inHours.toString().padLeft(2, '0');
+  String _formatDetailedCountdown(Duration d) {
+    if (d.isNegative || d.inSeconds <= 0) return '00:00:00';
+    final days = d.inDays;
+    final hours = (d.inHours % 24).toString().padLeft(2, '0');
     final minutes = (d.inMinutes % 60).toString().padLeft(2, '0');
     final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    if (days > 0) {
+      return '${days}d ${hours}h ${minutes}m ${seconds}s';
+    } else {
+      return '${hours}h ${minutes}m ${seconds}s';
+    }
+  }
+
+  String _formatTimerDigits(Duration d) {
+    if (d.isNegative || d.inSeconds <= 0) return '00:00:00';
+    final days = d.inDays;
+    final hours = (d.inHours % 24).toString().padLeft(2, '0');
+    final minutes = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    if (days > 0) {
+      return '${days}d $hours:$minutes:$seconds';
+    }
     return '$hours:$minutes:$seconds';
   }
 
@@ -181,9 +189,6 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
   @override
   Widget build(BuildContext context) {
     final t = widget.tournament;
-    final isLive = t.isLive;
-    final isUpcoming = t.isUpcoming;
-    final isCompleted = t.isCompleted;
     final isOptimisticallyJoined = ref.watch(joinedTournamentIdsProvider).any((id) => id.trim().toLowerCase() == t.id.trim().toLowerCase());
     final isJoined = t.isJoined || isOptimisticallyJoined;
 
@@ -230,25 +235,49 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
               children: [
                 // 1. Header (Tournament Title on left, Status Pill on right)
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        t.title,
-                        style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF0F172A),
-                          letterSpacing: -0.3,
-                          height: 1.15,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            t.title,
+                            style: GoogleFonts.outfit(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF0F172A),
+                              letterSpacing: -0.3,
+                              height: 1.15,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (t.minPointsToWin > 0) ...[
+                            const SizedBox(height: 3),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('🎯', style: TextStyle(fontSize: 10)),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'Min ${t.minPointsToWin} points to win prize',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFFDC2626), // Sharp eye-catching Red
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     const SizedBox(width: 8),
                     // Status Pill (🔴 LIVE / ⏰ UPCOMING / ENDED)
-                    _buildStateTag(isLive, isUpcoming, isCompleted),
+                    _buildStateTag(t),
                   ],
                 ),
 
@@ -265,7 +294,7 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
                 const SizedBox(height: 9),
 
                 // 4. Footer (Timer & Action CTA)
-                _buildFooter(isLive, isUpcoming, isCompleted, isJoined, t, hasCap, spotsLeft),
+                _buildFooter(isJoined, t, hasCap, spotsLeft),
               ],
             ),
           ),
@@ -274,45 +303,26 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
     );
   }
 
-  Widget _buildStateTag(bool isLive, bool isUpcoming, bool isCompleted) {
-    if (isLive) {
+  Widget _buildStateTag(Tournament t) {
+    if (t.isCompleted || t.status == TournamentStatus.completed || t.hasEnded) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF1F2),
+          color: const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFECDD3), width: 1.0),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FadeTransition(
-              opacity: _blinkController,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE11D48),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              'LIVE',
-              style: GoogleFonts.outfit(
-                color: const Color(0xFFE11D48),
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
-              ),
-            ),
-          ],
+        child: Text(
+          'ENDED',
+          style: GoogleFonts.outfit(
+            color: const Color(0xFF64748B),
+            fontSize: 9.5,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       );
     }
 
-    if (isUpcoming) {
+    if (t.isUpcoming) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
         decoration: BoxDecoration(
@@ -342,16 +352,35 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: const Color(0xFFFFF1F2),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFECDD3), width: 1.0),
       ),
-      child: Text(
-        'ENDED',
-        style: GoogleFonts.outfit(
-          color: const Color(0xFF64748B),
-          fontSize: 9.5,
-          fontWeight: FontWeight.w800,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FadeTransition(
+            opacity: _blinkController,
+            child: Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE11D48),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'LIVE',
+            style: GoogleFonts.outfit(
+              color: const Color(0xFFE11D48),
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -600,14 +629,16 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
   }
 
   Widget _buildFooter(
-    bool isLive,
-    bool isUpcoming,
-    bool isCompleted,
     bool isJoined,
     Tournament t,
     bool hasCap,
     int spotsLeft,
   ) {
+    final hasStarted = t.hasStarted;
+    final hasEnded = t.hasEnded;
+    final timerLabel = hasEnded ? 'Ended' : (!hasStarted ? 'Starts in' : 'Ends in');
+    final timerDuration = !hasStarted ? t.timeUntilStart : t.timeUntilEnd;
+
     return Row(
       children: [
         // Left Timer block
@@ -615,7 +646,7 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isLive ? 'Ends in' : (isUpcoming ? 'Starts in' : 'Ended'),
+              timerLabel,
               style: GoogleFonts.outfit(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
@@ -624,7 +655,7 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
             ),
             const SizedBox(height: 1),
             Text(
-              _formatTimerDigits(_remainingTime),
+              _formatTimerDigits(timerDuration),
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
@@ -646,9 +677,6 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
         // Right CTA Button (Smaller & compact)
         Expanded(
           child: _buildCtaButton(
-            isLive,
-            isUpcoming,
-            isCompleted,
             isJoined,
             t,
             hasCap,
@@ -660,15 +688,15 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
   }
 
   Widget _buildCtaButton(
-    bool isLive,
-    bool isUpcoming,
-    bool isCompleted,
     bool isJoined,
     Tournament t,
     bool hasCap,
     int spotsLeft,
   ) {
-    if (isCompleted) {
+    final hasStarted = t.hasStarted;
+    final hasEnded = t.hasEnded;
+
+    if (hasEnded) {
       return SizedBox(
         height: 38,
         child: OutlinedButton(
@@ -687,29 +715,101 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
       );
     }
 
-    if (isUpcoming) {
+    // If tournament status is UPCOMING: Coming Soon ⏰ (Cannot join until admin makes it LIVE)
+    if (t.isUpcoming) {
       return Container(
         height: 38,
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
-        child: Text(
-          'Starts Soon ⏰',
-          style: GoogleFonts.outfit(
-            fontWeight: FontWeight.w800,
-            fontSize: 12.5,
-            color: const Color(0xFF64748B),
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('⏰', style: TextStyle(fontSize: 13)),
+            const SizedBox(width: 5),
+            Text(
+              'Coming Soon',
+              style: GoogleFonts.outfit(
+                fontWeight: FontWeight.w800,
+                fontSize: 12.5,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    // When joined: Play Now 🎮 (Vibrant Green - Smaller)
+    // When joined:
     if (isJoined) {
+      // 1. If tournament hasn't started yet: Show Live Countdown Button
+      if (!hasStarted) {
+        final countdownText = _formatDetailedCountdown(t.timeUntilStart);
+        return Container(
+          height: 38,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ElevatedButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '⏰ Tournament starts in $countdownText! Game arena unlocks at start time.',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                  ),
+                  backgroundColor: const Color(0xFF5B1FE6),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.alarm_on_rounded, color: Colors.white, size: 16),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Starts in $countdownText',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // 2. Tournament has started: Play Now 🎮 (Vibrant Green)
       return Container(
         height: 38,
         decoration: BoxDecoration(
@@ -753,7 +853,7 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
       );
     }
 
-    // Live & unjoined
+    // When NOT joined:
     final isFull = hasCap && spotsLeft <= 0;
     if (isFull) {
       return Container(

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,6 +21,16 @@ class TournamentLeaderboardScreen extends ConsumerStatefulWidget {
 
 class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderboardScreen> {
   bool _isExiting = false;
+
+  void _openUserProfile(LeaderboardEntry entry) {
+    final target = (entry.username != null && entry.username!.trim().isNotEmpty)
+        ? entry.username!.trim()
+        : (entry.userId.trim().isNotEmpty ? entry.userId.trim() : entry.userName.trim());
+
+    if (target.isEmpty) return;
+
+    context.push('/playground/profile', extra: target);
+  }
 
   @override
   void initState() {
@@ -216,7 +227,11 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: _buildPinnedUserBar(userRank: data.userRank, isJoined: isJoined),
+                  child: _buildPinnedUserBar(
+                    userRank: data.userRank,
+                    isJoined: isJoined,
+                    tournament: detailTournament,
+                  ),
                 ),
             ],
           );
@@ -364,6 +379,34 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
                 ),
             ],
           ),
+          if ((detailTournament?.minPointsToWin ?? 1000) > 0) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFECACA), width: 1),
+              ),
+              child: Row(
+                children: [
+                  const Text('🎯', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Score min. ${detailTournament?.minPointsToWin ?? 1000} points to be eligible for prizes (even if Rank #1).',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFFDC2626), // Eye-catching Red
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -439,23 +482,18 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
         if (isFirst)
           const Text('👑', style: TextStyle(fontSize: 24)),
 
-        // Avatar
+        // Avatar (Clickable to open user's public profile)
         Stack(
           alignment: Alignment.bottomCenter,
           clipBehavior: Clip.none,
           children: [
-            Container(
-              width: isFirst ? 64 : 52,
-              height: isFirst ? 64 : 52,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: avatarBorder, width: isFirst ? 3 : 2),
-                color: Colors.white,
-              ),
-              child: ClipOval(
-                child: entry.userAvatar != null && entry.userAvatar!.isNotEmpty
-                    ? Image.network(entry.userAvatar!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _avatarFallback(entry.userName))
-                    : _avatarFallback(entry.userName),
+            GestureDetector(
+              onTap: () => _openUserProfile(entry),
+              child: _buildUserAvatar(
+                entry,
+                size: isFirst ? 64 : 52,
+                borderColor: avatarBorder,
+                borderWidth: isFirst ? 3 : 2,
               ),
             ),
             Positioned(
@@ -479,15 +517,18 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
         ),
         const SizedBox(height: 12),
 
-        // User Name
-        SizedBox(
-          width: 85,
-          child: Text(
-            entry.userName,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
+        // User Name (Clickable to open user's public profile)
+        GestureDetector(
+          onTap: () => _openUserProfile(entry),
+          child: SizedBox(
+            width: 85,
+            child: Text(
+              entry.userName,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF1E293B)),
+            ),
           ),
         ),
 
@@ -543,14 +584,73 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
     );
   }
 
-  Widget _avatarFallback(String name) {
+  Widget _buildUserAvatar(LeaderboardEntry entry, {required double size, Color? borderColor, double borderWidth = 0}) {
+    final avatar = entry.userAvatar;
+    Widget imageWidget;
+
+    if (avatar != null && avatar.isNotEmpty) {
+      if (avatar.startsWith('assets/')) {
+        imageWidget = Image.asset(
+          avatar,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _avatarFallback(entry.userName, size: size),
+        );
+      } else if (avatar.startsWith('data:image')) {
+        try {
+          final base64Str = avatar.split(',').last;
+          imageWidget = Image.memory(
+            base64Decode(base64Str),
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _avatarFallback(entry.userName, size: size),
+          );
+        } catch (_) {
+          imageWidget = _avatarFallback(entry.userName, size: size);
+        }
+      } else {
+        imageWidget = Image.network(
+          avatar,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _avatarFallback(entry.userName, size: size),
+        );
+      }
+    } else {
+      imageWidget = _avatarFallback(entry.userName, size: size);
+    }
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        border: borderWidth > 0 && borderColor != null
+            ? Border.all(color: borderColor, width: borderWidth)
+            : null,
+      ),
+      child: ClipOval(child: imageWidget),
+    );
+  }
+
+  Widget _avatarFallback(String name, {double size = 36}) {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'P';
     return Container(
+      width: size,
+      height: size,
       color: const Color(0xFF6E5DE7),
       alignment: Alignment.center,
       child: Text(
         initial,
-        style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
+        style: GoogleFonts.outfit(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: size * 0.42,
+        ),
       ),
     );
   }
@@ -621,87 +721,96 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
 
   Widget _buildLeaderboardTile(LeaderboardEntry entry) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
-      child: Row(
-        children: [
-          // Rank
-          Container(
-            width: 30,
-            alignment: Alignment.center,
-            child: Text(
-              '#${entry.rank}',
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF64748B),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // Avatar
-          Container(
-            width: 36,
-            height: 36,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-            ),
-            child: ClipOval(
-              child: entry.userAvatar != null && entry.userAvatar!.isNotEmpty
-                  ? Image.network(entry.userAvatar!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _avatarFallback(entry.userName))
-                  : _avatarFallback(entry.userName),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Name
-          Expanded(
-            child: Text(
-              entry.userName,
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF1E293B),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-
-          // Score
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${entry.score} pts',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF6E5DE7),
-                ),
-              ),
-              if (entry.prize > 0)
-                Text(
-                  '+${entry.prize} Coins',
-                  style: GoogleFonts.outfit(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFFD97706),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => _openUserProfile(entry),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                // Rank
+                Container(
+                  width: 30,
+                  alignment: Alignment.center,
+                  child: Text(
+                    '#${entry.rank}',
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF64748B),
+                    ),
                   ),
                 ),
-            ],
+                const SizedBox(width: 8),
+
+                // Avatar (Tap to open public profile)
+                _buildUserAvatar(
+                  entry,
+                  size: 38,
+                  borderColor: const Color(0xFFE2E8F0),
+                  borderWidth: 1.5,
+                ),
+                const SizedBox(width: 12),
+
+                // Name
+                Expanded(
+                  child: Text(
+                    entry.userName,
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1E293B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
+                // Score
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${entry.score} pts',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF6E5DE7),
+                      ),
+                    ),
+                    if (entry.prize > 0)
+                      Text(
+                        '+${entry.prize} Coins',
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFD97706),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildPinnedUserBar({LeaderboardEntry? userRank, required bool isJoined}) {
+  Widget _buildPinnedUserBar({
+    LeaderboardEntry? userRank,
+    required bool isJoined,
+    Tournament? tournament,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
@@ -734,29 +843,32 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    userRank != null ? 'Your Current Rank' : 'Your Tournament Status',
-                    style: GoogleFonts.outfit(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+              child: GestureDetector(
+                onTap: userRank != null ? () => _openUserProfile(userRank) : null,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      userRank != null ? 'Your Current Rank (Tap for profile)' : 'Your Tournament Status',
+                      style: GoogleFonts.outfit(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  Text(
-                    userRank?.userName ?? (isJoined ? 'Enrolled (Score: 0 pts)' : 'Not Joined Yet'),
-                    style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
+                    Text(
+                      userRank?.userName ?? (isJoined ? 'Enrolled (Score: 0 pts)' : 'Not Joined Yet'),
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             if (userRank != null)
@@ -785,16 +897,35 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
               )
             else if (isJoined)
               ElevatedButton(
-                onPressed: () => context.push('/tournaments/${widget.tournamentId}/games'),
+                onPressed: () {
+                  if (tournament != null && !tournament.hasStarted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '⏰ Tournament starts soon! Game arena unlocks at start time.',
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                        ),
+                        backgroundColor: const Color(0xFF5B1FE6),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+                  context.push('/tournaments/${widget.tournamentId}/games');
+                },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00C06D),
+                  backgroundColor: (tournament != null && !tournament.hasStarted)
+                      ? const Color(0xFF5B1FE6)
+                      : const Color(0xFF00C06D),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
                 child: Text(
-                  'Play Now 🎮',
+                  (tournament != null && !tournament.hasStarted)
+                      ? 'Starts Soon ⏰'
+                      : 'Play Now 🎮',
                   style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w800),
                 ),
               ),
