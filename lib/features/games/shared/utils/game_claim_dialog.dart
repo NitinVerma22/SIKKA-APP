@@ -5,12 +5,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/ads/ad_service.dart';
 import 'package:sikkaplay/core/config/config_service.dart';
-import 'package:sikkaplay/features/games/spin_earn/widgets/fake_ad_dialog.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/core/sync/sync_coordinator.dart';
 import 'package:sikkaplay/features/games/games_hub/providers/win_600_provider.dart';
+import 'package:sikkaplay/features/tournaments/providers/tournament_providers.dart';
 
 class GameClaimDialog {
   static void show({
@@ -23,11 +23,13 @@ class GameClaimDialog {
     required VoidCallback onContinue,
     required VoidCallback onExit,
     VoidCallback? onCancel,
+    bool? isTournament,
   }) {
     final selectedLanguage = ref.read(languageProvider);
-    final configState = ref.read(appConfigProvider);
     // User requested to only show 'rewarded' ads for gullak claim
-    final String adType = 'rewarded';
+    const String adType = 'rewarded';
+    final activeTournId = ref.read(activeTournamentIdProvider) ?? TournamentSessionTracker.activeTournamentId;
+    final bool isTournamentMode = (isTournament == true) || (activeTournId != null && activeTournId.isNotEmpty);
 
     final onCompleteClaim = () async {
       if (sessionId == null) {
@@ -336,16 +338,18 @@ class GameClaimDialog {
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold)))),
                 ),
-                const SizedBox(height: 10),
-                TextButton(
-                    onPressed: showDirectClaimLoaderAndClaim,
-                    child: Text(
-                        selectedLanguage == 'Hindi'
-                            ? 'विज्ञापन के बिना क्लेम करें'
-                            : 'Claim without ad',
-                        style: GoogleFonts.outfit(
-                            color: const Color(0xFF6B7280),
-                            fontWeight: FontWeight.w600))),
+                if (!isTournamentMode) ...[
+                  const SizedBox(height: 10),
+                  TextButton(
+                      onPressed: showDirectClaimLoaderAndClaim,
+                      child: Text(
+                          selectedLanguage == 'Hindi'
+                              ? 'विज्ञापन के बिना क्लेम करें'
+                              : 'Claim without ad',
+                          style: GoogleFonts.outfit(
+                              color: const Color(0xFF6B7280),
+                              fontWeight: FontWeight.w600))),
+                ],
               ]),
             ),
           ),

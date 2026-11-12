@@ -17,9 +17,11 @@ import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sikkaplay/features/tournaments/providers/tournament_providers.dart';
 
 class MathRushScreen extends ConsumerStatefulWidget {
-  const MathRushScreen({super.key});
+  final bool isTournament;
+  const MathRushScreen({super.key, this.isTournament = false});
 
   @override
   ConsumerState<MathRushScreen> createState() => _MathRushScreenState();
@@ -798,6 +800,7 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
         sessionId: _sessionId,
         gameName: 'Math Rush',
         coinsEarned: _gullakCoins,
+        isTournament: widget.isTournament,
         onClaimCompleted: () {
           GameAudio.playMathSikkaEarned();
           if (mounted) {
@@ -858,6 +861,9 @@ class _MathRushScreenState extends ConsumerState<MathRushScreen>
 
   @override
   void dispose() {
+    if (widget.isTournament) {
+      ref.read(activeTournamentIdProvider.notifier).clear();
+    }
     GameAudio.stopAll();
     _questionTimer?.cancel();
     _timerController.dispose();

@@ -18,6 +18,7 @@ import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sikkaplay/features/tournaments/providers/tournament_providers.dart';
 
 enum TileType { coin, bomb }
 
@@ -34,7 +35,8 @@ class TileData {
 }
 
 class TreasureGridScreen extends ConsumerStatefulWidget {
-  const TreasureGridScreen({super.key});
+  final bool isTournament;
+  const TreasureGridScreen({super.key, this.isTournament = false});
 
   @override
   ConsumerState<TreasureGridScreen> createState() => _TreasureGridScreenState();
@@ -267,6 +269,9 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
 
   @override
   void dispose() {
+    if (widget.isTournament) {
+      ref.read(activeTournamentIdProvider.notifier).clear();
+    }
     GameAudio.stopAll();
     _gameTimer?.cancel();
     _countdownTimer?.cancel();
@@ -578,6 +583,7 @@ class _TreasureGridScreenState extends ConsumerState<TreasureGridScreen> {
         sessionId: _sessionId,
         gameName: 'Treasure Grid',
         coinsEarned: _sessionCoins,
+        isTournament: widget.isTournament,
         onClaimCompleted: () {
           if (mounted) {
             setState(() {

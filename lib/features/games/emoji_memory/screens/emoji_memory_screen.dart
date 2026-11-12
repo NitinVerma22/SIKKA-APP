@@ -18,9 +18,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
+import 'package:sikkaplay/features/tournaments/providers/tournament_providers.dart';
 
 class EmojiMemoryScreen extends ConsumerStatefulWidget {
-  const EmojiMemoryScreen({super.key});
+  final bool isTournament;
+  const EmojiMemoryScreen({super.key, this.isTournament = false});
 
   @override
   ConsumerState<EmojiMemoryScreen> createState() => _EmojiMemoryScreenState();
@@ -647,6 +649,9 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
 
   @override
   void dispose() {
+    if (widget.isTournament) {
+      ref.read(activeTournamentIdProvider.notifier).clear();
+    }
     GameAudio.stopAll();
     _previewTimer?.cancel();
     _gameTimer?.cancel();
@@ -670,6 +675,7 @@ class _EmojiMemoryScreenState extends ConsumerState<EmojiMemoryScreen> with Tick
         sessionId: _sessionId,
         gameName: 'Emoji Memory',
         coinsEarned: _sessionCoins,
+        isTournament: widget.isTournament,
         onClaimCompleted: () {
           if (mounted) {
             setState(() {

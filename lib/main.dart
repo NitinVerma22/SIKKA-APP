@@ -89,6 +89,17 @@ Future<void> _handleNotificationAction(NotificationResponse response) async {
       return;
     }
 
+    final String type = data['type'] ?? '';
+    final String tournamentId = data['tournamentId'] ?? '';
+
+    if (type.startsWith('tournament') || tournamentId.isNotEmpty) {
+      final String targetTournamentId = tournamentId.isNotEmpty ? tournamentId : channelName;
+      if (targetTournamentId.isNotEmpty) {
+        globalPushTournamentScreenWithRetry(targetTournamentId, 15);
+      }
+      return;
+    }
+
     // Standard tap: Open the chat room
     if (channelName.isNotEmpty && partnerId.isNotEmpty) {
       globalPushChatScreenWithRetry(channelName, partnerId, partnerName, 15, partnerAvatar: partnerAvatar);
@@ -96,6 +107,26 @@ Future<void> _handleNotificationAction(NotificationResponse response) async {
   } catch (e) {
     debugPrint('Error handling notification tap: $e');
   }
+}
+
+void globalPushTournamentScreenWithRetry(String tournamentId, int retries) async {
+  if (rootNavigatorKey.currentContext == null) {
+    if (retries > 0) {
+      Future.delayed(const Duration(milliseconds: 400), () {
+        globalPushTournamentScreenWithRetry(tournamentId, retries - 1);
+      });
+    } else {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('pending_tournament_route', tournamentId);
+      } catch (e) {
+        debugPrint('Error saving pending tournament route: $e');
+      }
+    }
+    return;
+  }
+  
+  rootNavigatorKey.currentContext?.push('/tournaments/$tournamentId');
 }
 
 void globalPushChatScreenWithRetry(String channelName, String partnerId, String partnerName, int retries, {String? partnerAvatar}) async {
@@ -217,6 +248,8 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
     'channelName': message.data['channelName'] ?? '',
     'partnerId': senderId ?? '',
     'partnerName': title,
+    'tournamentId': message.data['tournamentId'] ?? message.data['channelName'] ?? '',
+    'type': message.data['type'] ?? '',
   });
 
   await localNotifications.show(
@@ -422,6 +455,20 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
     final partnerId = message.data['senderId'] ?? message.data['partnerId'] ?? '';
     final partnerName = message.data['senderName'] ?? message.data['partnerName'] ?? 'Sikka Games Friend';
     final partnerAvatar = message.data['senderAvatar'] ?? '';
+    final String type = message.data['type'] ?? '';
+    final String tournamentId = message.data['tournamentId'] ?? (type.startsWith('tournament') ? message.data['channelName'] : null) ?? '';
+
+    if (type.startsWith('tournament') || tournamentId.isNotEmpty) {
+      if (tournamentId.isNotEmpty) {
+        if (isKilledState) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('pending_tournament_route', tournamentId);
+        } else {
+          _pushTournamentScreenWithRetry(tournamentId, 10);
+        }
+      }
+      return;
+    }
 
     if (channelName.isNotEmpty && partnerId.isNotEmpty) {
       if (isKilledState) {
@@ -436,6 +483,26 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
         _pushChatScreenWithRetry(channelName, partnerId, partnerName, 10, partnerAvatar: partnerAvatar);
       }
     }
+  }
+
+  void _pushTournamentScreenWithRetry(String tournamentId, int retries) async {
+    if (rootNavigatorKey.currentContext == null) {
+      if (retries > 0) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _pushTournamentScreenWithRetry(tournamentId, retries - 1);
+        });
+      } else {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('pending_tournament_route', tournamentId);
+        } catch (e) {
+          debugPrint('Error saving pending tournament route: $e');
+        }
+      }
+      return;
+    }
+
+    rootNavigatorKey.currentContext?.push('/tournaments/$tournamentId');
   }
 
   void _pushChatScreenWithRetry(String channelName, String partnerId, String partnerName, int retries, {String? partnerAvatar}) async {

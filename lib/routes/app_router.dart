@@ -183,17 +183,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/games/treasure_grid',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const TreasureGridScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final isTournament = extra?['isTournament'] as bool? ?? false;
+          return TreasureGridScreen(isTournament: isTournament);
+        },
       ),
       GoRoute(
         path: '/games/emoji_memory',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const EmojiMemoryScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final isTournament = extra?['isTournament'] as bool? ?? false;
+          return EmojiMemoryScreen(isTournament: isTournament);
+        },
       ),
       GoRoute(
         path: '/games/math_rush',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const MathRushScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final isTournament = extra?['isTournament'] as bool? ?? false;
+          return MathRushScreen(isTournament: isTournament);
+        },
       ),
       GoRoute(
         path: '/games/water_sort',

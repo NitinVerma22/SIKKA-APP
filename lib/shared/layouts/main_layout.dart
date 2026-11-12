@@ -52,6 +52,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     super.initState();
     _initGlobalSocket();
     unawaited(_consumePendingChatRoute());
+    unawaited(_consumePendingTournamentRoute());
     
     Connectivity().checkConnectivity().then((results) {
       if (mounted) {
@@ -65,6 +66,42 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         setState(() => _isOffline = offline);
       }
     });
+  }
+
+  Future<void> _consumePendingTournamentRoute() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final tournamentId = prefs.getString('pending_tournament_route')?.trim();
+      if (tournamentId == null || tournamentId.isEmpty) return;
+
+      await prefs.remove('pending_tournament_route');
+
+      for (var attempt = 0; attempt < 20; attempt++) {
+        if (!mounted) return;
+        if (attempt > 0) {
+          await Future.delayed(const Duration(milliseconds: 250));
+        } else {
+          await Future.delayed(const Duration(milliseconds: 150));
+        }
+
+        if (!mounted) return;
+
+        try {
+          final router = GoRouter.of(context);
+          router.push('/tournaments/$tournamentId');
+          debugPrint('[Notification] Opened pending tournament: $tournamentId');
+          return;
+        } catch (e) {
+          debugPrint('[Notification] Tournament navigation attempt ${attempt + 1} failed: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('[Notification] Error consuming pending tournament route: $e');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('pending_tournament_route');
+      } catch (_) {}
+    }
   }
 
   Future<void> _consumePendingChatRoute() async {

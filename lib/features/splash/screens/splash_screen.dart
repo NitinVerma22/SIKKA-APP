@@ -251,6 +251,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             debugPrint('Error parsing pending chat route: $e');
           }
         }
+        final pendingTournamentId = prefs.getString('pending_tournament_route');
+        if (pendingTournamentId != null && pendingTournamentId.isNotEmpty) {
+          await prefs.remove('pending_tournament_route');
+          if (mounted) {
+            AppNavigator.resetTo(context, ref, '/tournaments');
+            context.push('/tournaments/${pendingTournamentId}');
+            return;
+          }
+        }
+
         if (mounted) {
           AppNavigator.resetTo(context, ref, '/home'); // Session active, verified, and preloaded
         }
