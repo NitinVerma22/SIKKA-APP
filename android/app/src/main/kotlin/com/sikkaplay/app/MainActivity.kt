@@ -36,7 +36,7 @@ class MainActivity: FlutterActivity() {
                 }
                 
                 try {
-                    if (!adScaleXInitialized) {
+                    if (!adScaleXInitialized || initializedUserId != userId) {
                         AdScaleX.init(
                             context = applicationContext,
                             appKey = appKey,
@@ -44,13 +44,6 @@ class MainActivity: FlutterActivity() {
                         )
                         adScaleXInitialized = true
                         initializedUserId = userId
-                    } else if (initializedUserId != userId) {
-                        result.error(
-                            "ADSCALEX_USER_CHANGED",
-                            "AdScaleX must be reinitialized after user change",
-                            null
-                        )
-                        return@setMethodCallHandler
                     }
 
                     AdScaleX.showOfferwall(this)
