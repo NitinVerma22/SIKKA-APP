@@ -144,7 +144,7 @@ class PrizeDistributionTable extends StatelessWidget {
                         child: Padding(
                           padding: const EdgeInsets.only(left: 16),
                           child: Text(
-                            'Reward (Coins)',
+                            'Reward',
                             style: GoogleFonts.outfit(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
@@ -231,57 +231,73 @@ class PrizeDistributionTable extends StatelessWidget {
                             color: const Color(0xFFF1F5F9),
                           ),
 
-                          // Right Column: Reward (Coins)
+                          // Right Column: Reward (Coins with optional Cash underneath)
                           Expanded(
                             flex: 10,
                             child: Padding(
-                              padding: const EdgeInsets.only(left: 16),
-                              child: Row(
+                              padding: const EdgeInsets.only(left: 14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Image.asset(
-                                    'assets/images/games_hub/coins_stack.png',
-                                    width: 26,
-                                    height: 26,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => const Icon(
-                                      Icons.monetization_on_rounded,
-                                      color: Color(0xFFF59E0B),
-                                      size: 24,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          _formatNumber(tier.prize),
-                                          style: GoogleFonts.outfit(
-                                            fontSize: 15.5,
-                                            fontWeight: FontWeight.w900,
-                                            color: const Color(0xFF0F172A),
-                                          ),
+                                  // Coins Row
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Image.asset(
+                                        'assets/images/games_hub/coins_stack.png',
+                                        width: 20,
+                                        height: 20,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, __, ___) => const Icon(
+                                          Icons.monetization_on_rounded,
+                                          color: Color(0xFFF59E0B),
+                                          size: 18,
                                         ),
-                                        if (cashRupees > 0) ...[
-                                          const SizedBox(width: 5),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFDCFCE7),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              '+₹$cashRupees',
-                                              style: GoogleFonts.outfit(
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.w800,
-                                                color: const Color(0xFF15803D),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _formatNumber(tier.prize),
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w900,
+                                          color: const Color(0xFF0F172A),
+                                          letterSpacing: -0.2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 3.5),
+                                      Text(
+                                        'Coins',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
                                   ),
+
+                                  // Rupees Row directly below coins (with small gap)
+                                  if (cashRupees > 0) ...[
+                                    const SizedBox(height: 3),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDCFCE7),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: const Color(0xFF86EFAC), width: 0.8),
+                                      ),
+                                      child: Text(
+                                        '+ ₹${_formatNumber(cashRupees)} Cash',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFF15803D),
+                                          letterSpacing: -0.1,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

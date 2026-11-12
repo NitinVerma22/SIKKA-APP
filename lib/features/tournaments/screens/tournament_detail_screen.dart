@@ -413,9 +413,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
   // 1. Hero Card (Sleek ~3:1 aspect ratio card with enlarged podium image, clean prize pool, royal sapphire theme)
   Widget _buildHeroCard(Tournament tournament, bool isOptimisticallyJoined) {
-    final int cashRupees = tournament.prizePoolRupees > 0
-        ? tournament.prizePoolRupees
-        : (tournament.prizePool / 20).round();
+    final int cashRupees = tournament.prizePoolRupees > 0 ? tournament.prizePoolRupees : 0;
 
     return Container(
       width: double.infinity,

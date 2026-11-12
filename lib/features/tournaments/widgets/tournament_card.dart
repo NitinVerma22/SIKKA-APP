@@ -398,9 +398,8 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
   }
 
   Widget _buildPrizeStage(Tournament t) {
-    final int cashRupees = t.prizePoolRupees > 0
-        ? t.prizePoolRupees
-        : (t.prizePool / 20).round();
+    final int cashRupees = t.prizePoolRupees > 0 ? t.prizePoolRupees : 0;
+    final bool hasCash = cashRupees > 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -455,62 +454,87 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '₹${_formatNumber(cashRupees)} EXTRA',
-                              style: GoogleFonts.outfit(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w900,
-                                color: const Color(0xFF00C853),
-                                letterSpacing: -0.5,
-                                shadows: const [
-                                  Shadow(
-                                    color: Color(0xFF00692C),
-                                    offset: Offset(0, 1.8),
-                                    blurRadius: 0,
-                                  ),
-                                  Shadow(
-                                    color: Color(0xFF004D20),
-                                    offset: Offset(0, 2.5),
-                                    blurRadius: 1,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 2.5),
-                              child: Text(
-                                'worth\nof coins',
+                      if (hasCash) ...[
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '₹${_formatNumber(cashRupees)} EXTRA',
                                 style: GoogleFonts.outfit(
-                                  fontSize: 8.5,
+                                  fontSize: 19,
                                   fontWeight: FontWeight.w900,
-                                  color: const Color(0xFF451A03),
-                                  height: 1.0,
+                                  color: const Color(0xFF00C853),
+                                  letterSpacing: -0.5,
+                                  shadows: const [
+                                    Shadow(
+                                      color: Color(0xFF00692C),
+                                      offset: Offset(0, 1.8),
+                                      blurRadius: 0,
+                                    ),
+                                    Shadow(
+                                      color: Color(0xFF004D20),
+                                      offset: Offset(0, 2.5),
+                                      blurRadius: 1,
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          '= ${_formatNumber(t.prizePool)} COINS',
-                          style: GoogleFonts.outfit(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF3F1D0B),
-                            letterSpacing: -0.2,
+                              const SizedBox(width: 4),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 2.5),
+                                child: Text(
+                                  'worth\nof coins',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w900,
+                                    color: const Color(0xFF451A03),
+                                    height: 1.0,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 2),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '= ${_formatNumber(t.prizePool)} COINS',
+                            style: GoogleFonts.outfit(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF3F1D0B),
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '🪙 ${_formatNumber(t.prizePool)} COINS',
+                            style: GoogleFonts.outfit(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF3F1D0B),
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'TOTAL PRIZE POOL',
+                          style: GoogleFonts.outfit(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF78350F),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -542,7 +566,9 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Text(
-              'ये ₹${_formatNumber(cashRupees)} (${_formatCoinsShort(t.prizePool)} coins) sabhi qualified players mein ranking ke hisaab se distribute honge!',
+              hasCash
+                  ? 'ये ₹${_formatNumber(cashRupees)} (${_formatCoinsShort(t.prizePool)} coins) sabhi qualified players mein ranking ke hisaab se distribute honge!'
+                  : 'ये ${_formatNumber(t.prizePool)} coins sabhi qualified players mein ranking ke hisaab se distribute honge!',
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
                 fontSize: 8.5,
