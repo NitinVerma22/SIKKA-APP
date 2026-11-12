@@ -142,23 +142,108 @@ class TournamentJoinDialog {
     );
   }
 
-  static void _playRewardedAdAndJoin(
+  static Future<void> _playRewardedAdAndJoin(
     BuildContext context,
     WidgetRef ref,
     Tournament tournament,
     VoidCallback onJoinSuccess,
-  ) {
+  ) async {
+    // If ad is not ready, show a brief loading spinner dialog while loading
+    if (!AdService.instance.isRewardedAdLoaded()) {
+      AdService.instance.loadRewardedAd();
+
+      // Show friendly loading dialog
+      bool dialogDismissed = false;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (loadingCtx) {
+          return PopScope(
+            canPop: false,
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 16,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6E5DE7)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading Video Ad...',
+                      style: GoogleFonts.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Preparing your free entry video ad. Please wait a moment...',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+
+      // Poll until ad loads or max 6 seconds timeout
+      int waitedMs = 0;
+      while (waitedMs < 6000 && !AdService.instance.isRewardedAdLoaded()) {
+        await Future.delayed(const Duration(milliseconds: 350));
+        waitedMs += 350;
+      }
+
+      if (context.mounted && !dialogDismissed) {
+        Navigator.of(context, rootNavigator: true).pop();
+        dialogDismissed = true;
+      }
+
+      if (!context.mounted) return;
+
+      if (!AdService.instance.isRewardedAdLoaded()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Video ad could not load in time. Please check your connection and try again.'),
+            backgroundColor: Color(0xFFEF4444),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+    }
+
+    // Now play the Rewarded Ad and strictly require completion
     bool rewardEarned = false;
+    bool isProcessing = false;
 
-    // Show loading indicator
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Loading video ad for free entry...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    AdService.instance.showRewardedAd(
+    final adLaunched = await AdService.instance.showRewardedAd(
       context: context,
       userId: 'tournament_join_${tournament.id}',
       onUserEarnedReward: (reward) {
@@ -167,7 +252,32 @@ class TournamentJoinDialog {
       onAdDismissed: () async {
         if (!context.mounted) return;
 
-        if (rewardEarned || !AdService.instance.isRewardedAdLoaded()) {
+        // STRICT ENFORCEMENT: User must complete the ad to get the reward!
+        if (rewardEarned) {
+          if (isProcessing) return;
+          isProcessing = true;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text('Video verified! Enrolling in tournament...'),
+                ],
+              ),
+              backgroundColor: Color(0xFF6E5DE7),
+              duration: Duration(seconds: 2),
+            ),
+          );
+
           // Join the tournament via backend
           final result = await ref.read(tournamentServiceProvider).joinTournament(tournament.id);
           if (!context.mounted) return;
@@ -176,11 +286,14 @@ class TournamentJoinDialog {
             // Instantly mark joined in memory so UI reflects Play Now without reload
             ref.read(joinedTournamentIdsProvider.notifier).markJoined(tournament.id);
             ref.invalidate(tournamentDetailProvider(tournament.id));
+            ref.invalidate(liveTournamentsProvider);
+            ref.invalidate(myTournamentsProvider);
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(result.message),
                 backgroundColor: const Color(0xFF10B981),
+                duration: const Duration(seconds: 3),
               ),
             );
             onJoinSuccess();
@@ -189,19 +302,31 @@ class TournamentJoinDialog {
               SnackBar(
                 content: Text(result.message),
                 backgroundColor: const Color(0xFFEF4444),
+                duration: const Duration(seconds: 3),
               ),
             );
           }
         } else {
+          // User backed out or closed ad early before reward
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Ad was closed early. Please watch full video to join.'),
+              content: Text('⚠️ Video ad was closed early. You must watch the complete video to join for free!'),
               backgroundColor: Color(0xFFEF4444),
+              duration: Duration(seconds: 4),
             ),
           );
         }
       },
     );
+
+    if (!adLaunched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not start video ad. Please try again in a few seconds.'),
+          backgroundColor: Color(0xFFEF4444),
+        ),
+      );
+    }
   }
 
   static void _showPaidConfirmationDialog(

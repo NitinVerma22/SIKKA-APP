@@ -254,22 +254,34 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
                             overflow: TextOverflow.ellipsis,
                           ),
                           if (t.minPointsToWin > 0) ...[
-                            const SizedBox(height: 3),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text('🎯', style: TextStyle(fontSize: 10)),
-                                const SizedBox(width: 3),
-                                Text(
-                                  'Min ${t.minPointsToWin} points to win prize',
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFFDC2626), // Sharp eye-catching Red
-                                    letterSpacing: -0.1,
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEF2F2),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFFECACA), width: 0.8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('🎯', style: TextStyle(fontSize: 9.5)),
+                                  const SizedBox(width: 3.5),
+                                  Flexible(
+                                    child: Text(
+                                      'Min ${_formatNumber(t.minPointsToWin)} pts to win prize',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFFDC2626),
+                                        letterSpacing: -0.1,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ],

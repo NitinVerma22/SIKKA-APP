@@ -176,7 +176,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   const SizedBox(height: 16),
 
                   // 5. Fair Play & Scoring Rules
-                  _buildFairPlayRulesCard(),
+                  _buildFairPlayRulesCard(tournament),
                   const SizedBox(height: 100), // Padding for sticky bottom navigation bar
                 ],
               ),
@@ -486,14 +486,18 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    (tournament.tag != null && tournament.tag!.isNotEmpty
-                                            ? tournament.tag!
-                                            : 'MEGA')
-                                        .replaceAll('⚡', '')
-                                        .replaceAll('🔥', '')
-                                        .replaceAll('🏆', '')
-                                        .trim()
-                                        .toUpperCase(),
+                                    () {
+                                      final rawTag = tournament.tag?.trim() ?? '';
+                                      if (rawTag.isEmpty || rawTag.contains(':')) {
+                                        return 'MEGA';
+                                      }
+                                      return rawTag
+                                          .replaceAll('⚡', '')
+                                          .replaceAll('🔥', '')
+                                          .replaceAll('🏆', '')
+                                          .trim()
+                                          .toUpperCase();
+                                    }(),
                                     style: GoogleFonts.outfit(
                                       color: Colors.white,
                                       fontSize: 10,
@@ -641,7 +645,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                 const Text('🎯', style: TextStyle(fontSize: 10)),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Score min. ${tournament.minPointsToWin} pts to win rewards',
+                                  'Score min. ${_formatNumber(tournament.minPointsToWin)} pts to win rewards',
                                   style: GoogleFonts.outfit(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
@@ -1082,7 +1086,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
   }
 
   // 5. Fair Play & Scoring Rules
-  Widget _buildFairPlayRulesCard() {
+  Widget _buildFairPlayRulesCard(Tournament tournament) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -1133,6 +1137,10 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (tournament.minPointsToWin > 0) ...[
+                _buildRuleCheckItem('🎯 Minimum ${_formatNumber(tournament.minPointsToWin)} Points Required to win rewards (even for Rank #1)'),
+                const SizedBox(height: 10),
+              ],
               _buildRuleCheckItem('1 Coin = 1 Tournament Point'),
               const SizedBox(height: 10),
               _buildRuleCheckItem('Instant score update'),

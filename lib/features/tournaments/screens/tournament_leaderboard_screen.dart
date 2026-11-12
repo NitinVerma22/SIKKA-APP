@@ -20,6 +20,14 @@ class TournamentLeaderboardScreen extends ConsumerStatefulWidget {
 }
 
 class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderboardScreen> {
+  String _formatNumber(num value) {
+    if (value >= 1000) {
+      final str = value.toInt().toString();
+      final reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+      return str.replaceAllMapped(reg, (Match m) => '${m[1]},');
+    }
+    return value.toInt().toString();
+  }
   bool _isExiting = false;
 
   void _openUserProfile(LeaderboardEntry entry) {
@@ -395,7 +403,7 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Score min. ${detailTournament?.minPointsToWin ?? 1000} points to be eligible for prizes (even if Rank #1).',
+                      'Score min. ${_formatNumber(detailTournament?.minPointsToWin ?? 1000)} points to qualify for prizes (even if Rank #1).',
                       style: GoogleFonts.outfit(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w800,
@@ -877,7 +885,7 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '${userRank.score} pts',
+                    '${_formatNumber(userRank.score)} pts',
                     style: GoogleFonts.outfit(
                       color: const Color(0xFFFFD43B),
                       fontSize: 15,
@@ -886,10 +894,19 @@ class _TournamentLeaderboardScreenState extends ConsumerState<TournamentLeaderbo
                   ),
                   if (userRank.prize > 0)
                     Text(
-                      'Prize: +${userRank.prize} Coins',
+                      'Prize: +${_formatNumber(userRank.prize)} Coins',
                       style: GoogleFonts.outfit(
                         color: const Color(0xFF10B981),
                         fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    )
+                  else if (userRank.score < (tournament?.minPointsToWin ?? 1000))
+                    Text(
+                      'Need ${_formatNumber((tournament?.minPointsToWin ?? 1000) - userRank.score)} more pts',
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFFF87171),
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

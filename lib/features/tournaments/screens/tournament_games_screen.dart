@@ -32,11 +32,7 @@ class _TournamentGamesScreenState extends ConsumerState<TournamentGamesScreen> {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      if (_remaining.inSeconds > 0) {
-        setState(() {
-          _remaining = _remaining - const Duration(seconds: 1);
-        });
-      }
+      setState(() {});
     });
   }
 
@@ -54,32 +50,50 @@ class _TournamentGamesScreenState extends ConsumerState<TournamentGamesScreen> {
     return '$hours:$minutes:$seconds';
   }
 
-  void _launchGame(BuildContext context, String gameType, Tournament tournament) {
+  String _formatDetailedCountdown(Duration d) {
+    if (d.isNegative || d.inSeconds <= 0) return '00:00:00';
+    final days = d.inDays;
+    final hours = (d.inHours % 24).toString().padLeft(2, '0');
+    final minutes = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    if (days > 0) {
+      return '${days}d ${hours}h ${minutes}m ${seconds}s';
+    } else {
+      return '${hours}h ${minutes}m ${seconds}s';
+    }
+  }
+
+  void _launchGame(BuildContext context, String gameType, Tournament tournament) async {
     // Set active tournament ID so score increment is attributed to this tournament
     ref.read(activeTournamentIdProvider.notifier).setActive(tournament.id);
+    final extra = {'isTournament': true, 'tournamentId': tournament.id};
 
     switch (gameType) {
       case 'arrow_escape':
-        context.push('/games/arrow_escape');
+        await context.push('/games/arrow_escape', extra: extra);
         break;
       case 'water_sort':
-        context.push('/games/water_sort');
+        await context.push('/games/water_sort', extra: extra);
         break;
       case 'bubble_shooter':
-        context.push('/games/bubble_shooter');
+        await context.push('/games/bubble_shooter', extra: extra);
         break;
       case 'math_rush':
-        context.push('/games/math_rush');
+        await context.push('/games/math_rush', extra: extra);
         break;
       case 'emoji_memory':
-        context.push('/games/emoji_memory');
+        await context.push('/games/emoji_memory', extra: extra);
         break;
       case 'treasure_grid':
-        context.push('/games/treasure_grid');
+        await context.push('/games/treasure_grid', extra: extra);
         break;
       default:
-        context.push('/games/arrow_escape');
+        await context.push('/games/arrow_escape', extra: extra);
         break;
+    }
+
+    if (mounted) {
+      ref.read(activeTournamentIdProvider.notifier).clear();
     }
   }
 
@@ -119,6 +133,111 @@ class _TournamentGamesScreenState extends ConsumerState<TournamentGamesScreen> {
               child: Text(
                 'Tournament not found',
                 style: GoogleFonts.outfit(fontSize: 16, color: const Color(0xFF64748B)),
+              ),
+            );
+          }
+
+          if (!tournament.hasStarted) {
+            return Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEDE9FE),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.alarm_on_rounded, color: Color(0xFF5B1FE6), size: 48),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Tournament Starts Soon!',
+                        style: GoogleFonts.outfit(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF0F172A),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${tournament.title} is scheduled to start soon. Arena games will unlock automatically.',
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          color: const Color(0xFF64748B),
+                          height: 1.4,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'STARTS IN',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF94A3B8),
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDetailedCountdown(tournament.timeUntilStart),
+                              style: GoogleFonts.outfit(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFF5B1FE6),
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 46,
+                        child: OutlinedButton(
+                          onPressed: () => context.pop(),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF5B1FE6),
+                            side: const BorderSide(color: Color(0xFF5B1FE6), width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: Text(
+                            'Back to Tournament Details',
+                            style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             );
           }
