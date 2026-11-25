@@ -137,6 +137,75 @@ class _TournamentGamesScreenState extends ConsumerState<TournamentGamesScreen> {
             );
           }
 
+          if (tournament.isPaused) {
+            return Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFEF3C7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.pause_circle_filled_rounded, color: Color(0xFFD97706), size: 48),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Tournament Paused ⏸️',
+                        style: GoogleFonts.outfit(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        tournament.pauseMessage.isNotEmpty
+                            ? tournament.pauseMessage
+                            : 'This tournament is currently paused by admin and will resume tomorrow. Your joined spot and points are safe!',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF64748B),
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => context.pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD97706),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        ),
+                        child: Text('Back to Arena', style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
           if (!tournament.hasStarted) {
             return Center(
               child: SingleChildScrollView(

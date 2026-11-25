@@ -316,13 +316,33 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       );
                     };
                   } else {
-                    // Joined and tournament is live & started: Play Now 🎮
-                    gradStart = const Color(0xFF00C06D);
-                    gradEnd = const Color(0xFF00A859);
-                    shadowCol = const Color(0xFF00C06D);
-                    btnIcon = Icons.play_circle_fill_rounded;
-                    btnText = 'Play Now 🎮';
-                    btnAction = () => context.push('/tournaments/${tournament.id}/games');
+                    if (tournament.isPaused) {
+                      gradStart = const Color(0xFFF59E0B);
+                      gradEnd = const Color(0xFFD97706);
+                      shadowCol = const Color(0xFFF59E0B);
+                      btnIcon = Icons.pause_circle_filled_rounded;
+                      btnText = 'Paused (Resumes Tomorrow)';
+                      btnAction = () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '⏸️ ${tournament.pauseMessage.isNotEmpty ? tournament.pauseMessage : "Tournament is paused and will resume tomorrow."} Your joined spot is safe!',
+                              style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                            ),
+                            backgroundColor: const Color(0xFFD97706),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      };
+                    } else {
+                      // Joined and tournament is live & started: Play Now 🎮
+                      gradStart = const Color(0xFF00C06D);
+                      gradEnd = const Color(0xFF00A859);
+                      shadowCol = const Color(0xFF00C06D);
+                      btnIcon = Icons.play_circle_fill_rounded;
+                      btnText = 'Play Now 🎮';
+                      btnAction = () => context.push('/tournaments/${tournament.id}/games');
+                    }
                   }
                 } else {
                   // Not joined yet
@@ -512,6 +532,31 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
                             // Status Pill
                             () {
+                              if (tournament.isPaused) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF3C7),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text('⏸️', style: TextStyle(fontSize: 9.5)),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        'PAUSED',
+                                        style: GoogleFonts.outfit(
+                                          color: const Color(0xFFD97706),
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 0.4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
                               final hasEnded = tournament.hasEnded;
                               final isLiveNow = (tournament.isLive || tournament.status == TournamentStatus.live) && !tournament.isUpcoming && !hasEnded;
                               final isUpcomingSoon = tournament.isUpcoming;

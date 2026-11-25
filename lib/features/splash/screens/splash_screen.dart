@@ -17,6 +17,7 @@ import 'package:sikkaplay/features/wallet/controllers/wallet_controller.dart';
 import 'package:sikkaplay/features/rewards/controllers/network_controller.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sikkaplay/core/navigation/app_navigator.dart';
+import 'package:sikkaplay/routes/app_router.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -222,8 +223,25 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       }
 
       if (mounted) {
-        final pendingRouteStr = prefs.getString('pending_chat_route');
+        final pendingTournamentId = prefs.getString('pending_tournament_route')?.trim();
+        final pendingRouteStr = prefs.getString('pending_chat_route')?.trim();
+        final pendingGeneralRoute = prefs.getString('pending_general_route')?.trim();
+
+        if (pendingTournamentId != null && pendingTournamentId.isNotEmpty) {
+          await prefs.remove('pending_tournament_route');
+          if (mounted) {
+            AppNavigator.resetTo(context, ref, '/home');
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (rootNavigatorKey.currentContext != null) {
+                rootNavigatorKey.currentContext!.push('/tournaments/$pendingTournamentId');
+              }
+            });
+          }
+          return;
+        }
+
         if (pendingRouteStr != null && pendingRouteStr.isNotEmpty) {
+          await prefs.remove('pending_chat_route');
           try {
             final Map<String, dynamic> data = json.decode(pendingRouteStr);
             final String channelName = data['channelName'] ?? '';
@@ -232,17 +250,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             final String partnerAvatar = data['senderAvatar'] ?? '';
             
             if (partnerId.isNotEmpty || channelName.isNotEmpty) {
-              await prefs.remove('pending_chat_route');
               final String effectiveChannel = partnerId.isNotEmpty ? 'friend-chat-$partnerId' : channelName;
               if (mounted) {
                 AppNavigator.resetTo(context, ref, '/playground/friends');
-                context.push('/playground/studio', extra: {
-                  'channelName': effectiveChannel,
-                  'agoraToken': effectiveChannel,
-                  'partnerId': partnerId,
-                  'partnerName': partnerName,
-                  'partnerUsername': '',
-                  'partnerAvatar': partnerAvatar,
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (rootNavigatorKey.currentContext != null) {
+                    rootNavigatorKey.currentContext!.push('/playground/studio', extra: {
+                      'channelName': effectiveChannel,
+                      'agoraToken': effectiveChannel,
+                      'partnerId': partnerId,
+                      'partnerName': partnerName,
+                      'partnerUsername': '',
+                      'partnerAvatar': partnerAvatar,
+                    });
+                  }
                 });
               }
               return;
@@ -251,14 +272,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             debugPrint('Error parsing pending chat route: $e');
           }
         }
-        final pendingTournamentId = prefs.getString('pending_tournament_route');
-        if (pendingTournamentId != null && pendingTournamentId.isNotEmpty) {
-          await prefs.remove('pending_tournament_route');
+
+        if (pendingGeneralRoute != null && pendingGeneralRoute.isNotEmpty) {
+          await prefs.remove('pending_general_route');
           if (mounted) {
-            AppNavigator.resetTo(context, ref, '/tournaments');
-            context.push('/tournaments/${pendingTournamentId}');
-            return;
+            AppNavigator.resetTo(context, ref, '/home');
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (rootNavigatorKey.currentContext != null) {
+                rootNavigatorKey.currentContext!.push(pendingGeneralRoute);
+              }
+            });
           }
+          return;
         }
 
         if (mounted) {

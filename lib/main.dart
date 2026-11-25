@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sikkaplay/core/theme/app_theme.dart';
-import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/routes/app_router.dart';
 import 'package:sikkaplay/features/playground/screens/playground_studio_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -22,7 +21,6 @@ import 'package:flutter/foundation.dart';
 import 'package:safe_device/safe_device.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:sikkaplay/features/playground/services/playground_service.dart';
-import 'package:sikkaplay/core/config/app_config.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sikkaplay/core/auth/auth_service.dart';
 import 'dart:convert';
@@ -55,8 +53,94 @@ Future<String?> _checkDeviceSafety() async {
 }
 final FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
 
+/// Centralized routine to persist payload for killed/background states
+/// and immediately navigate if the app is already awake and past splash.
+Future<void> saveAndRouteNotificationPayload(Map<String, dynamic> data) async {
+  try {
+    final String type = (data['type'] ?? '').toString().toLowerCase();
+    final String tournamentId = (data['tournamentId'] ?? (type.startsWith('tournament') ? data['channelName'] : null) ?? '').toString().trim();
+    final String channelName = (data['channelName'] ?? '').toString().trim();
+    final String partnerId = (data['senderId'] ?? data['partnerId'] ?? '').toString().trim();
+    final String partnerName = (data['senderName'] ?? data['partnerName'] ?? 'Sikka Games Friend').toString().trim();
+    final String partnerAvatar = (data['senderAvatar'] ?? '').toString().trim();
+
+    final prefs = await SharedPreferences.getInstance();
+
+    if (type.startsWith('tournament') || tournamentId.isNotEmpty) {
+      final target = tournamentId.isNotEmpty ? tournamentId : channelName;
+      if (target.isNotEmpty) {
+        await prefs.setString('pending_tournament_route', target);
+      }
+    } else if (channelName.isNotEmpty && partnerId.isNotEmpty) {
+      final effectiveChannel = partnerId.isNotEmpty ? 'friend-chat-$partnerId' : channelName;
+      await prefs.setString('pending_chat_route', json.encode({
+        'channelName': effectiveChannel,
+        'agoraToken': effectiveChannel,
+        'partnerId': partnerId,
+        'partnerName': partnerName,
+        'partnerUsername': '',
+        'partnerAvatar': partnerAvatar,
+      }));
+    } else if (type == 'withdrawal' || type == 'reward') {
+      await prefs.setString('pending_general_route', '/wallet');
+    } else if (type == 'referral') {
+      await prefs.setString('pending_general_route', '/my_network');
+    }
+
+    // Try immediate navigation if root navigator is active and not on splash
+    final context = rootNavigatorKey.currentContext;
+    if (context != null) {
+      String? currentPath;
+      try {
+        currentPath = GoRouterState.of(context).uri.path;
+      } catch (_) {}
+
+      if (currentPath != null && currentPath != '/splash') {
+        if (type.startsWith('tournament') || tournamentId.isNotEmpty) {
+          final target = tournamentId.isNotEmpty ? tournamentId : channelName;
+          if (target.isNotEmpty) {
+            context.push('/tournaments/$target');
+            await prefs.remove('pending_tournament_route');
+            return;
+          }
+        } else if (channelName.isNotEmpty && partnerId.isNotEmpty) {
+          final effectiveChannel = partnerId.isNotEmpty ? 'friend-chat-$partnerId' : channelName;
+          context.push('/playground/studio', extra: {
+            'channelName': effectiveChannel,
+            'agoraToken': effectiveChannel,
+            'partnerId': partnerId,
+            'partnerName': partnerName,
+            'partnerUsername': '',
+            'partnerAvatar': partnerAvatar,
+          });
+          await prefs.remove('pending_chat_route');
+          return;
+        } else if (type == 'withdrawal' || type == 'reward') {
+          context.push('/wallet');
+          await prefs.remove('pending_general_route');
+          return;
+        } else if (type == 'referral') {
+          context.push('/my_network');
+          await prefs.remove('pending_general_route');
+          return;
+        }
+      }
+    }
+  } catch (e) {
+    debugPrint('Error in saveAndRouteNotificationPayload: $e');
+  }
+}
+
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
+  WidgetsFlutterBinding.ensureInitialized();
+  final payloadStr = notificationResponse.payload;
+  if (payloadStr != null && payloadStr.isNotEmpty) {
+    try {
+      final Map<String, dynamic> data = json.decode(payloadStr);
+      saveAndRouteNotificationPayload(data);
+    } catch (_) {}
+  }
   _handleNotificationAction(notificationResponse);
 }
 
@@ -71,8 +155,6 @@ Future<void> _handleNotificationAction(NotificationResponse response) async {
     final Map<String, dynamic> data = json.decode(payloadStr);
     final String channelName = data['channelName'] ?? '';
     final String partnerId = data['partnerId'] ?? '';
-    final String partnerName = data['partnerName'] ?? 'Sikka Games Friend';
-    final String partnerAvatar = data['senderAvatar'] ?? '';
 
     if (response.actionId == 'mute_action') {
       final prefs = await SharedPreferences.getInstance();
@@ -89,78 +171,25 @@ Future<void> _handleNotificationAction(NotificationResponse response) async {
       return;
     }
 
-    final String type = data['type'] ?? '';
-    final String tournamentId = data['tournamentId'] ?? '';
-
-    if (type.startsWith('tournament') || tournamentId.isNotEmpty) {
-      final String targetTournamentId = tournamentId.isNotEmpty ? tournamentId : channelName;
-      if (targetTournamentId.isNotEmpty) {
-        globalPushTournamentScreenWithRetry(targetTournamentId, 15);
-      }
-      return;
-    }
-
-    // Standard tap: Open the chat room
-    if (channelName.isNotEmpty && partnerId.isNotEmpty) {
-      globalPushChatScreenWithRetry(channelName, partnerId, partnerName, 15, partnerAvatar: partnerAvatar);
-    }
+    await saveAndRouteNotificationPayload(data);
   } catch (e) {
     debugPrint('Error handling notification tap: $e');
   }
 }
 
 void globalPushTournamentScreenWithRetry(String tournamentId, int retries) async {
-  if (rootNavigatorKey.currentContext == null) {
-    if (retries > 0) {
-      Future.delayed(const Duration(milliseconds: 400), () {
-        globalPushTournamentScreenWithRetry(tournamentId, retries - 1);
-      });
-    } else {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('pending_tournament_route', tournamentId);
-      } catch (e) {
-        debugPrint('Error saving pending tournament route: $e');
-      }
-    }
-    return;
-  }
-  
-  rootNavigatorKey.currentContext?.push('/tournaments/$tournamentId');
+  await saveAndRouteNotificationPayload({
+    'type': 'tournament',
+    'tournamentId': tournamentId,
+  });
 }
 
 void globalPushChatScreenWithRetry(String channelName, String partnerId, String partnerName, int retries, {String? partnerAvatar}) async {
-  if (rootNavigatorKey.currentContext == null) {
-    if (retries > 0) {
-      Future.delayed(const Duration(milliseconds: 400), () {
-        globalPushChatScreenWithRetry(channelName, partnerId, partnerName, retries - 1, partnerAvatar: partnerAvatar);
-      });
-    } else {
-      // All retries exhausted (app likely in killed state) — save for SplashScreen to pick up.
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('pending_chat_route', json.encode({
-          'channelName': channelName,
-          'partnerId': partnerId,
-          'partnerName': partnerName,
-          'senderAvatar': partnerAvatar ?? '',
-        }));
-      } catch (e) {
-        debugPrint('Error saving pending chat route: $e');
-      }
-    }
-    return;
-  }
-  
-  final String effectiveChannel = partnerId.trim().isNotEmpty ? 'friend-chat-${partnerId.trim()}' : channelName;
-  
-  rootNavigatorKey.currentContext?.push('/playground/studio', extra: {
-    'channelName': effectiveChannel,
-    'agoraToken': effectiveChannel,
+  await saveAndRouteNotificationPayload({
+    'channelName': channelName,
     'partnerId': partnerId,
     'partnerName': partnerName,
-    'partnerUsername': '',
-    'partnerAvatar': partnerAvatar ?? '',
+    'senderAvatar': partnerAvatar ?? '',
   });
 }
 
@@ -313,6 +342,22 @@ Future<void> _initializeServices() async {
       onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
 
+    // Check if the app was launched by tapping a local notification from killed state
+    final NotificationAppLaunchDetails? launchDetails =
+        await localNotifications.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      final launchPayload = launchDetails!.notificationResponse?.payload;
+      if (launchPayload != null && launchPayload.isNotEmpty) {
+        try {
+          final data = json.decode(launchPayload) as Map<String, dynamic>;
+          debugPrint('[Notifications] App launched via local notification payload: $launchPayload');
+          await saveAndRouteNotificationPayload(data);
+        } catch (e) {
+          debugPrint('[Notifications] Error parsing launch payload: $e');
+        }
+      }
+    }
+
     // Configure Android Notification Channel  // Create high importance channel
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'sikkaplay_high_channel_v4',
@@ -354,8 +399,6 @@ void main() async {
   await Firebase.initializeApp();
   await _initializeServices();
   
-  FirebaseAnalytics analytics = FirebaseAnalytics.instance;
-
   tz.initializeTimeZones();
 
   String? safetyError = await _checkDeviceSafety();
@@ -450,97 +493,8 @@ class _SikkaPlayAppState extends ConsumerState<SikkaPlayApp> with WidgetsBinding
   }
 
   void _handleFirebaseMessageTap(RemoteMessage message, {bool isKilledState = false}) async {
-    // When backend sends FCM data payload, it comes in message.data
-    final channelName = message.data['channelName'] ?? '';
-    final partnerId = message.data['senderId'] ?? message.data['partnerId'] ?? '';
-    final partnerName = message.data['senderName'] ?? message.data['partnerName'] ?? 'Sikka Games Friend';
-    final partnerAvatar = message.data['senderAvatar'] ?? '';
-    final String type = message.data['type'] ?? '';
-    final String tournamentId = message.data['tournamentId'] ?? (type.startsWith('tournament') ? message.data['channelName'] : null) ?? '';
-
-    if (type.startsWith('tournament') || tournamentId.isNotEmpty) {
-      if (tournamentId.isNotEmpty) {
-        if (isKilledState) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('pending_tournament_route', tournamentId);
-        } else {
-          _pushTournamentScreenWithRetry(tournamentId, 10);
-        }
-      }
-      return;
-    }
-
-    if (channelName.isNotEmpty && partnerId.isNotEmpty) {
-      if (isKilledState) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('pending_chat_route', json.encode({
-          'channelName': channelName,
-          'partnerId': partnerId,
-          'partnerName': partnerName,
-          'senderAvatar': partnerAvatar,
-        }));
-      } else {
-        _pushChatScreenWithRetry(channelName, partnerId, partnerName, 10, partnerAvatar: partnerAvatar);
-      }
-    }
+    await saveAndRouteNotificationPayload(message.data);
   }
-
-  void _pushTournamentScreenWithRetry(String tournamentId, int retries) async {
-    if (rootNavigatorKey.currentContext == null) {
-      if (retries > 0) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          _pushTournamentScreenWithRetry(tournamentId, retries - 1);
-        });
-      } else {
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('pending_tournament_route', tournamentId);
-        } catch (e) {
-          debugPrint('Error saving pending tournament route: $e');
-        }
-      }
-      return;
-    }
-
-    rootNavigatorKey.currentContext?.push('/tournaments/$tournamentId');
-  }
-
-  void _pushChatScreenWithRetry(String channelName, String partnerId, String partnerName, int retries, {String? partnerAvatar}) async {
-    if (rootNavigatorKey.currentContext == null) {
-      if (retries > 0) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          _pushChatScreenWithRetry(channelName, partnerId, partnerName, retries - 1, partnerAvatar: partnerAvatar);
-        });
-      } else {
-        // All retries exhausted — save for SplashScreen to pick up.
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('pending_chat_route', json.encode({
-            'channelName': channelName,
-            'partnerId': partnerId,
-            'partnerName': partnerName,
-            'senderAvatar': partnerAvatar ?? '',
-          }));
-        } catch (e) {
-          debugPrint('Error saving pending chat route: $e');
-        }
-      }
-      return;
-    }
-    
-    final String effectiveChannel = partnerId.trim().isNotEmpty ? 'friend-chat-${partnerId.trim()}' : channelName;
-
-    rootNavigatorKey.currentContext?.push('/playground/studio', extra: {
-      'channelName': effectiveChannel,
-      'agoraToken': effectiveChannel,
-      'partnerId': partnerId,
-      'partnerName': partnerName,
-      'partnerUsername': '',
-      'partnerAvatar': partnerAvatar ?? '',
-    });
-  }
-
-
 
   Future<void> _syncFcmTokenOnStartup() async {
     try {

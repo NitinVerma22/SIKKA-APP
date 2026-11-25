@@ -43,7 +43,8 @@ import 'package:sikkaplay/features/splash/screens/language_screen.dart';
 import 'package:sikkaplay/features/home/screens/today_tasks_screen.dart';
 import 'package:sikkaplay/features/home/screens/surveys_screen.dart';
 import 'package:sikkaplay/features/home/screens/app_install_screen.dart';
-import 'package:sikkaplay/features/home/screens/visit_earn_screen.dart';
+import 'package:sikkaplay/features/home/screens/review_earn_screen.dart';
+import 'package:sikkaplay/features/home/screens/scratch_win_screen.dart';
 import 'package:sikkaplay/features/home/screens/daily_code_screen.dart';
 import 'package:sikkaplay/features/home/screens/video_tutorials_screen.dart';
 import 'package:sikkaplay/shared/screens/webview_screen.dart';
@@ -307,7 +308,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: 'visit_earn',
-                builder: (context, state) => const VisitEarnScreen(),
+                builder: (context, state) => const ReviewEarnScreen(),
+              ),
+              GoRoute(
+                path: 'review_earn',
+                builder: (context, state) => const ReviewEarnScreen(),
+              ),
+              GoRoute(
+                path: 'scratch_win',
+                builder: (context, state) => const ScratchWinScreen(),
               ),
               GoRoute(
                 path: 'video_tutorials',

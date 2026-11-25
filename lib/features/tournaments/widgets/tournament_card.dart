@@ -253,6 +253,37 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          if (t.isPaused) ...[
+                            const SizedBox(height: 3),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFFBEB),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFFDE68A), width: 0.8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('⏸️', style: TextStyle(fontSize: 9.5)),
+                                  const SizedBox(width: 3.5),
+                                  Flexible(
+                                    child: Text(
+                                      t.pauseMessage.isNotEmpty ? t.pauseMessage : 'Paused: will resume tomorrow',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFFB45309),
+                                        letterSpacing: -0.1,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           if (t.minPointsToWin > 0) ...[
                             const SizedBox(height: 4),
                             Container(
@@ -316,6 +347,33 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
   }
 
   Widget _buildStateTag(Tournament t) {
+    if (t.isPaused) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF3C7),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFDE68A), width: 1.0),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('⏸️', style: TextStyle(fontSize: 9.5)),
+            const SizedBox(width: 3.5),
+            Text(
+              'PAUSED',
+              style: GoogleFonts.outfit(
+                color: const Color(0xFFD97706),
+                fontSize: 9.5,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (t.isCompleted || t.status == TournamentStatus.completed || t.hasEnded) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
@@ -784,6 +842,68 @@ class _TournamentCardState extends ConsumerState<TournamentCard> with SingleTick
 
     // When joined:
     if (isJoined) {
+      // 0. If tournament is PAUSED: Show Paused Button
+      if (t.isPaused) {
+        return Container(
+          height: 38,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ElevatedButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '⏸️ ${t.pauseMessage.isNotEmpty ? t.pauseMessage : "Tournament is paused and will resume tomorrow."} Your joined spot is safe!',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                  ),
+                  backgroundColor: const Color(0xFFD97706),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.pause_circle_filled_rounded, color: Colors.white, size: 16),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Paused (Resumes Tomorrow)',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
       // 1. If tournament hasn't started yet: Show Live Countdown Button
       if (!hasStarted) {
         final countdownText = _formatDetailedCountdown(t.timeUntilStart);

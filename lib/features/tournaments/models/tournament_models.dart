@@ -148,6 +148,8 @@ class Tournament {
   final int? maxParticipants;
   final int currentParticipants;
   final TournamentStatus status;
+  final bool isPaused;
+  final String pauseMessage;
   final bool isJoinedExplicit;
   final UserParticipation? userParticipation;
   final int displayOrder;
@@ -171,6 +173,8 @@ class Tournament {
     this.maxParticipants,
     required this.currentParticipants,
     required this.status,
+    this.isPaused = false,
+    this.pauseMessage = 'Paused: will resume tomorrow',
     this.isJoinedExplicit = false,
     this.userParticipation,
     this.displayOrder = 999,
@@ -251,9 +255,17 @@ class Tournament {
       );
     }
 
+    final rawTitle = json['rawTitle']?.toString() ?? json['title']?.toString() ?? 'Tournament';
+    final cleanTitle = rawTitle.replaceAll(RegExp(r'^\[⏸️\s*Paused\]\s*', caseSensitive: false), '').trim();
+    final isPausedVal = json['isPaused'] == true || 
+        json['title']?.toString().toLowerCase().contains('[⏸️ paused]') == true ||
+        json['status']?.toString().toUpperCase() == 'PAUSED';
+
     return Tournament(
       id: json['id']?.toString() ?? '',
-      title: json['title']?.toString() ?? 'Tournament',
+      title: cleanTitle.isNotEmpty ? cleanTitle : 'Tournament',
+      isPaused: isPausedVal,
+      pauseMessage: json['pauseMessage']?.toString() ?? 'Paused: will resume tomorrow',
       description: json['description']?.toString(),
       bannerUrl: json['bannerUrl']?.toString(),
       tag: json['tag']?.toString(),

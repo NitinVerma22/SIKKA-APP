@@ -10,7 +10,6 @@ import 'package:sikkaplay/core/constants/app_colors.dart';
 import 'package:sikkaplay/core/constants/app_sizes.dart';
 import 'package:sikkaplay/features/profile/controllers/user_controller.dart';
 import 'package:sikkaplay/features/home/controllers/home_controller.dart';
-import 'package:sikkaplay/features/wallet/controllers/wallet_controller.dart';
 import 'package:sikkaplay/core/localization/app_translations.dart';
 import 'package:sikkaplay/core/localization/translation_provider.dart';
 import 'package:sikkaplay/features/playground/services/playground_service.dart';
@@ -37,7 +36,7 @@ class MainLayout extends ConsumerStatefulWidget {
   ConsumerState<MainLayout> createState() => _MainLayoutState();
 }
 
-class _MainLayoutState extends ConsumerState<MainLayout> {
+class _MainLayoutState extends ConsumerState<MainLayout> with WidgetsBindingObserver {
   DateTime? _lastPressedAt;
   
   IO.Socket? _globalSocket;
@@ -50,9 +49,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initGlobalSocket();
-    unawaited(_consumePendingChatRoute());
-    unawaited(_consumePendingTournamentRoute());
+    unawaited(_consumePendingRoutes());
     
     Connectivity().checkConnectivity().then((results) {
       if (mounted) {
@@ -68,111 +67,81 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     });
   }
 
-  Future<void> _consumePendingTournamentRoute() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final tournamentId = prefs.getString('pending_tournament_route')?.trim();
-      if (tournamentId == null || tournamentId.isEmpty) return;
-
-      await prefs.remove('pending_tournament_route');
-
-      for (var attempt = 0; attempt < 20; attempt++) {
-        if (!mounted) return;
-        if (attempt > 0) {
-          await Future.delayed(const Duration(milliseconds: 250));
-        } else {
-          await Future.delayed(const Duration(milliseconds: 150));
-        }
-
-        if (!mounted) return;
-
-        try {
-          final router = GoRouter.of(context);
-          router.push('/tournaments/$tournamentId');
-          debugPrint('[Notification] Opened pending tournament: $tournamentId');
-          return;
-        } catch (e) {
-          debugPrint('[Notification] Tournament navigation attempt ${attempt + 1} failed: $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('[Notification] Error consuming pending tournament route: $e');
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('pending_tournament_route');
-      } catch (_) {}
-    }
-  }
-
-  Future<void> _consumePendingChatRoute() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString('pending_chat_route');
-      if (raw == null || raw.isEmpty) return;
-
-      final data = json.decode(raw) as Map<String, dynamic>;
-      final channelName = data['channelName']?.toString().trim() ?? '';
-      final partnerId = data['partnerId']?.toString().trim() ?? '';
-      final partnerName = data['partnerName']?.toString().trim().isNotEmpty == true
-          ? data['partnerName'].toString()
-          : 'Sikka Games Friend';
-      final partnerAvatar = data['senderAvatar']?.toString() ?? '';
-
-      if (partnerId.isEmpty && channelName.isEmpty) {
-        await prefs.remove('pending_chat_route');
-        return;
-      }
-
-      // Remove first so a failed/repeated lifecycle callback cannot reopen the same chat.
-      await prefs.remove('pending_chat_route');
-
-      final effectiveChannel = partnerId.isNotEmpty
-          ? 'friend-chat-$partnerId'
-          : channelName;
-
-      // Wait until the shell/root navigator is mounted. This is important when
-      // Android launches the app from a notification while it was killed.
-      for (var attempt = 0; attempt < 20; attempt++) {
-        if (!mounted) return;
-        if (attempt > 0) {
-          await Future.delayed(const Duration(milliseconds: 250));
-        } else {
-          await Future.delayed(const Duration(milliseconds: 150));
-        }
-
-        if (!mounted) return;
-
-        try {
-          final router = GoRouter.of(context);
-          router.push('/playground/studio', extra: {
-            'channelName': effectiveChannel,
-            'agoraToken': effectiveChannel,
-            'partnerId': partnerId,
-            'partnerName': partnerName,
-            'partnerUsername': '',
-            'partnerAvatar': partnerAvatar,
-          });
-          debugPrint('[Notification] Opened pending chat for partner: $partnerId');
-          return;
-        } catch (e) {
-          debugPrint('[Notification] Chat navigation attempt ${attempt + 1} failed: $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('[Notification] Error consuming pending chat route: $e');
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('pending_chat_route');
-      } catch (_) {}
-    }
-  }
-
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _connectivitySubscription?.cancel();
     _globalSocket?.disconnect();
     _globalSocket?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_consumePendingRoutes());
+    }
+  }
+
+  Future<void> _consumePendingRoutes() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // 1. Pending tournament route
+      final tournamentId = prefs.getString('pending_tournament_route')?.trim();
+      if (tournamentId != null && tournamentId.isNotEmpty) {
+        await prefs.remove('pending_tournament_route');
+        if (mounted) {
+          GoRouter.of(context).push('/tournaments/$tournamentId');
+          debugPrint('[MainLayout] Consumed pending tournament: $tournamentId');
+          return;
+        }
+      }
+
+      // 2. Pending chat route
+      final raw = prefs.getString('pending_chat_route');
+      if (raw != null && raw.isNotEmpty) {
+        await prefs.remove('pending_chat_route');
+        if (mounted) {
+          try {
+            final data = json.decode(raw) as Map<String, dynamic>;
+            final channelName = data['channelName']?.toString().trim() ?? '';
+            final partnerId = data['partnerId']?.toString().trim() ?? '';
+            final partnerName = data['partnerName']?.toString().trim().isNotEmpty == true
+                ? data['partnerName'].toString()
+                : 'Sikka Games Friend';
+            final partnerAvatar = data['senderAvatar']?.toString() ?? '';
+            final effectiveChannel = partnerId.isNotEmpty ? 'friend-chat-$partnerId' : channelName;
+
+            GoRouter.of(context).push('/playground/studio', extra: {
+              'channelName': effectiveChannel,
+              'agoraToken': effectiveChannel,
+              'partnerId': partnerId,
+              'partnerName': partnerName,
+              'partnerUsername': '',
+              'partnerAvatar': partnerAvatar,
+            });
+            debugPrint('[MainLayout] Consumed pending chat for partner: $partnerId');
+            return;
+          } catch (e) {
+            debugPrint('[MainLayout] Error parsing pending chat route: $e');
+          }
+        }
+      }
+
+      // 3. Pending general route
+      final generalRoute = prefs.getString('pending_general_route')?.trim();
+      if (generalRoute != null && generalRoute.isNotEmpty) {
+        await prefs.remove('pending_general_route');
+        if (mounted) {
+          GoRouter.of(context).push(generalRoute);
+          debugPrint('[MainLayout] Consumed pending general route: $generalRoute');
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('[MainLayout] Error consuming pending routes: $e');
+    }
   }
 
   Future<void> _initGlobalSocket() async {
@@ -360,7 +329,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
       final FlutterLocalNotificationsPlugin localPlugin = FlutterLocalNotificationsPlugin();
       await localPlugin.show(
-        id: (friendId != null ? friendId.hashCode : (channelName.hashCode ^ text.hashCode)).abs() % 100000,
+        id: (friendId.isNotEmpty ? friendId.hashCode : (channelName.hashCode ^ text.hashCode)).abs() % 100000,
         title: friendName,
         body: text,
         notificationDetails: details,
@@ -369,10 +338,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     } catch (e) {
       debugPrint('Error showing system notification inside poll: $e');
     }
-  }
-
-  bool _isPlaygroundMode(String location) {
-    return location.startsWith('/playground');
   }
 
   int _getSelectedIndex(BuildContext context) {
